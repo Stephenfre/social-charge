@@ -38,7 +38,7 @@ const buttonStyle = tva({
   variants: {
     action: {
       primary:
-        'bg-primary-400 data-[hover=true]:bg-orange-600 data-[active=true]:bg-orange-400 border-orange-300 data-[hover=true]:border-orange-400 data-[active=true]:border-orange-500 data-[focus-visible=true]:web:ring-indicator-info',
+        'rounded-xl bg-primary-400 data-[hover=true]:bg-orange-600 data-[active=true]:bg-orange-400 border-black data-[hover=true]:border-black data-[active=true]:border-black data-[focus-visible=true]:web:ring-indicator-info',
       secondary:
         'bg-secondary-500 border-secondary-300 data-[hover=true]:bg-secondary-600 data-[hover=true]:border-secondary-400 data-[active=true]:bg-secondary-700 data-[active=true]:border-secondary-700 data-[focus-visible=true]:web:ring-indicator-info',
       positive:

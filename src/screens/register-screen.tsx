@@ -1,0 +1,51 @@
+import { FontAwesome } from '@expo/vector-icons';
+import { Mail } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { SignUpForm } from '~/components';
+import { Button, Flex, Text, Divider } from '~/components/ui';
+import { useNavigation } from '@react-navigation/native';
+import { NavigationProp } from '~/types/navigation';
+
+export function RegisterScreen() {
+  const navigation = useNavigation<NavigationProp<'Register'>>();
+  return (
+    <SafeAreaView>
+      <Flex direction="column" align="center" justify="center" className=" h-full" gap={5}>
+        <Flex direction="column" className="mt-4">
+          <Text size="4xl" bold>
+            Join Social Charge
+          </Text>
+          <Text>Find your vibe and the people who share it.</Text>
+        </Flex>
+        <Flex direction="column" justify="center" className="w-full  p-4" gap={6}>
+          <Flex direction="column" align="center" gap={4}>
+            <Button className="h-14 w-full bg-black">
+              <FontAwesome name="apple" size={24} color="white" />
+              <Text size="lg" weight="600" className="text-white">
+                Sign Up with Apple
+              </Text>
+            </Button>
+            <Button className="h-14 w-full bg-black">
+              <FontAwesome name="google" size={24} color="white" />
+              <Text size="lg" weight="600" className="text-white">
+                Sign Up with Google
+              </Text>
+            </Button>
+            <Button className="h-14 w-full bg-black">
+              <FontAwesome name="facebook" size={24} color="white" />
+              <Text size="lg" weight="600" className="text-white">
+                Sign Up with Facebook
+              </Text>
+            </Button>
+            <Flex align="center" justify="center" className="w-44">
+              <Divider />
+              <Text className="px-4">OR</Text>
+              <Divider />
+            </Flex>
+            <SignUpForm onSuccess={() => navigation.navigate('RegisterInfo')} />
+          </Flex>
+        </Flex>
+      </Flex>
+    </SafeAreaView>
+  );
+}
