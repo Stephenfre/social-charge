@@ -8,14 +8,19 @@ import {
   NativeSyntheticEvent,
   View,
 } from 'react-native';
+import { Button, ButtonText } from '~/components/ui';
 import { Text } from '~/components/ui/text';
+import { supabase } from '~/lib/supabase';
 
 export default function HomeScreen() {
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+  };
   return (
-    <SafeAreaView className="bg-white">
-      <Text size="5xl" weight="700" className="p-4 text-black">
-        Home
-      </Text>
+    <SafeAreaView>
+      <Button onPress={logout}>
+        <ButtonText>Logout</ButtonText>
+      </Button>
     </SafeAreaView>
   );
 }

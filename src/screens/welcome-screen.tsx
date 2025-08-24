@@ -29,7 +29,12 @@ export function WelcomeScreen() {
                 Get Started
               </Text>
             </Button>
-            <Text>Have an account already? Login</Text>
+            <Flex align="center" gap={1}>
+              <Text>Have an account already?</Text>
+              <Button variant="link" onPress={() => navigation.navigate('SignIn')}>
+                <Text bold>Login</Text>
+              </Button>
+            </Flex>
           </Flex>
         </Flex>
       </Flex>

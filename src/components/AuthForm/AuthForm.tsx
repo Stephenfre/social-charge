@@ -1,29 +1,31 @@
-import * as React from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { Button, Input, InputField, Text } from '../ui';
+import { useSignupWizard } from '~/hooks/useSignupWizard';
+import { cn } from '~/utils/cn';
 
 interface FormData {
   email: string;
   password: string;
 }
 
-interface SignUpFormProps {
-  onSuccess?: () => void;
+interface AuthFormProps {
+  onNavigate?: () => void;
+  from?: string;
 }
 
-export function SignUpForm({ onSuccess }: SignUpFormProps) {
+export function AuthForm({ onNavigate, from }: AuthFormProps) {
+  const { email, password, setField } = useSignupWizard();
+
+  // TODO: ADD ZOD VALIDATION
+
   const {
     control,
-    handleSubmit,
     formState: { errors },
   } = useForm<FormData>();
 
-  const onSubmit = handleSubmit((data) => {
-    console.log(data);
-    onSuccess?.();
-  });
+  const isDisabled = !email && !password;
 
-  // TODO: SET-UP ZOD
+  const buttonText = from === 'register' ? 'Create Account' : 'Login';
 
   return (
     <>
@@ -33,7 +35,11 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
         rules={{ required: 'Email is required' }}
         render={({ field: { onChange, value } }) => (
           <Input>
-            <InputField placeholder="Email" value={value} onChangeText={onChange} />
+            <InputField
+              placeholder="Email"
+              value={email}
+              onChangeText={(text) => setField('email', text)}
+            />
           </Input>
         )}
       />
@@ -47,18 +53,18 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
           <Input>
             <InputField
               placeholder="Password"
-              value={value}
-              onChangeText={onChange}
-              secureTextEntry
+              value={password}
+              onChangeText={(text) => setField('password', text)}
+              // secureTextEntry
             />
           </Input>
         )}
       />
       {errors.password && <Text className="text-red-500">{errors.password.message}</Text>}
 
-      <Button className="h-14 w-full bg-black" onPress={onSubmit}>
+      <Button className="h-14 w-full bg-black" onPress={onNavigate} disabled={isDisabled}>
         <Text size="lg" weight="600" className="text-white">
-          Create Account
+          {buttonText}
         </Text>
       </Button>
     </>

@@ -23,8 +23,7 @@ export function RegisterInfoScreen() {
     formState: { errors },
   } = useForm<FormData>();
 
-  const onSubmit = handleSubmit((data) => {
-    console.log(data);
+  const onNext = handleSubmit((data) => {
     navigation.navigate('Interest');
   });
 
@@ -43,7 +42,7 @@ export function RegisterInfoScreen() {
             <ButtonText>Upload Image</ButtonText>
           </Button>
         </Flex>
-        <RegisterInfoForm onSuccess={() => navigation.navigate('Interest')} />
+        <RegisterInfoForm onNavigate={onNext} />
       </Flex>
     </SafeAreaView>
   );

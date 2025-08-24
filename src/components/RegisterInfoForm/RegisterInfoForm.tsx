@@ -3,6 +3,7 @@ import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Box, ButtonText, Flex, InputField, Text, Input } from '../ui';
+import { useSignupWizard } from '~/hooks/useSignupWizard';
 
 interface FormData {
   firstName: string;
@@ -14,20 +15,23 @@ interface FormData {
 }
 
 interface RegisterInfoFormProps {
-  onSuccess?: () => void;
+  onNavigate?: () => void;
 }
 
-export function RegisterInfoForm({ onSuccess }: RegisterInfoFormProps) {
+export function RegisterInfoForm({ onNavigate }: RegisterInfoFormProps) {
   const {
     control,
     handleSubmit,
     formState: { errors },
   } = useForm<FormData>();
 
-  const onSubmit = handleSubmit((data) => {
-    console.log(data);
-    onSuccess?.();
-  });
+  // TODO: ADD ZOD VALIDATION
+  // TODO: ADD PHONE NUMBER LIBRARY
+  // TODO: ADD DATE PICKER
+  // TODO: ADD A LOCATION LIBRARY
+
+  const { firstName, lastName, nickName, phoneNumber, location, birthDate, setField } =
+    useSignupWizard();
 
   return (
     <Flex direction="column" align="center" className=" w-full px-4" gap={24}>
@@ -38,7 +42,11 @@ export function RegisterInfoForm({ onSuccess }: RegisterInfoFormProps) {
           rules={{ required: 'First Name is required' }}
           render={({ field: { onChange, value } }) => (
             <Input>
-              <InputField placeholder="First Name" value={value} onChangeText={onChange} />
+              <InputField
+                placeholder="First Name"
+                value={firstName}
+                onChangeText={(text) => setField('firstName', text)}
+              />
             </Input>
           )}
         />
@@ -49,7 +57,11 @@ export function RegisterInfoForm({ onSuccess }: RegisterInfoFormProps) {
           rules={{ required: 'Last Name is required' }}
           render={({ field: { onChange, value } }) => (
             <Input>
-              <InputField placeholder="Last Name" value={value} onChangeText={onChange} />
+              <InputField
+                placeholder="Last Name"
+                value={lastName}
+                onChangeText={(text) => setField('lastName', text)}
+              />
             </Input>
           )}
         />
@@ -57,14 +69,16 @@ export function RegisterInfoForm({ onSuccess }: RegisterInfoFormProps) {
         <Controller
           control={control}
           name="nickName"
-          rules={{ required: 'Nickname is required' }}
           render={({ field: { onChange, value } }) => (
             <Input>
-              <InputField placeholder="Nickname" value={value} onChangeText={onChange} />
+              <InputField
+                placeholder="Nickname"
+                value={nickName}
+                onChangeText={(text) => setField('nickName', text)}
+              />
             </Input>
           )}
         />
-        {errors.nickName && <Text className="text-red-500">{errors.nickName.message}</Text>}
         {/* This will be a date picker */}
         <Controller
           control={control}
@@ -72,7 +86,11 @@ export function RegisterInfoForm({ onSuccess }: RegisterInfoFormProps) {
           rules={{ required: 'Birth date is required' }}
           render={({ field: { onChange, value } }) => (
             <Input>
-              <InputField placeholder="Birth Date" value={value} onChangeText={onChange} />
+              <InputField
+                placeholder="Birth Date"
+                value={birthDate}
+                onChangeText={(text) => setField('birthDate', text)}
+              />
             </Input>
           )}
         />
@@ -83,7 +101,11 @@ export function RegisterInfoForm({ onSuccess }: RegisterInfoFormProps) {
           rules={{ required: 'Phone number is required' }}
           render={({ field: { onChange, value } }) => (
             <Input>
-              <InputField placeholder="Phone Number" value={value} onChangeText={onChange} />
+              <InputField
+                placeholder="Phone Number"
+                value={phoneNumber}
+                onChangeText={(text) => setField('phoneNumber', text)}
+              />
             </Input>
           )}
         />
@@ -94,13 +116,17 @@ export function RegisterInfoForm({ onSuccess }: RegisterInfoFormProps) {
           rules={{ required: 'Location is required' }}
           render={({ field: { onChange, value } }) => (
             <Input>
-              <InputField placeholder="Location" value={value} onChangeText={onChange} />
+              <InputField
+                placeholder="Location"
+                value={location}
+                onChangeText={(text) => setField('location', text)}
+              />
             </Input>
           )}
         />
         {errors.location && <Text className="text-red-500">{errors.location.message}</Text>}
       </Flex>
-      <Button className="h-14 w-full bg-black" onPress={onSubmit}>
+      <Button className="h-14 w-full bg-black" onPress={onNavigate}>
         <ButtonText size="lg" className="text-white">
           Continue
         </ButtonText>

@@ -5,6 +5,7 @@ export type RootStackParamList = {
   Register: undefined;
   RegisterInfo: undefined;
   Interest: undefined;
+  SignIn: undefined;
   Main: undefined;
 };
 
