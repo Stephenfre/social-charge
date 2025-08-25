@@ -14,7 +14,7 @@ export function WelcomeScreen() {
         </Box>
         <Flex direction="column" justify="center" className="w-full  p-4" gap={6}>
           <Flex direction="column" justify="center" align="flex-start">
-            <Text size="5xl" weight="600" className=" text-h">
+            <Text size="6xl" weight="600" className=" text-h">
               Charge up your social life!
             </Text>
             <Text size="xl" className=" text-black">

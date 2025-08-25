@@ -1,2 +1,2 @@
 export { AuthForm } from './AuthForm/AuthForm';
-export { RegisterInfoForm } from './RegisterInfoForm/RegisterInfoForm';
+export { PhoneInput } from './PhoneInput';

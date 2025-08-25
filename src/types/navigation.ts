@@ -3,7 +3,9 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 export type RootStackParamList = {
   Welcome: undefined;
   Register: undefined;
-  RegisterInfo: undefined;
+  RegisterUserName: undefined;
+  RegisterUserBirthDate: undefined;
+  RegisterUserLocation: undefined;
   Interest: undefined;
   SignIn: undefined;
   Main: undefined;

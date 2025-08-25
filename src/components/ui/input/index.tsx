@@ -69,7 +69,7 @@ const inputIconStyle = tva({
 });
 
 const inputSlotStyle = tva({
-  base: 'justify-center items-center web:disabled:cursor-not-allowed',
+  base: 'justify-center items-center web:disabled:cursor-not-allowed pr-2',
 });
 
 const inputFieldStyle = tva({

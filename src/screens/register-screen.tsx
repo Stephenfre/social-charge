@@ -10,7 +10,7 @@ export function RegisterScreen() {
   const navigation = useNavigation<NavigationProp<'Register'>>();
 
   const onNext = () => {
-    navigation.navigate('RegisterInfo');
+    navigation.navigate('RegisterUserName');
   };
 
   return (

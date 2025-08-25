@@ -126,7 +126,7 @@ const buttonTextStyle = tva({
       default: 'text-white data-[hover=true]:text-white data-[active=true]:text-white',
     },
     variant: {
-      link: 'data-[hover=true]:underline data-[active=true]:underline',
+      link: 'data-[active=true]:text-green-500',
       outline: '',
       solid:
         'text-typography-0 text-black data-[hover=true]:text-typography-0 data-[active=true]:text-typography-0',

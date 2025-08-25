@@ -5,8 +5,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { MainTabNavigator } from '~/navigation/MainTabNavigator';
 import {
   InterestScreen,
-  RegisterInfoScreen,
   RegisterScreen,
+  RegisterUserNameScreen,
+  RegisterLocationScreen,
   SignInScreen,
   WelcomeScreen,
 } from '~/screens';
@@ -15,6 +16,7 @@ import './global.css';
 
 import { Session } from '@supabase/supabase-js';
 import { supabase } from './src/lib/supabase';
+import { RegisterUserBirthDateScreen } from '~/screens/register-user-birthdate-screen';
 
 const Stack = createNativeStackNavigator();
 
@@ -66,7 +68,9 @@ const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Welcome" component={WelcomeScreen} />
     <Stack.Screen name="Register" component={RegisterScreen} />
-    <Stack.Screen name="RegisterInfo" component={RegisterInfoScreen} />
+    <Stack.Screen name="RegisterUserName" component={RegisterUserNameScreen} />
+    <Stack.Screen name="RegisterUserBirthDate" component={RegisterUserBirthDateScreen} />
+    <Stack.Screen name="RegisterUserLocation" component={RegisterLocationScreen} />
     <Stack.Screen name="Interest" component={InterestScreen} />
     <Stack.Screen name="SignIn" component={SignInScreen} />
   </Stack.Navigator>
