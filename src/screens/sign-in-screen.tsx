@@ -1,10 +1,7 @@
-import { FontAwesome } from '@expo/vector-icons';
-import { Mail } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthForm } from '~/components';
 import { Button, Flex, Text, Divider } from '~/components/ui';
-import { useNavigation } from '@react-navigation/native';
-import { NavigationProp } from '~/types/navigation';
+
 import { supabase } from '~/lib/supabase';
 import { Alert } from 'react-native';
 import { useSignupWizard } from '~/hooks/useSignupWizard';
@@ -13,7 +10,7 @@ export function SignInScreen() {
   const { email, password, reset } = useSignupWizard();
 
   const onSignIm = async () => {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email: email,
       password: password,
     });

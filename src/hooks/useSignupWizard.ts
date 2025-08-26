@@ -13,6 +13,7 @@ interface SignupData {
   country?: string;
   birthDate?: string;
   age?: number;
+  profileImageUri?: string;
   interests: string[];
 }
 
@@ -35,6 +36,7 @@ export const useSignupWizard = create<SignupWizardState>()(
       country: '',
       birthDate: '',
       age: undefined,
+      profileImageUri: '',
       interests: [],
       setField: (key, value) => set((s) => ({ ...s, [key]: value })),
       setInterests: (ints) => set(() => ({ interests: ints })),
@@ -50,6 +52,7 @@ export const useSignupWizard = create<SignupWizardState>()(
           country: '',
           birthDate: '',
           age: undefined,
+          profileImageUri: '',
           interests: [],
         }),
     }),

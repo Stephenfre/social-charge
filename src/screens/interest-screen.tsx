@@ -1,26 +1,22 @@
 import { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, ButtonIcon, ButtonText, Flex, Text } from '~/components/ui';
+import { Button, ButtonText, Flex, Text } from '~/components/ui';
 import { useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '~/types/navigation';
 import { supabase } from '~/lib/supabase';
 import { useSignupWizard } from '~/hooks/useSignupWizard';
 import { Alert } from 'react-native';
 import dayjs from 'dayjs';
-import { EditIcon } from '~/components/ui/icon';
+
 import { ChevronRight } from 'lucide-react-native';
 import { cn } from '~/utils/cn';
 import { INTEREST_CATEGORIES } from '~/constants/interests';
 
+import { uploadProfileImage } from '~/lib/uploadImage';
+
 export function InterestScreen() {
   const navigation = useNavigation<NavigationProp<'Interest'>>();
   const [selectedInterests, setSelectedInterests] = useState<String[]>([]);
-  const interestList = {
-    active: ['Sports', 'Outdoors', 'Fitness', 'Hiking', 'Yoga', 'Dancing'],
-    creative: ['Music', 'Art', 'Photography', 'Movies', 'Gaming', 'Fashion'],
-    social: ['Travel', 'Nightlife', 'Foodie', 'Coffee', 'Volunteering'],
-    relaxed: ['Reading', 'Tech', 'Pets'],
-  };
 
   const categoryEmojis = {
     active: '🏃‍♂️',
@@ -75,9 +71,7 @@ export function InterestScreen() {
     state,
     country,
     birthDate,
-    age,
-    interests,
-    setInterests,
+    profileImageUri,
     reset,
   } = useSignupWizard();
 
@@ -125,6 +119,22 @@ export function InterestScreen() {
           await supabase.auth.signOut();
           Alert.alert('Failed to create profile. Please try again.');
           return;
+        }
+
+        // Upload profile image if exists
+        if (profileImageUri) {
+          try {
+            const imageResult = await uploadProfileImage(userId, profileImageUri);
+            // Update user profile with image URL
+            await supabase
+              .from('users')
+              .update({ profile_image_url: imageResult.url })
+              .eq('id', userId);
+          } catch (imageError) {
+            console.error('Failed to upload profile image:', imageError);
+            // Don't fail the entire signup process if image upload fails
+            // Just log the error and continue
+          }
         }
 
         // Save user interests if any selected

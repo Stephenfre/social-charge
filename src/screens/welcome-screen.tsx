@@ -1,5 +1,5 @@
-import { SafeAreaView, View } from 'react-native';
-import { Button, ButtonGroup } from '~/components/ui/button';
+import { SafeAreaView } from 'react-native';
+import { Button } from '~/components/ui/button';
 import { Box, Flex, Text } from '~/components/ui';
 import { useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '~/types/navigation';

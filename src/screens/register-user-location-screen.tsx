@@ -2,13 +2,12 @@ import { useState, useRef, useEffect } from 'react';
 import * as Location from 'expo-location';
 import * as z from 'zod';
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Box, ButtonText, Flex, Text } from '~/components/ui';
+import { Button, ButtonText, Flex, Text } from '~/components/ui';
 import { useSignupWizard } from '~/hooks/useSignupWizard';
 import { useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '~/types/navigation';
-import { View } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 
 interface FormData {
@@ -19,10 +18,9 @@ export function RegisterLocationScreen() {
   const navigation = useNavigation<NavigationProp<'RegisterUserLocation'>>();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<Location.LocationObject | null>(null);
-  const { city, state, country, setField } = useSignupWizard();
+  const { setField } = useSignupWizard();
 
   const {
-    control,
     handleSubmit,
     formState: { errors },
   } = useForm<FormData>();
@@ -43,15 +41,13 @@ export function RegisterLocationScreen() {
     }
   };
 
-  const locationSchema = z.string();
-
   const onSubmit = (skip: boolean) => {
     if (skip) {
       navigation.navigate('Interest');
       return;
     }
 
-    handleSubmit(async ({ location }) => {
+    handleSubmit(async () => {
       if (!userLocation) {
         setErrorMessage('Please share your location first');
         return;
@@ -130,11 +126,11 @@ function MapScreen({ latitude, longitude }: MapScreenProps) {
     }
   }, [latitude, longitude]);
 
-  const recenter = () => {
-    if (coords && mapRef.current) {
-      mapRef.current.animateToRegion({ ...coords, latitudeDelta: 0.02, longitudeDelta: 0.02 }, 500);
-    }
-  };
+  // const recenter = () => {
+  //   if (coords && mapRef.current) {
+  //     mapRef.current.animateToRegion({ ...coords, latitudeDelta: 0.02, longitudeDelta: 0.02 }, 500);
+  //   }
+  // };
 
   return (
     <MapView

@@ -1,6 +1,6 @@
 import { useForm, Controller } from 'react-hook-form';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Box, ButtonText, Flex, InputField, Text, Input } from '~/components/ui';
+import { Button, Flex, InputField, Text, Input } from '~/components/ui';
 import * as z from 'zod';
 import { useSignupWizard } from '~/hooks/useSignupWizard';
 import { useNavigation } from '@react-navigation/native';
@@ -8,6 +8,7 @@ import { NavigationProp } from '~/types/navigation';
 import { KeyboardAvoidingView, Platform } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import { cn } from '~/utils/cn';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 interface FormData {
   birthDate: string;
@@ -16,13 +17,6 @@ interface FormData {
 export function RegisterUserBirthDateScreen() {
   const navigation = useNavigation<NavigationProp<'RegisterUserBirthDate'>>();
   const { birthDate, setField } = useSignupWizard();
-
-  const {
-    control,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm<FormData>();
 
   const birthdaySchema = z
     .string()
@@ -42,6 +36,20 @@ export function RegisterUserBirthDateScreen() {
       const minDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
       return date <= minDate;
     }, 'You must be at least 18 years old');
+
+  const formSchema = z.object({ birthDate: birthdaySchema });
+
+  const {
+    control,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      birthDate,
+    },
+  });
 
   const onSubmit = handleSubmit(({ birthDate }) => {
     setField('birthDate', birthDate);

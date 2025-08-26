@@ -1,2 +1,2 @@
 export { AuthForm } from './AuthForm/AuthForm';
-export { PhoneInput } from './PhoneInput';
+export { AppleOauth } from './AppleOauth/AppleOauth';

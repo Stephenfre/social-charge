@@ -45,8 +45,6 @@ export function AuthForm({ onNavigate, from }: AuthFormProps) {
     },
   });
 
-  const isDisabled = !storedEmail && !storedPassword;
-
   const buttonText = from === 'register' ? 'Create Account' : 'Login';
 
   const onSubmit = handleSubmit(({ email, password }) => {
