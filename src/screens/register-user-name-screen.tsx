@@ -5,20 +5,17 @@ import * as z from 'zod';
 import { useSignupWizard } from '~/hooks/useSignupWizard';
 import { useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '~/types/navigation';
+import { KeyboardAvoidingView, Platform } from 'react-native';
 
 interface FormData {
   firstName: string;
   lastName: string;
   nickName: string;
-  // birthDate: string;
-  // phoneNumber: string;
-  // location: string;
 }
 
 export function RegisterUserNameScreen() {
   const navigation = useNavigation<NavigationProp<'RegisterUserName'>>();
-  const { firstName, lastName, nickName, phoneNumber, location, birthDate, setField } =
-    useSignupWizard();
+  const { firstName, lastName, nickName, setField } = useSignupWizard();
 
   const {
     control,
@@ -53,69 +50,73 @@ export function RegisterUserNameScreen() {
   });
 
   return (
-    <SafeAreaView>
-      <Flex direction="column" align="center" justify="center" gap={6} className="h-full">
-        <Text size="4xl" bold>
-          Whats Your Name?
-        </Text>
-        <Flex direction="column" align="center" className=" w-full px-4" gap={8}>
-          <Flex direction="column" align="center" justify="center" gap={8} className="w-full">
-            <Controller
-              control={control}
-              name="firstName"
-              render={({ field }) => (
-                <Input>
-                  <InputField
-                    placeholder="First Name"
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    onBlur={field.onBlur}
-                    textContentType="name"
-                  />
-                </Input>
-              )}
-            />
-            {errors.firstName && <Text className="text-red-500">{errors.firstName.message}</Text>}
-            <Controller
-              control={control}
-              name="lastName"
-              rules={{ required: 'Last Name is required' }}
-              render={({ field }) => (
-                <Input>
-                  <InputField
-                    placeholder="Last Name"
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    onBlur={field.onBlur}
-                    textContentType="name"
-                  />
-                </Input>
-              )}
-            />
-            {errors.lastName && <Text className="text-red-500">{errors.lastName.message}</Text>}
-            <Controller
-              control={control}
-              name="nickName"
-              render={({ field }) => (
-                <Input>
-                  <InputField
-                    placeholder="Nickname"
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    onBlur={field.onBlur}
-                    textContentType="name"
-                  />
-                </Input>
-              )}
-            />
+    <SafeAreaView className=" mx-4 h-full">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className="flex-1">
+        <Flex direction="column" align="center" justify="center" gap={6} className="h-full">
+          <Text size="4xl" bold>
+            Whats Your Name?
+          </Text>
+          <Flex direction="column" align="center" className=" w-full px-4" gap={8}>
+            <Flex direction="column" align="center" justify="center" gap={8} className="w-full">
+              <Controller
+                control={control}
+                name="firstName"
+                render={({ field }) => (
+                  <Input>
+                    <InputField
+                      placeholder="First Name"
+                      value={field.value}
+                      onChangeText={field.onChange}
+                      onBlur={field.onBlur}
+                      textContentType="name"
+                    />
+                  </Input>
+                )}
+              />
+              {errors.firstName && <Text className="text-red-500">{errors.firstName.message}</Text>}
+              <Controller
+                control={control}
+                name="lastName"
+                rules={{ required: 'Last Name is required' }}
+                render={({ field }) => (
+                  <Input>
+                    <InputField
+                      placeholder="Last Name"
+                      value={field.value}
+                      onChangeText={field.onChange}
+                      onBlur={field.onBlur}
+                      textContentType="name"
+                    />
+                  </Input>
+                )}
+              />
+              {errors.lastName && <Text className="text-red-500">{errors.lastName.message}</Text>}
+              <Controller
+                control={control}
+                name="nickName"
+                render={({ field }) => (
+                  <Input>
+                    <InputField
+                      placeholder="Nickname"
+                      value={field.value}
+                      onChangeText={field.onChange}
+                      onBlur={field.onBlur}
+                      textContentType="name"
+                    />
+                  </Input>
+                )}
+              />
+            </Flex>
+            <Button className="h-14 w-full bg-black" onPress={onSubmit}>
+              <ButtonText size="lg" className="text-white">
+                Continue
+              </ButtonText>
+            </Button>
           </Flex>
-          <Button className="h-14 w-full bg-black" onPress={onSubmit}>
-            <ButtonText size="lg" className="text-white">
-              Continue
-            </ButtonText>
-          </Button>
         </Flex>
-      </Flex>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

@@ -9,6 +9,7 @@ import { useSignupWizard } from '~/hooks/useSignupWizard';
 import { useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '~/types/navigation';
 import { View } from 'react-native';
+import { ChevronRight } from 'lucide-react-native';
 
 interface FormData {
   location: string;
@@ -44,23 +45,30 @@ export function RegisterLocationScreen() {
 
   const locationSchema = z.string();
 
-  const onSubmit = handleSubmit(async ({ location }) => {
-    if (!userLocation) {
-      setErrorMessage('Please share your location first');
+  const onSubmit = (skip: boolean) => {
+    if (skip) {
+      navigation.navigate('Interest');
       return;
     }
 
-    const cityStateCountry = await Location.reverseGeocodeAsync({
-      latitude: userLocation.coords.latitude,
-      longitude: userLocation.coords.longitude,
-    });
+    handleSubmit(async ({ location }) => {
+      if (!userLocation) {
+        setErrorMessage('Please share your location first');
+        return;
+      }
 
-    setField('city', cityStateCountry[0].city ?? undefined);
-    setField('state', cityStateCountry[0].region ?? undefined);
-    setField('country', cityStateCountry[0].country ?? undefined);
+      const cityStateCountry = await Location.reverseGeocodeAsync({
+        latitude: userLocation.coords.latitude,
+        longitude: userLocation.coords.longitude,
+      });
 
-    navigation.navigate('Interest');
-  });
+      setField('city', cityStateCountry[0].city ?? undefined);
+      setField('state', cityStateCountry[0].region ?? undefined);
+      setField('country', cityStateCountry[0].country ?? undefined);
+
+      navigation.navigate('Interest');
+    })();
+  };
 
   return (
     <SafeAreaView className="h-full p-4">
@@ -83,9 +91,16 @@ export function RegisterLocationScreen() {
             </Button>
           </Flex>
         </Flex>
-        <Button className="h-14" onPress={onSubmit}>
-          <ButtonText>Continue</ButtonText>
-        </Button>
+        <Flex direction="row" justify="space-between" align="center">
+          <Button variant="link" onPress={() => onSubmit(true)}>
+            <ButtonText>Skip</ButtonText>
+          </Button>
+          <Flex direction="row" align="center" gap={4}>
+            <Button size="lg" className={'h-16 w-16 rounded-full'} onPress={() => onSubmit(false)}>
+              <ChevronRight size={35} color="white" />
+            </Button>
+          </Flex>
+        </Flex>
       </Flex>
     </SafeAreaView>
   );

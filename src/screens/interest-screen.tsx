@@ -86,47 +86,72 @@ export function InterestScreen() {
   const getAge = dayjs().diff(birthDateObj, 'year');
 
   const onFinish = async (skip: boolean) => {
-    // 1) Create auth user (session may be null if email confirmation required)
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    // TODO: change from native Alert to alert message
-    if (signUpError) Alert.alert(signUpError.message);
-    // if (!session) Alert.alert('Please check your inbox for email verification!')
-
-    // 2) If session exists now, create profile + interests immediately
-    const userId = signUpData.user?.id ?? signUpData.session?.user.id;
-    if (userId) {
-      const userInfo = {
-        id: userId,
-        first_name: firstName,
-        last_name: lastName,
+    try {
+      // 1) Create auth user (session may be null if email confirmation required)
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
-        city,
-        state,
-        country,
-        age: getAge,
-        birth_date: birthDate,
-      };
-      const { error: upsertError } = await supabase.from('users').upsert(userInfo);
+        password,
+        options: {
+          data: {
+            display_name: firstName + ' ' + lastName,
+          },
+        },
+      });
 
-      console.log('upsertError', upsertError);
-
-      if (selectedInterests.length && !skip) {
-        // Save user interests (upsert example)
-        await supabase
-          .from('user_interests')
-          .upsert(selectedInterests.map((i) => ({ user_id: userId, interest: i })));
+      if (signUpError) {
+        Alert.alert(signUpError.message);
+        return;
       }
 
-      reset();
-      navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
-    } else {
-      // Email confirmation flow: wait for SIGNED_IN, then finish profile there
-      // (See hook below)
-      navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
+      // 2) If session exists now, create profile + interests immediately
+      const userId = signUpData.user?.id ?? signUpData.session?.user.id;
+      if (userId) {
+        const userInfo = {
+          id: userId,
+          first_name: firstName,
+          last_name: lastName,
+          email,
+          city,
+          state,
+          country,
+          age: getAge,
+          birth_date: birthDate,
+        };
+
+        // Create user profile
+        const { error: upsertError } = await supabase.from('users').upsert(userInfo);
+        if (upsertError) {
+          // If user profile creation fails, sign out and show error
+          await supabase.auth.signOut();
+          Alert.alert('Failed to create profile. Please try again.');
+          return;
+        }
+
+        // Save user interests if any selected
+        if (selectedInterests.length && !skip) {
+          const { error: interestsError } = await supabase
+            .from('user_interests')
+            .upsert(selectedInterests.map((i) => ({ user_id: userId, interest: i })));
+
+          if (interestsError) {
+            // If interests creation fails, sign out and show error
+            Alert.alert('Failed to save interests. Please try again.');
+            return;
+          }
+        }
+
+        // Success - reset form and navigate to main
+        reset();
+        navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+      } else {
+        // Email confirmation flow: wait for SIGNED_IN, then finish profile there
+        navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
+      }
+    } catch (error) {
+      // Catch any unexpected errors and clean up
+      await supabase.auth.signOut();
+      Alert.alert('An unexpected error occurred. Please try again.');
+      console.error('Signup error:', error);
     }
   };
 

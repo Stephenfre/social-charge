@@ -5,11 +5,12 @@ import * as z from 'zod';
 import { useSignupWizard } from '~/hooks/useSignupWizard';
 import { useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '~/types/navigation';
+import { KeyboardAvoidingView, Platform } from 'react-native';
+import { ChevronRight } from 'lucide-react-native';
+import { cn } from '~/utils/cn';
 
 interface FormData {
   birthDate: string;
-  // phoneNumber: string;
-  // location: string;
 }
 
 export function RegisterUserBirthDateScreen() {
@@ -19,11 +20,13 @@ export function RegisterUserBirthDateScreen() {
   const {
     control,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<FormData>();
 
   const birthdaySchema = z
     .string()
+    .min(10, 'Please enter a complete date')
     .regex(/^\d{2}\/\d{2}\/\d{4}$/, 'Date must be in MM/DD/YYYY format')
     .refine((val) => {
       const [month, day, year] = val.split('/').map(Number);
@@ -34,7 +37,7 @@ export function RegisterUserBirthDateScreen() {
         return false;
       }
 
-      // min age 13
+      // min age 18
       const today = new Date();
       const minDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
       return date <= minDate;
@@ -45,31 +48,48 @@ export function RegisterUserBirthDateScreen() {
     navigation.navigate('RegisterUserLocation');
   });
 
+  // Watch the current birthDate input value
+  const currentBirthDate = watch('birthDate');
+
   return (
-    <SafeAreaView>
-      <Flex direction="column" align="center" justify="center" gap={6} className="h-full">
-        <Text size="4xl" bold>
-          Whats Your Birthdate?
-        </Text>
-        <Flex direction="column" align="center" className=" w-full px-4" gap={8}>
-          <Controller
-            control={control}
-            name="birthDate"
-            render={({ field }) => (
-              <BirthdayInput
-                value={field.value}
-                onChange={field.onChange}
-                error={errors?.birthDate?.message}
-              />
+    <SafeAreaView className="mx-4 h-full">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className="flex-1">
+        <Flex flex={8} direction="column" align="center" justify="center" gap={6}>
+          <Flex align="center">
+            <Text size="4xl" bold>
+              Whats Your Birthdate?
+            </Text>
+            <Text size="xl">Don’t worry, we won’t judge your age.</Text>
+          </Flex>
+          <Flex direction="column" align="center" className=" w-full px-4" gap={8}>
+            <Controller
+              control={control}
+              name="birthDate"
+              render={({ field }) => (
+                <BirthdayInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={errors?.birthDate?.message}
+                />
+              )}
+            />
+          </Flex>
+        </Flex>
+        <Flex flex={1} direction="row" justify="flex-end" align="center">
+          <Button
+            size="lg"
+            disabled={!currentBirthDate || currentBirthDate.length !== 10}
+            className={cn(
+              'h-16 w-16 rounded-full',
+              (!currentBirthDate || currentBirthDate.length !== 10) && 'bg-gray-400'
             )}
-          />
-          <Button className="h-14 w-full bg-black" onPress={onSubmit}>
-            <ButtonText size="lg" className="text-white">
-              Continue
-            </ButtonText>
+            onPress={onSubmit}>
+            <ChevronRight size={35} color="white" />
           </Button>
         </Flex>
-      </Flex>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
