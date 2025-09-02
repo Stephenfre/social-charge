@@ -166,7 +166,7 @@ export function InterestScreen() {
   };
 
   return (
-    <SafeAreaView className="mx-4 h-full">
+    <SafeAreaView className="h-full bg-background-dark px-4">
       <Flex flex={1} direction="column" justify="space-between">
         <Flex flex={1} justify="center" gap={10}>
           <Flex direction="column" align="center" gap={2}>
@@ -185,15 +185,14 @@ export function InterestScreen() {
                   <Button
                     key={interest}
                     variant="outline"
-                    className={`rounded-xl ${selectedInterests.includes(interest) && 'bg-black'}`}
+                    className={`rounded-xl ${selectedInterests.includes(interest) && 'bg-white'}`}
                     onPress={() => handleSelectInterest(interest)}
                     disabled={
                       !selectedInterests.includes(interest) && selectedInterests.length === 5
                     }>
-                    <ButtonText
-                      className={`${selectedInterests.includes(interest) ? 'text-white' : 'text-black'}`}>
+                    <Text className={`${selectedInterests.includes(interest) && 'text-black'}`}>
                       {interestEmojis[interest]} {interest}
-                    </ButtonText>
+                    </Text>
                   </Button>
                 ))}
               </Flex>

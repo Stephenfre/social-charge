@@ -76,7 +76,7 @@ export function AuthForm({ onNavigate, from }: AuthFormProps) {
           </Input>
         )}
       />
-      {errors.email && <Text className="text-red-500">{errors.email.message}</Text>}
+      {errors.email && <Text className="text-error-500">{errors.email.message}</Text>}
 
       <Controller
         control={control}
@@ -91,7 +91,7 @@ export function AuthForm({ onNavigate, from }: AuthFormProps) {
               secureTextEntry={showPassword ? false : true}
               textContentType="password"
             />
-            <Pressable className="mx-2" onPress={handleShowPassword}>
+            <Pressable className="bg-white p-2" onPress={handleShowPassword}>
               {showPassword ? (
                 <EyeOffIcon size={24} color={'grey'} />
               ) : (
@@ -101,10 +101,10 @@ export function AuthForm({ onNavigate, from }: AuthFormProps) {
           </Input>
         )}
       />
-      {errors.password && <Text className="text-red-500">{errors.password.message}</Text>}
+      {errors.password && <Text className="text-error-500">{errors.password.message}</Text>}
 
-      <Button className="h-14 w-full bg-black" onPress={onSubmit}>
-        <Text size="lg" weight="600" className="text-white">
+      <Button className="h-14 w-full " onPress={onSubmit}>
+        <Text size="lg" weight="600" className="text-typography-light">
           {buttonText}
         </Text>
       </Button>
