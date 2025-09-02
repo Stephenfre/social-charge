@@ -50,10 +50,8 @@ export const flexStyle = tva({
     },
   },
   defaultVariants: {
-    direction: 'row',
+    direction: 'column',
     wrap: 'nowrap',
-    justify: 'flex-start',
-    align: 'stretch',
     gap: 0,
   },
 });

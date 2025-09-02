@@ -1,7 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Home } from 'lucide-react-native';
 import { Icon } from '~/components/ui/icon';
-import HomeScreen from '~/screens/home-screen/home-screen';
+import HomeScreen from '~/screens/home-screen';
 
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 

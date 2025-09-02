@@ -10,6 +10,7 @@ type IFlexProps = ViewProps &
     className?: string;
     direction?: 'row' | 'row-reverse' | 'column' | 'column-reverse';
     wrap?: 'wrap' | 'nowrap';
+    flex?: number | boolean;
     justify?:
       | 'flex-start'
       | 'flex-end'
@@ -22,13 +23,22 @@ type IFlexProps = ViewProps &
   };
 
 const Flex = React.forwardRef<React.ComponentRef<typeof View>, IFlexProps>(function Flex(
-  { className, direction, wrap, justify, align, gap, ...props },
+  { className, direction, flex, wrap, justify, align, gap, ...props },
   ref
 ) {
+  const flexStyleValue = React.useMemo(() => {
+    if (flex === undefined) return undefined;
+    if (typeof flex === 'number') return { flex };
+    if (flex === true) return { flex: 1 };
+    if (flex === false) return { flex: 0 };
+    return undefined;
+  }, [flex]);
+
   return (
     <View
       ref={ref}
       {...props}
+      style={[flexStyleValue, props.style]}
       className={flexStyle({
         class: className,
         direction,

@@ -1,2 +1,1 @@
-# sneaker-app
-React Native Sneaker App
+# social-charge-app

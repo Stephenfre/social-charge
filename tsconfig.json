@@ -5,15 +5,11 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "~/*": [
-        "src/*"
-      ],
-      "@/*": [
-        "./*"
-      ],
-      "tailwind.config": [
-        "./tailwind.config.js"
-      ]
-    }
+      "~/*": ["src/*"],
+      "@/*": ["./*"],
+      "tailwind.config": ["./tailwind.config.js"]
+    },
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   }
 }
