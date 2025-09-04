@@ -22,7 +22,7 @@ const Skeleton = forwardRef<React.ComponentRef<typeof Animated.View>, ISkeletonP
       className,
       variant,
       children,
-      startColor = 'bg-background-200',
+      startColor = 'bg-gray-300',
       isLoaded = false,
       speed = 2,
       ...props
@@ -82,7 +82,7 @@ const SkeletonText = forwardRef<React.ComponentRef<typeof View>, ISkeletonTextPr
       className,
       _lines,
       isLoaded = false,
-      startColor = 'bg-background-200',
+      startColor = 'bg-gray-300',
       gap = 2,
       children,
       ...props

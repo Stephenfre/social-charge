@@ -11,57 +11,33 @@ import {
   SignInScreen,
   WelcomeScreen,
 } from '~/screens';
-import { useEffect, useState } from 'react';
 import './global.css';
-
-import { Session } from '@supabase/supabase-js';
-import { supabase } from './src/lib/supabase';
 import { RegisterUserBirthDateScreen } from '~/screens/register-user-birthdate-screen';
+import { AuthProvider, useAuth } from '~/providers/AuthProvider';
 
 const Stack = createNativeStackNavigator();
+// create once
+const queryClient = new QueryClient();
 
 export default function App() {
-  const queryClient = new QueryClient();
-
-  const [session, setSession] = useState<Session | null>(null);
-  const [initializing, setInitializing] = useState<Boolean>(true);
-
-  useEffect(() => {
-    let mounted = true;
-
-    // get current session once
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (mounted) {
-        setSession(session);
-        setInitializing(false);
-      }
-    });
-
-    // subscribe to changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, s) => {
-      if (mounted) setSession(s);
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  // ! FIX SPACE BETWEEN CONTENT AND CONTINUE BUTTON
-  // TODO: CHANGE FORM A LETERS FROM TEXT TO "!" IN THE INPUT OR REMOVE PADDING
-
-  if (initializing) return null; // or a splash
-
   return (
-    <QueryClientProvider client={queryClient}>
-      <NavigationContainer>
-        <GluestackUIProvider>{session ? <AppStack /> : <AuthStack />}</GluestackUIProvider>
-      </NavigationContainer>
-    </QueryClientProvider>
+    <AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <NavigationContainer>
+          <GluestackUIProvider>
+            <RootNavigator />
+          </GluestackUIProvider>
+        </NavigationContainer>
+      </QueryClientProvider>
+    </AuthProvider>
   );
+}
+
+function RootNavigator() {
+  const { session, initializing } = useAuth();
+  if (initializing) return null; // or splash
+
+  return session ? <AppStack /> : <AuthStack />;
 }
 
 const AuthStack = () => (

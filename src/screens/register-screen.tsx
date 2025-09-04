@@ -1,9 +1,7 @@
-import { FontAwesome } from '@expo/vector-icons';
-import { Mail } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAvoidingView, Platform } from 'react-native';
 import { AppleOauth, AuthForm } from '~/components';
-import { Button, Flex, Text, Divider } from '~/components/ui';
+import { Flex, Text, Divider } from '~/components/ui';
 import { useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '~/types/navigation';
 
@@ -15,7 +13,7 @@ export function RegisterScreen() {
   };
 
   return (
-    <SafeAreaView className=" mx-4 h-full">
+    <SafeAreaView className=" h-full bg-background-dark px-4">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1">

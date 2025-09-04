@@ -67,7 +67,7 @@ export function RegisterLocationScreen() {
   };
 
   return (
-    <SafeAreaView className="h-full p-4">
+    <SafeAreaView className="h-full bg-background-dark p-4">
       <Flex justify="space-between" className="h-full">
         <Flex gap={6}>
           <Flex>
