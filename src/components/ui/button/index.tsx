@@ -34,11 +34,11 @@ cssInterop(PrimitiveIcon, {
 });
 
 const buttonStyle = tva({
-  base: 'group/button rounded bg-primary-500 flex-row items-center justify-center data-[focus-visible=true]:web:outline-none data-[focus-visible=true]:web:ring-2 data-[disabled=true]:opacity-40 gap-2',
+  base: 'group/button rounded bg-secondary-700 flex-row items-center justify-center data-[focus-visible=true]:web:outline-none data-[focus-visible=true]:web:ring-2 data-[disabled=true]:opacity-40 gap-2',
   variants: {
     action: {
       primary:
-        'rounded-xl bg-primary-400 data-[hover=true]:bg-orange-600 data-[active=true]:bg-orange-400 border-black data-[hover=true]:border-black data-[active=true]:border-black data-[focus-visible=true]:web:ring-indicator-info',
+        'rounded-xl bg-primary-400 data-[hover=true]:bg-primary-600 data-[active=true]:bg-primary-400 border-black data-[hover=true]:border-black data-[active=true]:border-black data-[focus-visible=true]:web:ring-indicator-info',
       secondary:
         'bg-secondary-500 border-secondary-300 data-[hover=true]:bg-secondary-600 data-[hover=true]:border-secondary-400 data-[active=true]:bg-secondary-700 data-[active=true]:border-secondary-700 data-[focus-visible=true]:web:ring-indicator-info',
       positive:
@@ -46,14 +46,15 @@ const buttonStyle = tva({
       negative:
         'bg-error-500 border-error-300 data-[hover=true]:bg-error-600 data-[hover=true]:border-error-400 data-[active=true]:bg-error-700 data-[active=true]:border-error-500 data-[focus-visible=true]:web:ring-indicator-info',
       default:
-        'bg-orange-200 data-[hover=true]:bg-orange-300 data-[active=true]:bg-orange-400 border-orange-300 data-[hover=true]:border-orange-400 data-[active=true]:border-orange-500 data-[focus-visible=true]:web:ring-indicator-info',
+        'bg-primary-200 data-[hover=true]:bg-primary-300 data-[active=true]:bg-primary-400 border-primary-300 data-[hover=true]:border-primary-400 data-[active=true]:border-primary-500 data-[focus-visible=true]:web:ring-indicator-info',
     },
     variant: {
       link: 'px-0',
       outline:
-        'bg-transparent border data-[hover=true]:bg-background-50 data-[active=true]:bg-transparent',
-      solid: 'bg-orange-400',
+        'bg-transparent border border-white data-[hover=true]:bg-background-50 data-[active=true]:bg-transparent',
+      solid: 'bg-secondary-700  data-[active=true]:bg-secondary-700',
       muted: 'bg-gray-200',
+      tag: 'bg-primary-800',
     },
 
     size: {
@@ -126,7 +127,7 @@ const buttonTextStyle = tva({
       default: 'text-white data-[hover=true]:text-white data-[active=true]:text-white',
     },
     variant: {
-      link: 'data-[active=true]:text-green-500',
+      link: '',
       outline: '',
       solid:
         'text-typography-0 text-black data-[hover=true]:text-typography-0 data-[active=true]:text-typography-0',
@@ -203,7 +204,7 @@ const buttonTextStyle = tva({
 });
 
 const buttonIconStyle = tva({
-  base: 'fill-none',
+  base: '',
   parentVariants: {
     variant: {
       link: 'data-[hover=true]:underline data-[active=true]:underline',
@@ -337,11 +338,11 @@ const ButtonSpinner = UIButton.Spinner;
 
 type IButtonIcon = React.ComponentPropsWithoutRef<typeof UIButton.Icon> &
   VariantProps<typeof buttonIconStyle> & {
-    className?: string | undefined;
+    className?: string;
     as?: React.ElementType;
     height?: number;
     width?: number;
-  };
+  } & Record<string, any>;
 
 const ButtonIcon = React.forwardRef<React.ComponentRef<typeof UIButton.Icon>, IButtonIcon>(
   function ButtonIcon({ className, size, ...props }, ref) {

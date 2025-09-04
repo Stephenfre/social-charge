@@ -2,7 +2,6 @@ import { useForm, Controller } from 'react-hook-form';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Button,
-  Box,
   ButtonText,
   Flex,
   InputField,
@@ -120,7 +119,7 @@ export function RegisterUserNameScreen() {
   });
 
   return (
-    <SafeAreaView className=" mx-4 h-full">
+    <SafeAreaView className=" h-full bg-background-dark px-4">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1">
@@ -216,7 +215,7 @@ export function RegisterUserNameScreen() {
                 )}
               />
             </Flex>
-            <Button className="h-14 w-full bg-black" onPress={onSubmit}>
+            <Button className="h-14 w-full " onPress={onSubmit}>
               <ButtonText size="lg" className="text-white">
                 Continue
               </ButtonText>

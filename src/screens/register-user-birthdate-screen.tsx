@@ -60,7 +60,7 @@ export function RegisterUserBirthDateScreen() {
   const currentBirthDate = watch('birthDate');
 
   return (
-    <SafeAreaView className="mx-4 h-full">
+    <SafeAreaView className="h-full bg-background-dark px-4">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1">
