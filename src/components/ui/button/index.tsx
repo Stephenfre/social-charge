@@ -52,7 +52,7 @@ const buttonStyle = tva({
       link: 'px-0',
       outline:
         'bg-transparent border border-white data-[hover=true]:bg-background-50 data-[active=true]:bg-transparent',
-      solid: 'bg-secondary-700  data-[active=true]:bg-secondary-700 ',
+      solid: 'bg-secondary-700  data-[active=true]:bg-secondary-700',
       muted: 'bg-gray-200',
     },
 

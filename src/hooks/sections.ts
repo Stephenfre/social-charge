@@ -50,3 +50,55 @@ export function useLowToken() {
     },
   });
 }
+
+export function useThisWeekend() {
+  return useQuery({
+    queryKey: ['events', 'thisWeekend'],
+    queryFn: async () => {
+      const now = new Date();
+      const day = now.getDay(); // 0=Sun … 6=Sat
+
+      // calculate upcoming Friday
+      const daysUntilFriday = (5 - day + 7) % 7;
+      const friday = new Date(now);
+      friday.setDate(now.getDate() + daysUntilFriday);
+      friday.setHours(0, 0, 0, 0);
+
+      // calculate end of Sunday
+      const sunday = new Date(friday);
+      sunday.setDate(friday.getDate() + 2);
+      sunday.setHours(23, 59, 59, 999);
+
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .gte('starts_at', friday.toISOString())
+        .lte('ends_at', sunday.toISOString())
+        .order('starts_at', { ascending: true });
+
+      if (error) throw error;
+      return data as EventRow[];
+    },
+  });
+}
+
+export function useTrending() {
+  return useQuery({
+    queryKey: ['events', 'trending'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('events')
+        .select(
+          `
+          *,
+          rsvps:event_id(count)
+        `
+        )
+        .order('rsvps.count', { ascending: false }) // sort by RSVP count
+        .limit(10);
+
+      if (error) throw error;
+      return data as EventRow[];
+    },
+  });
+}
