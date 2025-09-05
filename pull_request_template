@@ -1,0 +1,52 @@
+# 📝 Pull Request
+
+**Title
+
+---
+
+## 🔗 Related Issues
+- Closes #
+
+---
+
+## 📋 Summary
+Explain what this PR does in plain language:
+- What was changed?
+  - This Pr adds Sign up and Sign in Flows
+- Why was it needed?
+
+---
+
+## 🖼 Screenshots / GIFs (if UI changes)
+- Before / After screenshots
+- Small GIF or Loom link showing interaction
+
+---
+
+## 🧪 Testing Instructions
+Steps for reviewers to test:
+
+1. Run `npm start`
+
+---
+
+## ✅ Checklist
+- [ ] Code compiles without warnings
+- [ ] ESLint/Prettier pass
+- [ ] Tests written/updated
+- [ ] Storybook/docs updated (if applicable)
+- [ ] Mobile/responsive behavior checked
+
+---
+
+## ⚠️ Notes for Reviewers
+- Anything tricky or non-obvious you want to highlight?
+- Known limitations?
+- Follow-ups planned?
+
+---
+
+## 📊 Risk/Impact (optional)
+- [ ] Low risk (isolated to new component)
+- [ ] Medium risk (affects shared components)
+- [ ] High risk (core flow such as auth, payments)
