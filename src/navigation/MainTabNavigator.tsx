@@ -1,25 +1,27 @@
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Home } from 'lucide-react-native';
 import { Icon } from '~/components/ui/icon';
 import HomeScreen from '~/screens/home-screen';
 
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import ViewEventScreen from '~/screens/view-event-screen';
+import { AppTabs, RootStack } from '~/types/navigation.types';
 
-const HomeStack = createNativeStackNavigator();
 function HomeStackNavigator() {
   return (
-    <HomeStack.Navigator>
-      <HomeStack.Screen name="HomeScreen" component={HomeScreen} options={{ headerShown: false }} />
-    </HomeStack.Navigator>
+    <RootStack.Navigator>
+      <RootStack.Screen name="HomeScreen" component={HomeScreen} options={{ headerShown: false }} />
+      <RootStack.Screen
+        name="ViewEventScreen"
+        component={ViewEventScreen}
+        options={{ headerShown: false }}
+      />
+    </RootStack.Navigator>
   );
 }
 
-const Tab = createBottomTabNavigator();
-
 export function MainTabNavigator() {
   return (
-    <Tab.Navigator>
-      <Tab.Screen
+    <AppTabs.Navigator>
+      <AppTabs.Screen
         name="Home"
         component={HomeStackNavigator}
         options={{
@@ -32,6 +34,6 @@ export function MainTabNavigator() {
           },
         }}
       />
-    </Tab.Navigator>
+    </AppTabs.Navigator>
   );
 }

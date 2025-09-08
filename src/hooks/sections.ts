@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '~/lib/supabase';
 import { EventRow } from '~/types/event.types';
 
-// hooks/sections.ts
 export function useForYou(userId: string | null) {
   return useQuery<EventRow[]>({
     queryKey: ['events', 'justForYou', userId],

@@ -1,14 +1,21 @@
 import dayjs from 'dayjs';
-import { Pressable, SafeAreaView, ScrollView, View } from 'react-native';
-import { Button, ButtonIcon, ButtonText, Flex, Image, Skeleton, Text } from '~/components/ui';
+import { SafeAreaView, ScrollView, View } from 'react-native';
+import { Button, Flex, Skeleton, Text } from '~/components/ui';
 import { FontAwesome } from '@expo/vector-icons';
 
 import { useAuth } from '~/providers/AuthProvider';
-import { useForYou, useLowToken, useUpcoming } from '~/hooks/sections';
-import { EventRow } from '~/types/event.types';
-// import { supabase } from '~/lib/supabase';
+import { useForYou, useLowToken, useUpcoming } from '~/hooks';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '~/types/navigation.types';
+import { supabase } from '~/lib/supabase';
+import { EventCard } from '~/components/EventCard/EventCard';
+
+type ViewEventNav = NativeStackNavigationProp<RootStackParamList, 'ViewEventScreen'>;
 
 export default function HomeScreen() {
+  const navigation = useNavigation<ViewEventNav>();
+
   const { userId } = useAuth();
 
   const { data: forYouEvents = [], isLoading: forYouEventsLoading } = useForYou(userId);
@@ -31,10 +38,14 @@ export default function HomeScreen() {
   const trendingEventRows = splitIntoRows(trendingEvents, 3);
   const trendingEventRowSkeletons = splitIntoRows(Array.from({ length: 4 }), 2);
 
-  // const logout = async () => {
-  //   const { error } = await supabase.auth.signOut();
-  //   console.log(error);
-  // };
+  const handlePressNavigateToViewEvent = (eventId: string) => {
+    navigation.navigate('ViewEventScreen', { eventId });
+  };
+
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    console.log(error);
+  };
 
   return (
     <SafeAreaView className=" h-full bg-background-dark">
@@ -46,7 +57,12 @@ export default function HomeScreen() {
                 <Skeleton className="h-64 w-full" />
               </Flex>
             ) : (
-              <EventCard event={upcomingEvents[7]} featured imageSize="cover" />
+              <EventCard
+                onPress={() => handlePressNavigateToViewEvent(upcomingEvents[7]?.id)}
+                event={upcomingEvents[7]}
+                featured
+                imageSize="cover"
+              />
             )}
           </View>
           <Flex gap={4}>
@@ -82,6 +98,7 @@ export default function HomeScreen() {
                       <Flex gap={2} key={event.id} className="w-96">
                         <EventCard
                           event={event}
+                          onPress={() => handlePressNavigateToViewEvent(event.id)}
                           rounded="md"
                           favorited
                           imageSize="cover"
@@ -133,6 +150,7 @@ export default function HomeScreen() {
                       <Flex gap={2} key={event.id}>
                         <EventCard
                           event={event}
+                          onPress={() => handlePressNavigateToViewEvent(event.id)}
                           rounded="md"
                           favorited
                           imageSize="xl-wide"
@@ -216,6 +234,7 @@ export default function HomeScreen() {
                           <Flex gap={2} direction="row" className="pr-2" key={event.id}>
                             <EventCard
                               event={event}
+                              onPress={() => handlePressNavigateToViewEvent(event.id)}
                               rounded="md"
                               imageSize="sm"
                               showTitle={false}
@@ -290,6 +309,7 @@ export default function HomeScreen() {
                       <Flex gap={2} key={event.id} className="w-96">
                         <EventCard
                           event={event}
+                          onPress={() => handlePressNavigateToViewEvent(event.id)}
                           rounded="md"
                           favorited
                           imageSize="cover"
@@ -355,6 +375,7 @@ export default function HomeScreen() {
                           <Flex gap={2} direction="row" className="pr-2" key={event.id}>
                             <EventCard
                               event={event}
+                              onPress={() => handlePressNavigateToViewEvent(event.id)}
                               rounded="md"
                               imageSize="sm"
                               showTitle={false}
@@ -397,104 +418,10 @@ export default function HomeScreen() {
             </ScrollView>
           </Flex>
         </Flex>
-        {/* <Button onPress={logout}>
+        <Button onPress={logout}>
           <Text>Logout</Text>
-        </Button> */}
+        </Button>
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-interface EventCardProps {
-  event: EventRow;
-  onPress?: () => void;
-  featured?: boolean;
-  favorited?: boolean;
-  overlay?: boolean;
-  rounded?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
-  showTitle?: boolean;
-  showDate?: boolean;
-  showLocation?: boolean;
-  showToken?: boolean;
-  imageSize:
-    | 'none'
-    | 'sm'
-    | 'md'
-    | 'lg'
-    | 'xl'
-    | 'xl-wide'
-    | '2xl'
-    | 'full'
-    | '2xs'
-    | 'xs'
-    | 'cover';
-  className?: string;
-}
-
-export function EventCard({
-  event,
-  onPress,
-  featured = false,
-  favorited = false,
-  overlay = true,
-  rounded = 'lg',
-  showTitle = true,
-  showDate = true,
-  showLocation = true,
-  showToken = true,
-  imageSize,
-  className,
-}: EventCardProps) {
-  return (
-    <Flex className="relative">
-      {featured && (
-        <Button className="absolute left-0 top-0 z-50 m-4 h-6 rounded-md bg-red-500 px-4">
-          <ButtonText className="text-sm text-white">FEATURED</ButtonText>
-        </Button>
-      )}
-      {favorited && (
-        <Pressable className="absolute right-0 top-0 z-50 mr-2 mt-3 h-6 rounded-md px-4">
-          <FontAwesome name="heart-o" size={18} color="white" />
-        </Pressable>
-      )}
-
-      <Pressable onPress={onPress} className={className}>
-        <Image
-          source={{
-            uri: event?.cover_img ?? 'https://picsum.photos/800/400', // fallback
-          }}
-          size={imageSize}
-          overlay={overlay}
-          rounded={rounded}
-        />
-      </Pressable>
-
-      <Flex direction="column" gap={1} className="absolute left-0 top-36 z-50 px-4">
-        {showToken && (
-          <Button className="h-6 w-10 rounded-md bg-green-500 p-0">
-            <ButtonText className="text-sm text-white">${event?.token_cost}</ButtonText>
-          </Button>
-        )}
-
-        {showTitle && event?.title && (
-          <Text size="lg" bold className="text-white">
-            {event?.title}
-          </Text>
-        )}
-
-        {(showDate || showLocation) && (
-          <Flex direction="row">
-            {showDate && event?.starts_at && (
-              <Text className="text-white">{dayjs(event?.starts_at).format('MMM DD')}</Text>
-            )}
-            {showLocation && event?.location && (
-              <Text className="text-white">
-                {showDate ? ` | ${event?.location}` : event?.location}
-              </Text>
-            )}
-          </Flex>
-        )}
-      </Flex>
-    </Flex>
   );
 }
