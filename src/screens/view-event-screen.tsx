@@ -14,7 +14,7 @@ import { EventCard } from '~/components/EventCard/EventCard';
 export default function ViewEventScreen() {
   const { params } = useRouteStack<'ViewEventScreen'>();
   const { data, isLoading } = useEventById(params.eventId);
-  const { userId } = useAuth();
+  const { userId, membership_role } = useAuth();
   const event = data as unknown as EventWithJoins;
 
   const { data: rsvps = [], isLoading: rsvpLoading } = useRsvps(params.eventId);
@@ -164,37 +164,39 @@ export default function ViewEventScreen() {
               );
             })}
           </Flex>
-          <Flex gap={4}>
-            <Text bold size="2xl">
-              Attendees
-            </Text>
-            {eventRsvps?.length ? (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <Flex direction="row" align="center" gap={10}>
-                  {eventRsvps?.map((rsvp, i) => {
-                    return (
-                      <Flex key={rsvp.id} align="center" gap={4}>
-                        {eventRsvpsAvatar && !eventRsvpsAvatarLoading ? (
-                          <Image
-                            key={rsvp.id}
-                            alt="picture of guest"
-                            source={{ uri: eventRsvpsAvatar[i] ?? '' }}
-                            rounded="full"
-                            size="xl"
-                          />
-                        ) : (
-                          <Box className="h-28 w-28 rounded-full bg-slate-500" />
-                        )}
-                        <Text>{rsvp.name}</Text>
-                      </Flex>
-                    );
-                  })}
-                </Flex>
-              </ScrollView>
-            ) : (
-              <Text>Be the first to RSVP!</Text>
-            )}
-          </Flex>
+          {membership_role !== 'basic' && (
+            <Flex gap={4}>
+              <Text bold size="2xl">
+                Attendees
+              </Text>
+              {eventRsvps?.length ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <Flex direction="row" align="center" gap={10}>
+                    {eventRsvps?.map((rsvp, i) => {
+                      return (
+                        <Flex key={rsvp.id} align="center" gap={4}>
+                          {eventRsvpsAvatar && !eventRsvpsAvatarLoading ? (
+                            <Image
+                              key={rsvp.id}
+                              alt="picture of guest"
+                              source={{ uri: eventRsvpsAvatar[i] ?? '' }}
+                              rounded="full"
+                              size="xl"
+                            />
+                          ) : (
+                            <Box className="h-28 w-28 rounded-full bg-slate-500" />
+                          )}
+                          <Text>{rsvp.name}</Text>
+                        </Flex>
+                      );
+                    })}
+                  </Flex>
+                </ScrollView>
+              ) : (
+                <Text>Be the first to RSVP!</Text>
+              )}
+            </Flex>
+          )}
           <Flex gap={2}>
             <Flex direction="row" align="center" gap={2}>
               <MessagesSquare color={'white'} size={20} />

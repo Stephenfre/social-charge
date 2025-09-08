@@ -350,19 +350,19 @@ export type Database = {
       rsvps: {
         Row: {
           created_at: string | null
-          event_id: string | null
+          event_id: string
           id: string
           user_id: string | null
         }
         Insert: {
           created_at?: string | null
-          event_id?: string | null
+          event_id: string
           id?: string
           user_id?: string | null
         }
         Update: {
           created_at?: string | null
-          event_id?: string | null
+          event_id?: string
           id?: string
           user_id?: string | null
         }
@@ -469,6 +469,7 @@ export type Database = {
           first_name: string | null
           id: string
           last_name: string | null
+          membership: Database["public"]["Enums"]["membership_role"]
           phone_number: string | null
           profile_picture: string | null
           role: string | null
@@ -485,6 +486,7 @@ export type Database = {
           first_name?: string | null
           id: string
           last_name?: string | null
+          membership?: Database["public"]["Enums"]["membership_role"]
           phone_number?: string | null
           profile_picture?: string | null
           role?: string | null
@@ -501,6 +503,7 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_name?: string | null
+          membership?: Database["public"]["Enums"]["membership_role"]
           phone_number?: string | null
           profile_picture?: string | null
           role?: string | null
@@ -563,6 +566,7 @@ export type Database = {
         | "Reading"
         | "Tech"
         | "Pets"
+      membership_role: "superadmin" | "admin" | "basic" | "plus" | "premium"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -712,6 +716,7 @@ export const Constants = {
         "Tech",
         "Pets",
       ],
+      membership_role: ["superadmin", "admin", "basic", "plus", "premium"],
     },
   },
 } as const
