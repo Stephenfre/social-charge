@@ -39,7 +39,6 @@ export default function HomeScreen() {
   const trendingEventRowSkeletons = splitIntoRows(Array.from({ length: 4 }), 2);
 
   const handlePressNavigateToViewEvent = (eventId: string) => {
-    console.log('pressed');
     navigation.navigate('ViewEventScreen', { eventId });
   };
 

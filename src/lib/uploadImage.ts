@@ -22,15 +22,13 @@ export const uploadProfileImage = async (userId: string, imageUri: string) => {
     const path = `${userId}/${fileName}`;
 
     const { error } = await supabase.storage
-      .from('profile-avatars')
+      .from('avatars')
       .upload(path, buffer, { contentType: mime, upsert: true });
 
     if (error) throw error;
 
     // Get a signed URL
-    const { data: signed } = await supabase.storage
-      .from('profile-avatars')
-      .createSignedUrl(path, 60 * 10); // 10 minutes
+    const { data: signed } = await supabase.storage.from('avatars').createSignedUrl(path, 60 * 10); // 10 minutes
 
     await supabase.from('users').update({ profile_picture: path }).eq('id', userId);
 

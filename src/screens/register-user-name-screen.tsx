@@ -138,11 +138,7 @@ export function RegisterUserNameScreen() {
               {profileImageUri ? (
                 <Pressable onPress={() => setField('profileImageUri', '')}>
                   <Flex align="center" gap={2}>
-                    <Image
-                      source={{ uri: profileImageUri }}
-                      className="h-24 w-24 rounded-full"
-                      alt="Profile picture"
-                    />
+                    <Image source={{ uri: profileImageUri }} rounded="full" alt="Profile picture" />
                     <Text size="sm" className="text-gray-500">
                       Remove Photo
                     </Text>

@@ -22,7 +22,7 @@ export function useEventById(id: string) {
         `
         )
         .eq('id', id)
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data as EventRow;
     },
