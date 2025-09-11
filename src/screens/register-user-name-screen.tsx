@@ -22,8 +22,6 @@ import * as ImagePicker from 'expo-image-picker';
 import 'react-native-get-random-values';
 import { v4 as uuid } from 'uuid';
 
-console.log('uuid()', uuid());
-
 interface FormData {
   firstName: string;
   lastName: string;
