@@ -4,25 +4,32 @@ import { Button, Flex, Skeleton, Text } from '~/components/ui';
 import { FontAwesome } from '@expo/vector-icons';
 
 import { useAuth } from '~/providers/AuthProvider';
-import { useForYou, useLowToken, useUpcoming } from '~/hooks';
+import {
+  useForYouEvents,
+  useLowTokenEvents,
+  useThisWeekendEvents,
+  useTrendingEvents,
+  useUpcomingEvents,
+} from '~/hooks';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '~/types/navigation.types';
 import { supabase } from '~/lib/supabase';
 import { EventCard } from '~/components/EventCard/EventCard';
 
-type ViewEventNav = NativeStackNavigationProp<RootStackParamList, 'ViewEventScreen'>;
+type ViewEventNav = NativeStackNavigationProp<RootStackParamList, 'ViewEvent'>;
 
-export default function HomeScreen() {
+export function HomeScreen() {
   const navigation = useNavigation<ViewEventNav>();
 
   const { userId } = useAuth();
 
-  const { data: forYouEvents = [], isLoading: forYouEventsLoading } = useForYou(userId);
-  const { data: upcomingEvents = [], isLoading: upcomingEventsLoading } = useUpcoming();
-  const { data: lowTokenEvents = [], isLoading: lowTokenEventsLoading } = useLowToken();
-  const { data: thisWeekendEvents = [], isLoading: thisWeekendEventsLoading } = useLowToken();
-  const { data: trendingEvents = [], isLoading: trendingEventsLoading } = useLowToken();
+  const { data: forYouEvents = [], isLoading: forYouEventsLoading } = useForYouEvents(userId);
+  const { data: upcomingEvents = [], isLoading: upcomingEventsLoading } = useUpcomingEvents();
+  const { data: lowTokenEvents = [], isLoading: lowTokenEventsLoading } = useLowTokenEvents();
+  const { data: thisWeekendEvents = [], isLoading: thisWeekendEventsLoading } =
+    useThisWeekendEvents();
+  const { data: trendingEvents = [], isLoading: trendingEventsLoading } = useTrendingEvents();
 
   function splitIntoRows<T>(arr: T[], numRows: number): T[][] {
     const rows: T[][] = Array.from({ length: numRows }, () => []);
@@ -39,7 +46,7 @@ export default function HomeScreen() {
   const trendingEventRowSkeletons = splitIntoRows(Array.from({ length: 4 }), 2);
 
   const handlePressNavigateToViewEvent = (eventId: string) => {
-    navigation.navigate('ViewEventScreen', { eventId });
+    navigation.navigate('ViewEvent', { eventId });
   };
 
   const logout = async () => {

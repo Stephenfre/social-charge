@@ -1,8 +1,52 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '~/lib/supabase';
-import { EventRow } from '~/types/event.types';
+import { EventRow, UserEventCardRow } from '~/types/event.types';
 
-export function useForYou(userId: string | null) {
+export function useUserEvents(limit: number) {
+  return useQuery<UserEventCardRow[]>({
+    queryKey: ['events', 'userEvents', limit],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('v_user_events')
+        .select('id, title, cover_img, event_status, created_at')
+        .order('event_status', { ascending: false }) // "upcoming" first, then "past"
+        .order('starts_at', { ascending: false }) // optional: chronological within each group
+        .limit(limit);
+
+      if (error) throw error;
+      return data as UserEventCardRow[];
+    },
+  });
+}
+
+export function useEventById(id: string) {
+  return useQuery<EventRow>({
+    queryKey: ['events', 'eventById', id],
+    enabled: !!id,
+    initialData: undefined,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('events')
+        .select(
+          `
+          *,
+          event_hosts:event_hosts!event_hosts_event_id_fkey (
+            user:users!event_hosts_user_id_fkey ( id, first_name, last_name, profile_picture )
+          ),
+          rsvps:rsvps!rsvps_event_id_fkey (
+            user:users!rsvps_user_id_fkey ( id, first_name, last_name, profile_picture )
+          )
+        `
+        )
+        .eq('id', id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as EventRow;
+    },
+  });
+}
+
+export function useForYouEvents(userId: string | null) {
   return useQuery<EventRow[]>({
     queryKey: ['events', 'justForYou', userId],
     enabled: !!userId,
@@ -18,7 +62,7 @@ export function useForYou(userId: string | null) {
   });
 }
 
-export function useUpcoming() {
+export function useUpcomingEvents() {
   return useQuery<EventRow[]>({
     queryKey: ['events', 'upcoming'],
     queryFn: async () => {
@@ -34,7 +78,7 @@ export function useUpcoming() {
   });
 }
 
-export function useLowToken() {
+export function useLowTokenEvents() {
   return useQuery<EventRow[]>({
     queryKey: ['events', 'cheap'],
     queryFn: async () => {
@@ -50,7 +94,7 @@ export function useLowToken() {
   });
 }
 
-export function useThisWeekend() {
+export function useThisWeekendEvents() {
   return useQuery({
     queryKey: ['events', 'thisWeekend'],
     queryFn: async () => {
@@ -81,7 +125,7 @@ export function useThisWeekend() {
   });
 }
 
-export function useTrending() {
+export function useTrendingEvents() {
   return useQuery({
     queryKey: ['events', 'trending'],
     queryFn: async () => {

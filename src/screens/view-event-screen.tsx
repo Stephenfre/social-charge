@@ -12,9 +12,9 @@ import { Spinner } from '~/components/ui/spinner';
 import { EventCard } from '~/components/EventCard/EventCard';
 
 export default function ViewEventScreen() {
-  const { params } = useRouteStack<'ViewEventScreen'>();
+  const { params } = useRouteStack<'ViewEvent'>();
   const { data, isLoading } = useEventById(params.eventId);
-  const { userId, membership_role } = useAuth();
+  const { userId, user } = useAuth();
   const event = data as unknown as EventWithJoins;
 
   const { data: rsvps = [], isLoading: rsvpLoading } = useRsvps(params.eventId);
@@ -164,7 +164,7 @@ export default function ViewEventScreen() {
               );
             })}
           </Flex>
-          {membership_role !== 'basic' && (
+          {user?.membership !== 'basic' && (
             <Flex gap={4}>
               <Text bold size="2xl">
                 Attendees
