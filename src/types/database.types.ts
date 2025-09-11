@@ -662,7 +662,10 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      f_user_event_today_or_next: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
     }
     Enums: {
       attend_status: "yes" | "no" | "can"

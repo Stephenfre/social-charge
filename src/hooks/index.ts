@@ -1,3 +1,4 @@
+export { useUserInterests } from './useUser';
 export {
   useUserEvents,
   useEventById,

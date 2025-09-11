@@ -14,6 +14,7 @@ import { BottomTabNavigationProp, createBottomTabNavigator } from '@react-naviga
 export type AppTabParamList = {
   Home: undefined;
   Profile: undefined;
+  'Event Check In': undefined;
 };
 
 /** ----- Root stack params ----- */
@@ -29,6 +30,8 @@ export type RootStackParamList = {
   HomeIndex: undefined;
   ProfileIndex: undefined;
   ViewEvent: { eventId: string };
+  'Event History': undefined;
+  EventCheckInIndex: undefined;
 };
 
 /** ----- Navigator creators with types (optional re-exports) ----- */

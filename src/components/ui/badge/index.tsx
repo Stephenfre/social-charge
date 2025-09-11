@@ -23,7 +23,8 @@ const badgeStyle = tva({
     variant: {
       solid: '',
       outline: 'border',
-      primary: 'bg-secondary-200/20',
+      primary: 'bg-primary-500/20',
+      secondary: 'bg-secondary-200/20',
       muted: 'bg-gray-200/20',
     },
     size: {
@@ -113,7 +114,7 @@ type IBadgeProps = React.ComponentPropsWithoutRef<typeof ContextView> &
   VariantProps<typeof badgeStyle>;
 function Badge({
   children,
-  action = 'musunted',
+  action = 'muted',
   variant = 'solid',
   size = 'md',
   className,

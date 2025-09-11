@@ -12,45 +12,12 @@ import { ChevronRight } from 'lucide-react-native';
 import { cn } from '~/utils/cn';
 import { INTEREST_CATEGORIES } from '~/constants/interests';
 import { useSignUp } from '~/hooks';
+import { categoryEmojis, interestEmojis } from '~/utils/const';
 
 export function InterestScreen() {
   const navigation = useNavigation<NavigationProp<'Interest'>>();
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const signUp = useSignUp();
-
-  const categoryEmojis = {
-    active: '🏃‍♂️',
-    creative: '🎨',
-    social: '🍻',
-    relaxed: '📚',
-  };
-
-  const interestEmojis: Record<string, string> = {
-    // Active
-    Sports: '⚽',
-    Outdoors: '🏔️',
-    Fitness: '💪',
-    Hiking: '🥾',
-    Yoga: '🧘‍♀️',
-    Dancing: '💃',
-    // Creative
-    Music: '🎵',
-    Art: '🎨',
-    Photography: '📸',
-    Movies: '🎬',
-    Gaming: '🎮',
-    Fashion: '👗',
-    // Social
-    Travel: '✈️',
-    Nightlife: '🌙',
-    Foodie: '🍕',
-    Coffee: '☕',
-    Volunteering: '🤝',
-    // Relaxed
-    Reading: '📖',
-    Tech: '💻',
-    Pets: '🐕',
-  };
 
   const handleSelectInterest = (interest: string) => {
     if (selectedInterests.includes(interest)) {

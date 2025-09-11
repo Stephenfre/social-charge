@@ -2,30 +2,24 @@ import dayjs from 'dayjs';
 import { Calendar, Clock, MapPin, MessagesSquare } from 'lucide-react-native';
 import { Alert, SafeAreaView, ScrollView, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Box, Button, Flex, Image, Text } from '~/components/ui';
+import { Badge, Box, Button, Flex, Image, Text } from '~/components/ui';
 import { useEventById, useStorageImages } from '~/hooks';
 import { useRouteStack } from '~/types/navigation.types';
-import { EventWithJoins, PersonCard } from '~/types/event.types';
+import { PersonCard } from '~/types/event.types';
 import { useRsvps, useCreateRsvp, useRemoveRsvp } from '~/hooks/useRsvps';
 import { useAuth } from '~/providers/AuthProvider';
 import { Spinner } from '~/components/ui/spinner';
 import { EventCard } from '~/components/EventCard/EventCard';
+import React from 'react';
 
-export default function ViewEventScreen() {
+export function ViewEventScreen() {
   const { params } = useRouteStack<'ViewEvent'>();
-  const { data, isLoading } = useEventById(params.eventId);
+  const { data: event, isLoading } = useEventById(params.eventId);
   const { userId, user } = useAuth();
-  const event = data as unknown as EventWithJoins;
 
   const { data: rsvps = [], isLoading: rsvpLoading } = useRsvps(params.eventId);
 
   const isRsvped = rsvps.some((r) => r.user_id === userId);
-
-  if (isLoading) {
-    <SafeAreaView className=" h-full bg-background-dark">
-      <Text>Loading....</Text>
-    </SafeAreaView>;
-  }
 
   const eventHosts: PersonCard[] =
     event?.event_hosts.map((host) => ({
@@ -41,12 +35,10 @@ export default function ViewEventScreen() {
       profile_pic: rsvp.user.profile_picture,
     })) ?? [];
 
-  const eventHost: PersonCard | undefined = eventHosts[0];
-
-  const hostPaths = eventHost?.profile_pic;
+  const hostPaths = eventHosts.map((host) => host.profile_pic);
   const { data: hostAvatar, isLoading: hostAvatarLoading } = useStorageImages({
     bucket: 'avatars',
-    paths: [hostPaths], // stored in users table
+    paths: hostPaths, // stored in users table
   });
 
   const evenRsvpsPaths = eventRsvps.map((r) => r.profile_pic);
@@ -55,14 +47,25 @@ export default function ViewEventScreen() {
     paths: evenRsvpsPaths,
   });
 
-  const eventStart = dayjs(data?.starts_at);
+  if (isLoading) {
+    return (
+      <SafeAreaView className=" h-full bg-background-dark">
+        <Text>Loading....</Text>
+      </SafeAreaView>
+    );
+  }
+
+  const isHost = event?.event_hosts?.some((host) => host.user_id === userId);
+
+  const eventStart = dayjs(event?.starts_at);
+
   return (
     <SafeAreaView className="h-full bg-background-dark">
       <ScrollView>
         <View className="relative">
           <EventCard
-            event={event}
-            favorited={userId !== eventHost?.id ? true : false}
+            event={event!}
+            favorited={eventHosts.some((host) => host.id !== userId)}
             imageSize="cover"
             rounded="none"
             showDate={false}
@@ -85,84 +88,84 @@ export default function ViewEventScreen() {
         <Flex className="px-4" gap={6}>
           <Flex>
             <Text size="3xl" bold>
-              {data?.title}
+              {event?.title}
             </Text>
             <Flex direction="row" gap={4}>
               <Flex direction="row" align="center" gap={2}>
                 <Calendar color={'white'} size={14} />
                 <Text size="lg" className="text-white">
-                  {dayjs(data?.starts_at).format('ddd, MMM DD')}
+                  {dayjs(event?.starts_at).format('ddd, MMM DD')}
                 </Text>
               </Flex>
               <Flex direction="row" align="center" gap={2}>
                 <Clock color={'white'} size={14} />
                 <Text size="lg" className="text-white">
-                  {dayjs(data?.starts_at).format('h:mm A')}
+                  {dayjs(event?.starts_at).format('h:mm A')}
                 </Text>
               </Flex>
               <Flex direction="row" align="center" gap={2}>
                 <MapPin color={'white'} size={14} />
                 <Text size="lg" className="text-white">
-                  {data?.location}
+                  {event?.location}
                 </Text>
               </Flex>
             </Flex>
           </Flex>
           <Flex direction="row" align="center" gap={4}>
-            {eventHost ? (
+            {eventHosts.length ? (
               <>
-                {hostAvatar && !hostAvatarLoading ? (
-                  <Image
-                    alt="picture of host"
-                    rounded="full"
-                    source={{ uri: hostAvatar[0] ?? '' }}
-                  />
-                ) : (
-                  <Box className="h-28 w-28 rounded-full bg-slate-500" />
-                )}
-                <Flex>
-                  <Text bold size="xl">
-                    {eventHost.name}
-                  </Text>
-                  <Text>Host</Text>
-                </Flex>
+                {eventHosts.map((host, i) => {
+                  return (
+                    <React.Fragment key={host.id}>
+                      {hostAvatar && !hostAvatarLoading ? (
+                        <Image
+                          alt="picture of host"
+                          rounded="full"
+                          source={{ uri: hostAvatar[i] ?? '' }}
+                        />
+                      ) : (
+                        <Box className="h-28 w-28 rounded-full bg-slate-500" />
+                      )}
+                      <Flex>
+                        <Text bold size="xl">
+                          {host.name}
+                        </Text>
+                        <Text>Host</Text>
+                      </Flex>
+                    </React.Fragment>
+                  );
+                })}
               </>
             ) : (
               <Text>Host not assigned yet</Text>
             )}
           </Flex>
-          {userId !== eventHost?.id && (
-            <>
-              {!isRsvped ? (
-                <RsvpButton
-                  userId={userId ?? ''}
-                  eventId={params.eventId}
-                  isLoading={rsvpLoading}
-                />
-              ) : (
-                <CancelRsvpButton userId={userId ?? ''} eventId={params.eventId} />
-              )}
-            </>
-          )}
+
+          {!isHost &&
+            (!isRsvped ? (
+              <RsvpButton userId={userId ?? ''} eventId={params.eventId} isLoading={rsvpLoading} />
+            ) : (
+              <CancelRsvpButton userId={userId ?? ''} eventId={params.eventId} />
+            ))}
           <Flex>
             <Text bold size="2xl">
               About this event
             </Text>
-            <Text>{data?.description}</Text>
+            <Text>{event?.description}</Text>
           </Flex>
           <Flex gap={2}>
             <Text bold size="2xl">
               Vibe Chack
             </Text>
-            {data?.category?.map((cat) => {
-              return (
-                <Button key={cat} variant="tag" className="h-7 w-24 rounded-lg" disabled={true}>
-                  <Text weight="600" className="text-primary-200">
-                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
+            <Flex direction="row" gap={4} wrap="wrap">
+              {event?.category?.map((cat) => (
+                <Badge key={cat} variant="primary" className="rounded-lg px-4 py-1">
+                  <Text size="sm" className="uppercase text-primary-300">
+                    {cat}
                   </Text>
-                </Button>
-              );
-            })}
+                </Badge>
+              ))}
+            </Flex>
           </Flex>
           {user?.membership !== 'basic' && (
             <Flex gap={4}>

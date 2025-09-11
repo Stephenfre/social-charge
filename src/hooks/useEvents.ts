@@ -1,26 +1,51 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '~/lib/supabase';
-import { EventRow, UserEventCardRow } from '~/types/event.types';
+import { EventRow, EventWithJoins, UserEventCardRow } from '~/types/event.types';
 
-export function useUserEvents(limit: number) {
+export function useUserEvents(limit?: number) {
   return useQuery<UserEventCardRow[]>({
-    queryKey: ['events', 'userEvents', limit],
+    queryKey: ['events', 'userEvents', { limit }],
+    queryFn: async () => {
+      let q = supabase
+        .from('v_user_events')
+        .select('id, title, cover_img, event_status, starts_at, created_at')
+        .order('event_status', { ascending: false })
+        .order('starts_at', { ascending: false });
+      if (limit) q = q.limit(limit);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data as UserEventCardRow[]) ?? [];
+    },
+  });
+}
+
+type CheckInUser = {
+  user_id: string;
+  user: { id: string; first_name: string; last_name: string; profile_picture: string | null };
+};
+
+type CheckInResult = {
+  event: EventRow; // your generated type from Supabase
+  hosts: CheckInUser[] | null;
+  attendees: CheckInUser[] | null;
+};
+
+export function useCheckInEvent() {
+  return useQuery<CheckInResult | null>({
+    queryKey: ['events', 'checkInEvent'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('v_user_events')
-        .select('id, title, cover_img, event_status, created_at')
-        .order('event_status', { ascending: false }) // "upcoming" first, then "past"
-        .order('starts_at', { ascending: false }) // optional: chronological within each group
-        .limit(limit);
+        .rpc('f_user_event_today_or_next')
+        .maybeSingle<CheckInResult>(); // 👈 add the generic
 
       if (error) throw error;
-      return data as UserEventCardRow[];
+      return data; // null if none
     },
   });
 }
 
 export function useEventById(id: string) {
-  return useQuery<EventRow>({
+  return useQuery<EventWithJoins>({
     queryKey: ['events', 'eventById', id],
     enabled: !!id,
     initialData: undefined,
@@ -41,7 +66,7 @@ export function useEventById(id: string) {
         .eq('id', id)
         .maybeSingle();
       if (error) throw error;
-      return data as EventRow;
+      return data as EventWithJoins;
     },
   });
 }

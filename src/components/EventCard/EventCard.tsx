@@ -1,11 +1,11 @@
 import { Calendar, Heart, MapPin, View } from 'lucide-react-native';
 import { Button, ButtonText, Flex, Image, Pressable, Text } from '../ui';
-import { EventRow } from '~/types/event.types';
+import { EventRow, EventWithJoins } from '~/types/event.types';
 import dayjs from 'dayjs';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface EventCardProps {
-  event: EventRow;
+  event: EventRow | EventWithJoins;
   onPress?: () => void;
   featured?: boolean;
   favorited?: boolean;

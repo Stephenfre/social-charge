@@ -1,23 +1,35 @@
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import dayjs from 'dayjs';
 import { SafeAreaView, ScrollView } from 'react-native';
-import { Badge, Box, Button, Flex, Image, Text } from '~/components/ui';
-import { useStorageImages, useUserEvents } from '~/hooks';
+import { EventsList } from '~/components';
+import { Badge, Box, Button, Flex, Image, Pressable, Text } from '~/components/ui';
+import { useStorageImages, useUserEvents, useUserInterests } from '~/hooks';
 import { useAuth } from '~/providers/AuthProvider';
-import { UserEventCardRow } from '~/types/event.types';
-import { cn } from '~/utils/cn';
+import { RootStackParamList } from '~/types/navigation.types';
+import { interestEmojis } from '~/utils/const';
+
+type EventHistory = NativeStackNavigationProp<RootStackParamList, 'Event History'>;
 
 export function ProfileScreen() {
+  const navigation = useNavigation<EventHistory>();
+
   const { user } = useAuth();
-  const { data, isLoading } = useUserEvents(10);
+  const { data: events, isLoading: eventsLoading } = useUserEvents(6);
+  const { data: interests, isLoading: interestsLoading } = useUserInterests(user.id);
   const { data: userAvater, isLoading: userAvatarLoading } = useStorageImages({
     bucket: 'avatars',
-    paths: [user?.profile_picture], // stored in users table
+    paths: [user?.profile_picture],
   });
+
+  const handleViewAllPress = () => {
+    navigation.navigate('Event History');
+  };
 
   return (
     <SafeAreaView className="h-full bg-background-dark">
       <ScrollView className="p-4">
-        <Flex align="center">
+        <Flex gap={4}>
           <Flex align="center" gap={1}>
             {userAvater && !userAvatarLoading ? (
               <Image
@@ -32,61 +44,65 @@ export function ProfileScreen() {
             <Text bold size="2xl">
               {user?.first_name} {user?.last_name}
             </Text>
-            {/* CREATE THIS IN DB */}
+            {/* Add THIS TO DB */}
+            {/* Add THIS TO DB */}
             <Text size="sm">@DevinBooker</Text>
             <Text size="sm">Joined in {dayjs(user?.created_at).format('YYYY')}</Text>
           </Flex>
-        </Flex>
-        <Flex direction="row" justify="space-between" className="mb-4">
-          <Text size="2xl" bold>
-            Events
+          <Flex direction="row" align="center" gap={1}>
+            <Pressable className="w-1/3 rounded-lg">
+              <Flex align="center" className="p-6">
+                <Text size="2xl" bold>
+                  {events?.length ? events.length : '--'}
+                </Text>
+                <Text size="sm">Events</Text>
+              </Flex>
+            </Pressable>
+            {/* <Divider orientation="vertical" className="h-2/3 bg-background-800" /> */}
+            <Pressable className="w-1/3 rounded-lg">
+              <Flex align="center" className="p-6">
+                <Text size="2xl" bold>
+                  34
+                </Text>
+                <Text size="sm">Friends</Text>
+              </Flex>
+            </Pressable>
+            {/* <Divider orientation="vertical" className="h-2/3 bg-background-800" /> */}
+            <Pressable className="w-1/3 rounded-lg">
+              <Flex align="center" className="p-6">
+                <Text size="2xl" bold>
+                  25
+                </Text>
+                <Text size="sm">Credits</Text>
+              </Flex>
+            </Pressable>
+          </Flex>
+          <Text size="2xl" bold className="mb-2">
+            Interests
           </Text>
-          <Button variant="link">
-            <Text>View All</Text>
-          </Button>
+          <Flex direction="row" gap={4} wrap="wrap">
+            {interests?.map((interest) => (
+              <Badge
+                key={interest.interest}
+                variant="solid"
+                className="bg-background-900 px-4 py-2">
+                <Text size="sm" weight="700">
+                  {interestEmojis[interest.interest]} {interest.interest}
+                </Text>
+              </Badge>
+            ))}
+          </Flex>
+          <Flex direction="row" justify="space-between" className="my-2">
+            <Text size="2xl" bold>
+              Events History
+            </Text>
+            <Button variant="link" onPress={handleViewAllPress}>
+              <Text>View All</Text>
+            </Button>
+          </Flex>
+          <EventsList events={events ?? []} loading={eventsLoading} />
         </Flex>
-        <EventList events={data ?? []} loading={isLoading} />
       </ScrollView>
     </SafeAreaView>
-  );
-}
-type EventListProp = {
-  events: UserEventCardRow[];
-  loading: boolean;
-};
-function EventList({ events, loading }: EventListProp) {
-  console.log(events[0]);
-
-  if (loading) {
-    <Text>Loading</Text>;
-  }
-
-  return (
-    <Flex gap={8}>
-      {events.map((event) => {
-        return (
-          <Flex key={event.id} direction="row" align="center" justify="space-between">
-            <Flex direction="row" gap={4}>
-              <Image alt="picture of host" size="sm" source={{ uri: event.cover_img ?? '' }} />
-              <Flex>
-                <Text bold>{event.title}</Text>
-                <Text size="sm">{dayjs(event.starts_at).format('ddd, MMM DD, YYYY h:mm A')}</Text>
-              </Flex>
-            </Flex>
-            <Badge variant={event.event_status == 'upcoming' ? 'primary' : 'muted'}>
-              <Text
-                bold
-                size="xs"
-                className={cn(
-                  event.event_status == 'upcoming' ? 'text-green-600' : 'text-gray-400',
-                  'uppercase'
-                )}>
-                {event.event_status}
-              </Text>
-            </Badge>
-          </Flex>
-        );
-      })}
-    </Flex>
   );
 }
