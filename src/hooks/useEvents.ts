@@ -8,7 +8,7 @@ export function useUserEvents(limit?: number) {
     queryFn: async () => {
       let q = supabase
         .from('v_user_events')
-        .select('id, title, cover_img, event_status, starts_at, created_at')
+        .select('id, title, cover_img, event_status, starts_at, ends_at, created_at')
         .order('event_status', { ascending: false })
         .order('starts_at', { ascending: false });
       if (limit) q = q.limit(limit);
@@ -71,6 +71,8 @@ export function useEventById(id: string) {
   });
 }
 
+const nowIso = new Date().toISOString();
+
 export function useForYouEvents(userId: string | null) {
   return useQuery<EventRow[]>({
     queryKey: ['events', 'justForYou', userId],
@@ -80,6 +82,8 @@ export function useForYouEvents(userId: string | null) {
       const { data, error } = await supabase
         .from('v_events_for_current_user')
         .select('*')
+        .gte('starts_at', nowIso)
+        .order('starts_at', { ascending: true })
         .limit(10);
       if (error) throw error;
       return data as EventRow[];
@@ -94,7 +98,7 @@ export function useUpcomingEvents() {
       const { data, error } = await supabase
         .from('events')
         .select('*')
-        .gt('starts_at', new Date().toISOString())
+        .gt('starts_at', nowIso)
         .order('starts_at', { ascending: true })
         .limit(10);
       if (error) throw error;
@@ -111,6 +115,7 @@ export function useLowTokenEvents() {
         .from('events')
         .select('*')
         .lte('token_cost', 1)
+        .gte('starts_at', nowIso)
         .order('starts_at', { ascending: true })
         .limit(10);
       if (error) throw error;
@@ -124,15 +129,18 @@ export function useThisWeekendEvents() {
     queryKey: ['events', 'thisWeekend'],
     queryFn: async () => {
       const now = new Date();
-      const day = now.getDay(); // 0=Sun … 6=Sat
+      const nowIso = now.toISOString();
 
-      // calculate upcoming Friday
+      // 0=Sun … 6=Sat
+      const day = now.getDay();
+
+      // Start of upcoming Friday
       const daysUntilFriday = (5 - day + 7) % 7;
       const friday = new Date(now);
       friday.setDate(now.getDate() + daysUntilFriday);
       friday.setHours(0, 0, 0, 0);
 
-      // calculate end of Sunday
+      // End of Sunday
       const sunday = new Date(friday);
       sunday.setDate(friday.getDate() + 2);
       sunday.setHours(23, 59, 59, 999);
@@ -140,8 +148,11 @@ export function useThisWeekendEvents() {
       const { data, error } = await supabase
         .from('events')
         .select('*')
+        // only events that start during the weekend window…
         .gte('starts_at', friday.toISOString())
-        .lte('ends_at', sunday.toISOString())
+        .lte('starts_at', sunday.toISOString())
+        // …and have not already ended (excludes 3am-today past events)
+        .gte('ends_at', nowIso)
         .order('starts_at', { ascending: true });
 
       if (error) throw error;
@@ -162,7 +173,8 @@ export function useTrendingEvents() {
           rsvps:event_id(count)
         `
         )
-        .order('rsvps.count', { ascending: false }) // sort by RSVP count
+        // .gte('starts_at', nowIso)
+        .order('rsvps.count', { ascending: false })
         .limit(10);
 
       if (error) throw error;

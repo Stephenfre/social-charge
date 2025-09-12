@@ -11,6 +11,7 @@ import { useAuth } from '~/providers/AuthProvider';
 import { Spinner } from '~/components/ui/spinner';
 import { EventCard } from '~/components/EventCard/EventCard';
 import React from 'react';
+import { cn } from '~/utils/cn';
 
 export function ViewEventScreen() {
   const { params } = useRouteStack<'ViewEvent'>();
@@ -58,6 +59,8 @@ export function ViewEventScreen() {
   const isHost = event?.event_hosts?.some((host) => host.user_id === userId);
 
   const eventStart = dayjs(event?.starts_at);
+
+  const isEventOver = dayjs().isAfter(event?.ends_at);
 
   return (
     <SafeAreaView className="h-full bg-background-dark">
@@ -141,12 +144,26 @@ export function ViewEventScreen() {
             )}
           </Flex>
 
-          {!isHost &&
-            (!isRsvped ? (
-              <RsvpButton userId={userId ?? ''} eventId={params.eventId} isLoading={rsvpLoading} />
-            ) : (
-              <CancelRsvpButton userId={userId ?? ''} eventId={params.eventId} />
-            ))}
+          {!isEventOver ? (
+            <>
+              {!isHost &&
+                (!isRsvped ? (
+                  <RsvpButton
+                    userId={userId ?? ''}
+                    eventId={params.eventId}
+                    isLoading={rsvpLoading}
+                  />
+                ) : (
+                  <CancelRsvpButton userId={userId ?? ''} eventId={params.eventId} />
+                ))}
+            </>
+          ) : (
+            <Button className=" h-14" variant="muted">
+              <Text bold className="text-gray-200">
+                This Event Has Ended
+              </Text>
+            </Button>
+          )}
           <Flex>
             <Text bold size="2xl">
               About this event
@@ -200,7 +217,7 @@ export function ViewEventScreen() {
               )}
             </Flex>
           )}
-          <Flex gap={2}>
+          {/* <Flex gap={2}>
             <Flex direction="row" align="center" gap={2}>
               <MessagesSquare color={'white'} size={20} />
               <Text bold size="2xl">
@@ -212,7 +229,7 @@ export function ViewEventScreen() {
             ) : (
               <Text>Show discussion</Text>
             )}
-          </Flex>
+          </Flex> */}
         </Flex>
       </ScrollView>
     </SafeAreaView>
@@ -239,14 +256,22 @@ function RsvpButton({
       className=" h-14 bg-primary"
       onPress={onSubmit}
       disabled={isLoading || createRsvp.isPending}>
-      <Text bold size="xl">
+      <Text bold size="lg">
         {label}
       </Text>
     </Button>
   );
 }
 
-function CancelRsvpButton({ eventId, userId }: { eventId: string; userId: string }) {
+export function CancelRsvpButton({
+  eventId,
+  userId,
+  className,
+}: {
+  eventId: string;
+  userId: string;
+  className?: string;
+}) {
   const removeRsvp = useRemoveRsvp();
 
   const label = removeRsvp.isPending ? <Spinner /> : 'Cancel Rsvp';
@@ -262,8 +287,11 @@ function CancelRsvpButton({ eventId, userId }: { eventId: string; userId: string
   };
 
   return (
-    <Button className=" h-14 bg-primary" onPress={onCancelSubmit} disabled={removeRsvp.isPending}>
-      <Text bold size="xl">
+    <Button
+      className={cn(className, 'h-14 bg-primary')}
+      onPress={onCancelSubmit}
+      disabled={removeRsvp.isPending}>
+      <Text bold size="lg">
         {label}
       </Text>
     </Button>

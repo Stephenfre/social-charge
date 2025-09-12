@@ -26,6 +26,8 @@ export function ProfileScreen() {
     navigation.navigate('Event History');
   };
 
+  const filterEventsByPast = events?.filter((event) => event.event_status !== 'upcoming');
+
   return (
     <SafeAreaView className="h-full bg-background-dark">
       <ScrollView className="p-4">
@@ -53,7 +55,7 @@ export function ProfileScreen() {
             <Pressable className="w-1/3 rounded-lg">
               <Flex align="center" className="p-6">
                 <Text size="2xl" bold>
-                  {events?.length ? events.length : '--'}
+                  {filterEventsByPast?.length ? filterEventsByPast.length : '--'}
                 </Text>
                 <Text size="sm">Events</Text>
               </Flex>
@@ -80,18 +82,22 @@ export function ProfileScreen() {
           <Text size="2xl" bold className="mb-2">
             Interests
           </Text>
-          <Flex direction="row" gap={4} wrap="wrap">
-            {interests?.map((interest) => (
-              <Badge
-                key={interest.interest}
-                variant="solid"
-                className="bg-background-900 px-4 py-2">
-                <Text size="sm" weight="700">
-                  {interestEmojis[interest.interest]} {interest.interest}
-                </Text>
-              </Badge>
-            ))}
-          </Flex>
+          {!interestsLoading && (
+            <>
+              <Flex direction="row" gap={4} wrap="wrap">
+                {interests?.map((interest) => (
+                  <Badge
+                    key={interest.interest}
+                    variant="solid"
+                    className="bg-background-900 px-4 py-2">
+                    <Text size="sm" weight="700">
+                      {interestEmojis[interest.interest]} {interest.interest}
+                    </Text>
+                  </Badge>
+                ))}
+              </Flex>
+            </>
+          )}
           <Flex direction="row" justify="space-between" className="my-2">
             <Text size="2xl" bold>
               Events History

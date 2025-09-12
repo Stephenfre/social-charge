@@ -14,6 +14,7 @@ import { useAuth } from '~/providers/AuthProvider';
 import { PersonCard } from '~/types/event.types';
 import { RootStackParamList } from '~/types/navigation.types';
 import { cn } from '~/utils/cn';
+import { CancelRsvpButton } from './view-event-screen';
 
 type HomeNav = NativeStackNavigationProp<RootStackParamList, 'HomeIndex'>;
 
@@ -56,7 +57,10 @@ export function EventCheckInScreen() {
   });
 
   const handlePressNavigateToViewEvent = () => {
-    navigation.navigate('HomeIndex');
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Home' as never }],
+    });
   };
 
   if (loadingEvent) {
@@ -86,6 +90,10 @@ export function EventCheckInScreen() {
     );
   }
 
+  const startsAt = dayjs(checkInEvent.starts_at);
+  const now = dayjs();
+  const withinTwoHours = startsAt.diff(now, 'hour', true) <= 2; // true = fractional hours
+
   return (
     <SafeAreaView className="h-full bg-background-dark">
       <ScrollView>
@@ -113,26 +121,29 @@ export function EventCheckInScreen() {
               </Text>
             </Flex>
           </Flex>
-          <Button
-            className={cn(isNotStartTime ? 'bg-gray-500' : 'bg-primary', 'h-14')}
-            onPress={() => {
-              console.log('pressed');
-            }}
-            disabled={isNotStartTime}>
-            <Flex align="center">
-              <Text bold size="xl">
-                Check In
-              </Text>
-              {checkInEvent && (
-                <Countdown
-                  to={checkInEvent?.starts_at} // ISO string from Supabase
-                  onComplete={() => console.log('Event started!')}
-                  // intervalMs={500}               // optional: tick faster
-                  // hideDaysIfZero={false}         // optional: always show days
-                />
-              )}
-            </Flex>
-          </Button>
+          <Flex direction="row" gap={2} align="center">
+            <Button
+              className={cn(isNotStartTime ? 'bg-gray-500' : 'bg-primary', 'h-14 w-1/2')}
+              onPress={() => {
+                console.log('pressed');
+              }}
+              disabled={isNotStartTime}>
+              <Flex align="center">
+                <Text bold size="lg">
+                  Check In
+                </Text>
+                {checkInEvent && (
+                  <Countdown
+                    to={checkInEvent?.starts_at}
+                    onComplete={() => console.log('Event started!')}
+                  />
+                )}
+              </Flex>
+            </Button>
+            {!withinTwoHours && (
+              <CancelRsvpButton className="w-1/2" eventId={checkInEvent.id} userId={user.id} />
+            )}
+          </Flex>
           <Flex direction="row" align="center" gap={4}>
             {eventHosts.length ? (
               <>
@@ -215,7 +226,7 @@ export function EventCheckInScreen() {
               )}
             </Flex>
           )}
-          <Flex gap={2} className="pb-4">
+          {/* <Flex gap={2} className="pb-4">
             <Flex direction="row" align="center" gap={2}>
               <MessagesSquare color={'white'} size={20} />
               <Text bold size="2xl">
@@ -227,7 +238,7 @@ export function EventCheckInScreen() {
             ) : (
               <Text>Show discussion</Text>
             )}
-          </Flex>
+          </Flex> */}
         </Flex>
       </ScrollView>
     </SafeAreaView>

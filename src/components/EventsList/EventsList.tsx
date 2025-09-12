@@ -28,7 +28,8 @@ export function EventsList({ events, loading }: EventsListProp) {
   return (
     <Flex gap={8}>
       {events.map((event) => {
-        const isEventToday = dayjs(event.starts_at).isSame(dayjs(), 'day');
+        const isCurrentEvent =
+          dayjs(event.starts_at).isSame(dayjs(), 'day') && dayjs().isBefore(event.ends_at);
 
         return (
           <Pressable key={event.id} onPress={() => handlePressNavigateToViewEvent(event.id)}>
@@ -42,7 +43,7 @@ export function EventsList({ events, loading }: EventsListProp) {
               </Flex>
               <Badge
                 variant={cn(
-                  isEventToday
+                  isCurrentEvent
                     ? 'primary'
                     : event.event_status == 'upcoming'
                       ? 'secondary'
@@ -52,14 +53,14 @@ export function EventsList({ events, loading }: EventsListProp) {
                   bold
                   size="xs"
                   className={cn(
-                    isEventToday
+                    isCurrentEvent
                       ? 'text-primary-300'
                       : event.event_status == 'upcoming'
                         ? 'text-green-600'
                         : 'text-gray-400',
                     'uppercase'
                   )}>
-                  {isEventToday ? 'TODAY' : event.event_status}
+                  {isCurrentEvent ? 'TODAY' : event.event_status}
                 </Text>
               </Badge>
             </Flex>

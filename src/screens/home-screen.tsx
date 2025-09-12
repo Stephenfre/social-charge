@@ -1,13 +1,13 @@
 import dayjs from 'dayjs';
 import { SafeAreaView, ScrollView, View } from 'react-native';
-import { Button, Flex, Skeleton, Text } from '~/components/ui';
+import { Button, Flex, Pressable, Skeleton, Text } from '~/components/ui';
 import { FontAwesome } from '@expo/vector-icons';
 
 import { useAuth } from '~/providers/AuthProvider';
 import {
   useForYouEvents,
   useLowTokenEvents,
-  useThisWeekendEvents,
+  // useThisWeekendEvents,
   useTrendingEvents,
   useUpcomingEvents,
 } from '~/hooks';
@@ -27,8 +27,8 @@ export function HomeScreen() {
   const { data: forYouEvents = [], isLoading: forYouEventsLoading } = useForYouEvents(userId);
   const { data: upcomingEvents = [], isLoading: upcomingEventsLoading } = useUpcomingEvents();
   const { data: lowTokenEvents = [], isLoading: lowTokenEventsLoading } = useLowTokenEvents();
-  const { data: thisWeekendEvents = [], isLoading: thisWeekendEventsLoading } =
-    useThisWeekendEvents();
+  // const { data: thisWeekendEvents = [], isLoading: thisWeekendEventsLoading } =
+  //   useThisWeekendEvents();
   const { data: trendingEvents = [], isLoading: trendingEventsLoading } = useTrendingEvents();
 
   function splitIntoRows<T>(arr: T[], numRows: number): T[][] {
@@ -60,9 +60,7 @@ export function HomeScreen() {
         <Flex gap={4}>
           <View className="mx-4">
             {upcomingEventsLoading ? (
-              <Flex>
-                <Skeleton className="h-64 w-full" />
-              </Flex>
+              <Flex>{/* <Skeleton className="h-64 w-full" /> */}</Flex>
             ) : (
               <EventCard
                 onPress={() => handlePressNavigateToViewEvent(upcomingEvents[7]?.id)}
@@ -72,7 +70,10 @@ export function HomeScreen() {
               />
             )}
           </View>
-          <Flex gap={4}>
+
+          {/* fix to remove ongoing events */}
+
+          {/* <Flex gap={4}>
             <Flex direction="row" justify="space-between" align="center" className="mx-4">
               <Text size="xl" bold>
                 This Weekend
@@ -117,7 +118,7 @@ export function HomeScreen() {
                 </>
               )}
             </ScrollView>
-          </Flex>
+          </Flex> */}
           <Flex gap={4}>
             <Flex direction="row" justify="space-between" align="center" className="mx-4">
               <Text size="xl" bold>
@@ -139,12 +140,10 @@ export function HomeScreen() {
                   {Array.from({ length: 5 }).map((_, i) => {
                     return (
                       <Flex gap={2} key={i}>
-                        <Skeleton className="mr-2 h-32 w-44" />
+                        {/* <Skeleton className="mr-2 h-32 w-44" /> */}
                         <Flex gap={2}>
-                          <Skeleton className="h-5 w-24" />
-                          <Flex direction="row">
-                            <Skeleton className="h-5 w-40" />
-                          </Flex>
+                          {/* <Skeleton className="h-5 w-24" /> */}
+                          <Flex direction="row">{/* <Skeleton className="h-5 w-40" /> */}</Flex>
                         </Flex>
                       </Flex>
                     );
@@ -154,34 +153,38 @@ export function HomeScreen() {
                 <>
                   {forYouEvents.map((event) => {
                     return (
-                      <Flex gap={2} key={event.id}>
-                        <EventCard
-                          event={event}
-                          onPress={() => handlePressNavigateToViewEvent(event.id)}
-                          rounded="md"
-                          favorited
-                          imageSize="xl-wide"
-                          className="pr-2"
-                          showTitle={false}
-                          showDate={false}
-                          showLocation={false}
-                          showToken={false}
-                        />
-                        <Flex>
-                          <Text size="md" weight="600" className="w-40">
-                            {event?.title}
-                          </Text>
-                          <Flex direction="row">
-                            <Text size="sm" className="text-gray-500">
-                              {dayjs(event?.starts_at).format('ddd MM/DD')}
+                      <Pressable
+                        key={event.id}
+                        onPress={() => handlePressNavigateToViewEvent(event.id)}>
+                        <Flex gap={2} key={event.id}>
+                          <EventCard
+                            event={event}
+                            onPress={() => handlePressNavigateToViewEvent(event.id)}
+                            rounded="md"
+                            favorited
+                            imageSize="xl-wide"
+                            className="pr-2"
+                            showTitle={false}
+                            showDate={false}
+                            showLocation={false}
+                            showToken={false}
+                          />
+                          <Flex>
+                            <Text size="md" weight="600" className="w-40">
+                              {event?.title}
                             </Text>
-                            <Text size="sm" className="text-gray-500">
-                              {' '}
-                              | {event?.location}
-                            </Text>
+                            <Flex direction="row">
+                              <Text size="sm" className="text-gray-500">
+                                {dayjs(event?.starts_at).format('ddd MM/DD')}
+                              </Text>
+                              <Text size="sm" className="text-gray-500">
+                                {' '}
+                                | {event?.location}
+                              </Text>
+                            </Flex>
                           </Flex>
                         </Flex>
-                      </Flex>
+                      </Pressable>
                     );
                   })}
                 </>
@@ -220,13 +223,13 @@ export function HomeScreen() {
                               className="w-80 pr-2"
                               key={i}>
                               <Flex direction="row" gap={4}>
-                                <Skeleton className="h-16 w-16" />
+                                {/* <Skeleton className="h-16 w-16" /> */}
                                 <Flex gap={4}>
-                                  <Skeleton className="h-4 w-36" />
-                                  <Skeleton className="h-4 w-20" />
+                                  {/* <Skeleton className="h-4 w-36" /> */}
+                                  {/* <Skeleton className="h-4 w-20" /> */}
                                 </Flex>
                               </Flex>
-                              <Skeleton className="w-16 rounded-xl bg-gray-300 p-2" />
+                              {/* <Skeleton className="w-16 rounded-xl bg-gray-300 p-2" /> */}
                             </Flex>
                           ))}
                         </Flex>
@@ -236,45 +239,49 @@ export function HomeScreen() {
                 ) : (
                   <>
                     {upcomingEventRows.map((row, rowIndex) => (
-                      <Flex key={rowIndex} direction="row" gap={2}>
+                      <Flex direction="row" gap={2} key={rowIndex}>
                         {row.map((event) => (
-                          <Flex gap={2} direction="row" className="pr-2" key={event.id}>
-                            <EventCard
-                              event={event}
-                              onPress={() => handlePressNavigateToViewEvent(event.id)}
-                              rounded="md"
-                              imageSize="sm"
-                              showTitle={false}
-                              showDate={false}
-                              showLocation={false}
-                              showToken={false}
-                            />
-                            <Flex>
-                              <Text size="md" weight="600" className="w-40">
-                                {event?.title}
-                              </Text>
-                              <Flex direction="row">
-                                <Text size="sm" className="text-gray-500">
-                                  {dayjs(event?.starts_at).format('ddd MM/DD')}
+                          <Pressable
+                            key={event.id}
+                            onPress={() => handlePressNavigateToViewEvent(event.id)}>
+                            <Flex gap={2} direction="row" className="pr-2" key={event.id}>
+                              <EventCard
+                                event={event}
+                                onPress={() => handlePressNavigateToViewEvent(event.id)}
+                                rounded="md"
+                                imageSize="sm"
+                                showTitle={false}
+                                showDate={false}
+                                showLocation={false}
+                                showToken={false}
+                              />
+                              <Flex>
+                                <Text size="md" weight="600" className="w-40">
+                                  {event?.title}
                                 </Text>
-                                <Text size="sm" className="text-gray-500">
-                                  {' '}
-                                  | Venue
+                                <Flex direction="row">
+                                  <Text size="sm" className="text-gray-500">
+                                    {dayjs(event?.starts_at).format('ddd MM/DD')}
+                                  </Text>
+                                  <Text size="sm" className="text-gray-500">
+                                    {' '}
+                                    | Venue
+                                  </Text>
+                                </Flex>
+                              </Flex>
+                              <Flex
+                                className="w-16 rounded-xl bg-background-900 p-2"
+                                justify="center"
+                                align="center">
+                                <Text className="text-primary" weight="500">
+                                  RSVP
+                                </Text>
+                                <Text className="text-white" weight="500">
+                                  {event?.token_cost} $B
                                 </Text>
                               </Flex>
                             </Flex>
-                            <Flex
-                              className="w-16 rounded-xl bg-background-900 p-2"
-                              justify="center"
-                              align="center">
-                              <Text className="text-primary" weight="500">
-                                RSVP
-                              </Text>
-                              <Text className="text-white" weight="500">
-                                {event?.token_cost} $B
-                              </Text>
-                            </Flex>
-                          </Flex>
+                          </Pressable>
                         ))}
                       </Flex>
                     ))}
@@ -304,7 +311,7 @@ export function HomeScreen() {
                   {Array.from({ length: 5 }).map((_, i) => {
                     return (
                       <Flex key={i} className="mr-2 w-96">
-                        <Skeleton className="h-64 w-full" />
+                        {/* <Skeleton className="h-64 w-full" /> */}
                       </Flex>
                     );
                   })}
@@ -329,7 +336,7 @@ export function HomeScreen() {
               )}
             </ScrollView>
           </Flex>
-          <Flex gap={4}>
+          {/* <Flex gap={4}>
             <Flex direction="row" justify="space-between" align="center" className="mx-4">
               <Text size="xl" bold>
                 Trending Events
@@ -423,7 +430,7 @@ export function HomeScreen() {
                 )}
               </Flex>
             </ScrollView>
-          </Flex>
+          </Flex> */}
         </Flex>
         <Button onPress={logout}>
           <Text>Logout</Text>

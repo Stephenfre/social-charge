@@ -24,7 +24,7 @@ export type PersonCard = {
 
 export type UserEventCardRow = Pick<
   UserEventRow,
-  'id' | 'title' | 'cover_img' | 'created_at' | 'starts_at'
+  'id' | 'title' | 'cover_img' | 'created_at' | 'starts_at' | 'ends_at'
 > & {
   event_status: 'upcoming' | 'past';
 };
