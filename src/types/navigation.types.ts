@@ -13,6 +13,8 @@ import { BottomTabNavigationProp, createBottomTabNavigator } from '@react-naviga
 /** ----- Tab params (if you have tabs) ----- */
 export type AppTabParamList = {
   Home: undefined;
+  Profile: undefined;
+  'Event Check In': undefined;
 };
 
 /** ----- Root stack params ----- */
@@ -25,9 +27,11 @@ export type RootStackParamList = {
   RegisterUserLocation: undefined;
   Interest: undefined;
   SignIn: undefined;
-  HomeScreen: undefined;
-  ViewEventScreen: { eventId: string };
-  // add more screens here
+  HomeIndex: undefined;
+  ProfileIndex: undefined;
+  ViewEvent: { eventId: string };
+  'Event History': undefined;
+  EventCheckInIndex: undefined;
 };
 
 /** ----- Navigator creators with types (optional re-exports) ----- */

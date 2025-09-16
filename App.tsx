@@ -14,6 +14,7 @@ import './global.css';
 import { RegisterUserBirthDateScreen } from '~/screens/register-user-birthdate-screen';
 import { AuthProvider, useAuth } from '~/providers/AuthProvider';
 import { RootStack } from '~/types/navigation.types';
+import { StatusBar } from 'react-native';
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <NavigationContainer>
           <GluestackUIProvider>
+            <StatusBar barStyle="light-content" backgroundColor="black" />
             <RootNavigator />
           </GluestackUIProvider>
         </NavigationContainer>

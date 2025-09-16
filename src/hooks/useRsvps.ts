@@ -2,17 +2,22 @@
 import { Tables, TablesInsert } from '@/database.types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '~/lib/supabase';
+import { EventRow, UserEventCardRow } from '~/types/event.types';
+
+const KEYS = {
+  userEvents: ['events', 'userEvents'] as const,
+  eventById: (id: string) => ['events', 'eventById', id] as const,
+  rsvps: (id: string) => ['rsvps', id] as const,
+  checkIn: ['events', 'checkInEvent'] as const, // <— use this everywhere
+};
 
 export type RsvpRow = Tables<'rsvps'>;
 export type RsvpInsert = TablesInsert<'rsvps'>;
 
-export const rsvpKeys = {
-  list: (eventId: string) => ['rsvps', eventId] as const,
-};
-
 export function useRsvps(eventId: string) {
   return useQuery({
-    queryKey: rsvpKeys.list(eventId),
+    queryKey: ['rsvps', eventId],
+    initialData: undefined,
     queryFn: async (): Promise<RsvpRow[]> => {
       const { data, error } = await supabase.from('rsvps').select('*').eq('event_id', eventId);
       if (error) throw error;
@@ -21,130 +26,164 @@ export function useRsvps(eventId: string) {
   });
 }
 
-type ToggleArgs = { eventId: string; userId: string };
-
 export function useCreateRsvp() {
   const qc = useQueryClient();
 
-  return useMutation({
-    // we’ll decide insert vs delete inside mutationFn
-    mutationFn: async ({ eventId, userId }: ToggleArgs): Promise<'added' | 'removed'> => {
-      // Is there currently an RSVP?
+  return useMutation<'added' | 'removed', unknown, ToggleArgs, Ctx>({
+    mutationFn: async ({ eventId, userId }) => {
       const { data: existing, error: exErr } = await supabase
         .from('rsvps')
         .select('id')
         .eq('event_id', eventId)
         .eq('user_id', userId)
         .limit(1);
-
       if (exErr) throw exErr;
 
-      if (existing && existing.length) {
-        // UN-RSVP: delete
-        const { error: delErr } = await supabase
+      if (existing?.length) {
+        const { error } = await supabase
           .from('rsvps')
           .delete()
           .eq('event_id', eventId)
           .eq('user_id', userId);
-        if (delErr) throw delErr;
+        if (error) throw error;
         return 'removed';
-      } else {
-        // RSVP: idempotent add via upsert
-        const { error: upsertErr } = await supabase
-          .from('rsvps')
-          .upsert([{ event_id: eventId, user_id: userId }] as RsvpInsert[], {
-            onConflict: 'user_id,event_id',
-            ignoreDuplicates: true,
-          })
-          .select()
-          .single();
-        if (upsertErr) throw upsertErr;
-        return 'added';
       }
+
+      const { error: upsertErr } = await supabase
+        .from('rsvps')
+        .upsert([{ event_id: eventId, user_id: userId }], {
+          onConflict: 'user_id,event_id',
+          ignoreDuplicates: true,
+        });
+      if (upsertErr) throw upsertErr;
+      return 'added';
     },
 
-    // Optimistic cache update
     onMutate: async ({ eventId, userId }) => {
-      const key = rsvpKeys.list(eventId);
-      await qc.cancelQueries({ queryKey: key });
+      await qc.cancelQueries({ queryKey: KEYS.userEvents });
+      await qc.cancelQueries({ queryKey: KEYS.checkIn });
+      await qc.cancelQueries({ queryKey: KEYS.rsvps(eventId) });
 
-      const prev = qc.getQueryData<RsvpRow[]>(key) ?? [];
-
-      const isRsvped = prev.some((r) => r.user_id === userId);
+      const listSnaps = qc.getQueriesData<UserEventCardRow[]>({ queryKey: KEYS.userEvents });
+      const rsvpKey = KEYS.rsvps(eventId);
+      const prevRsvps = qc.getQueryData<RsvpRow[]>(rsvpKey) ?? [];
+      const isRsvped = prevRsvps.some((r) => r.user_id === userId);
 
       if (isRsvped) {
-        // remove optimistically
         qc.setQueryData<RsvpRow[]>(
-          key,
-          prev.filter((r) => r.user_id !== userId)
+          rsvpKey,
+          prevRsvps.filter((r) => r.user_id !== userId)
+        );
+        // update ONLY userEvents lists
+        qc.setQueriesData<UserEventCardRow[]>({ queryKey: KEYS.userEvents }, (prev) =>
+          (prev ?? []).filter((e) => e.id !== eventId)
         );
       } else {
-        // add a lightweight optimistic row
         const optimistic: RsvpRow = {
           id: `optimistic-${Date.now()}`,
-          created_at: new Date().toISOString(),
-          user_id: userId,
           event_id: eventId,
+          user_id: userId,
+          created_at: new Date().toISOString(),
         };
-        qc.setQueryData<RsvpRow[]>(key, [optimistic, ...prev]);
+        qc.setQueryData<RsvpRow[]>(rsvpKey, [optimistic, ...prevRsvps]);
+
+        // try to add to userEvents from cached event detail
+        const detail = qc.getQueryData<EventRow>(KEYS.eventById(eventId));
+        if (detail) {
+          const status: 'upcoming' | 'past' =
+            new Date(detail.starts_at) >= new Date() ? 'upcoming' : 'past';
+
+          const card: UserEventCardRow = {
+            id: detail.id,
+            title: detail.title,
+            cover_img: detail.cover_img,
+            starts_at: detail.starts_at,
+            created_at: detail.created_at,
+            event_status: status,
+          };
+
+          qc.setQueriesData<UserEventCardRow[]>({ queryKey: KEYS.userEvents }, (prev) => {
+            const arr = prev ?? [];
+            return arr.some((e) => e.id === card.id) ? arr : [card, ...arr];
+          });
+
+          // (Optional) optimistic check-in: if this event is today and sooner than current,
+          // you can set it—but simplest is just to invalidate on settle.
+        }
       }
 
-      return { key, prev };
+      return { listSnaps, rsvpKey, prevRsvps };
     },
 
-    onError: (_err, _vars, ctx) => {
-      if (ctx) qc.setQueryData(ctx.key, ctx.prev); // rollback
+    onError: (_e, _v, ctx) => {
+      ctx?.listSnaps.forEach(([key, prev]) => qc.setQueryData(key, prev));
+      if (ctx) qc.setQueryData(ctx.rsvpKey, ctx.prevRsvps);
     },
 
     onSettled: (_res, _err, { eventId }) => {
-      // ensure cache exactly matches server
-      qc.invalidateQueries({ queryKey: rsvpKeys.list(eventId) });
-      qc.invalidateQueries({ queryKey: ['events', 'eventById', eventId] }); // <-- add this
+      qc.invalidateQueries({ queryKey: KEYS.rsvps(eventId) });
+      qc.invalidateQueries({ queryKey: KEYS.eventById(eventId) });
+      qc.invalidateQueries({ queryKey: KEYS.userEvents });
+      qc.invalidateQueries({ queryKey: KEYS.checkIn }); // <— refetch RPC
     },
   });
 }
 
-type RemoveArgs = {
-  eventId: string;
-  userId: string;
-};
+type RemoveArgs = { eventId: string; userId: string };
+type ListSnap = [key: readonly unknown[], data: UserEventCardRow[] | undefined];
+type Ctx = { listSnaps: ListSnap[]; rsvpKey: ReturnType<typeof KEYS.rsvps>; prevRsvps: RsvpRow[] };
 
 export function useRemoveRsvp() {
   const qc = useQueryClient();
 
-  return useMutation({
-    mutationFn: async ({ eventId, userId }: RemoveArgs): Promise<void> => {
+  return useMutation<void, unknown, RemoveArgs, Ctx>({
+    mutationFn: async ({ eventId, userId }) => {
       const { error } = await supabase
         .from('rsvps')
         .delete()
         .eq('event_id', eventId)
         .eq('user_id', userId);
-
       if (error) throw error;
     },
 
-    // Optimistic update
     onMutate: async ({ eventId, userId }) => {
-      const key = rsvpKeys.list(eventId);
-      await qc.cancelQueries({ queryKey: key });
+      // Pause relevant queries
+      await qc.cancelQueries({ queryKey: KEYS.userEvents });
+      await qc.cancelQueries({ queryKey: KEYS.checkIn });
+      await qc.cancelQueries({ queryKey: KEYS.rsvps(eventId) });
 
-      const prev = qc.getQueryData<RsvpRow[]>(key) ?? [];
+      // Snapshot lists for rollback
+      const listSnaps = qc.getQueriesData<UserEventCardRow[]>({ queryKey: KEYS.userEvents });
 
-      qc.setQueryData<RsvpRow[]>(
-        key,
-        prev.filter((r) => r.user_id !== userId)
+      // Optimistically remove event from ALL userEvents lists
+      qc.setQueriesData<UserEventCardRow[]>({ queryKey: KEYS.userEvents }, (prev) =>
+        (prev ?? []).filter((e) => e.id !== eventId)
       );
 
-      return { key, prev };
+      // Optimistically remove user from RSVPs cache (if present)
+      const rsvpKey = KEYS.rsvps(eventId);
+      const prevRsvps = qc.getQueryData<RsvpRow[]>(rsvpKey) ?? [];
+      qc.setQueryData<RsvpRow[]>(
+        rsvpKey,
+        prevRsvps.filter((r) => r.user_id !== userId)
+      );
+
+      return { listSnaps, rsvpKey, prevRsvps };
     },
 
     onError: (_err, _vars, ctx) => {
-      if (ctx) qc.setQueryData(ctx.key, ctx.prev); // rollback on failure
+      // Rollback lists
+      ctx?.listSnaps.forEach(([key, prev]) => qc.setQueryData(key, prev));
+      // Rollback RSVPs
+      if (ctx) qc.setQueryData(ctx.rsvpKey, ctx.prevRsvps);
     },
 
     onSettled: (_res, _err, { eventId }) => {
-      qc.invalidateQueries({ queryKey: rsvpKeys.list(eventId) });
-      qc.invalidateQueries({ queryKey: ['events', 'eventById', eventId] }); // <-- add this
+      // Sync with server
+      qc.invalidateQueries({ queryKey: KEYS.userEvents });
+      qc.invalidateQueries({ queryKey: KEYS.checkIn });
+      qc.invalidateQueries({ queryKey: KEYS.eventById(eventId) });
+      qc.invalidateQueries({ queryKey: KEYS.rsvps(eventId) });
     },
   });
 }

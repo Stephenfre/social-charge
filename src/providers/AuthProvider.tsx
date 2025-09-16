@@ -2,23 +2,25 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { supabase } from '~/lib/supabase';
 import type { Session } from '@supabase/supabase-js';
+import { UserRow } from '~/types/event.types';
 
 type AuthCtx = {
   session: Session | null;
   userId: string | null;
-  membership_role: string;
+  user: UserRow | null;
   initializing: boolean;
 };
+
 const AuthContext = createContext<AuthCtx>({
   session: null,
   userId: null,
-  membership_role: 'basic',
+  user: null,
   initializing: true,
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [membershipRole, setMembershipRole] = useState<string>('basic');
+  const [user, setUser] = useState<UserRow>();
   const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
@@ -29,14 +31,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (sess?.user?.id) {
         const { data, error } = await supabase
           .from('users')
-          .select('membership')
+          .select('*')
           .eq('id', sess.user.id)
           .single();
         if (!error && data && mounted) {
-          setMembershipRole(data.membership);
+          setUser(data);
         }
-      } else {
-        setMembershipRole('basic');
       }
       setInitializing(false);
     };
@@ -57,10 +57,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => ({
       session,
       userId: session?.user?.id ?? null,
-      membership_role: membershipRole,
+      user: user ?? null,
       initializing,
     }),
-    [session, membershipRole, initializing]
+    [session, user, initializing]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

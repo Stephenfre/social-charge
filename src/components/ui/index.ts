@@ -12,4 +12,5 @@ export { Image } from './image';
 export { Pressable } from './pressable';
 export { Skeleton, SkeletonText } from './skeleton';
 export { Text } from './text';
+export { Badge, BadgeIcon, BadgeText } from './badge';
 export { GluestackUIProvider } from './gluestack-ui-provider';
