@@ -1,12 +1,15 @@
 import { Home, TicketCheck, User } from 'lucide-react-native';
-import { Icon } from '~/components/ui/icon';
+import { AddIcon, Icon } from '~/components/ui/icon';
+import { useAuth } from '~/providers/AuthProvider';
 import {
   EventCheckInScreen,
   HomeScreen,
   ProfileScreen,
+  ReviewCreateEventScreen,
   ViewEventScreen,
   ViewUserEventsScreen,
 } from '~/screens';
+import CreateEventScreen from '~/screens/create-event-screen';
 import { AppTabs, RootStack } from '~/types/navigation.types';
 
 function HomeStackNavigator() {
@@ -52,7 +55,7 @@ function ProfileStackNavigator() {
   );
 }
 
-function EventStackNavigator() {
+function CheckInEventStackNavigator() {
   return (
     <RootStack.Navigator>
       <RootStack.Screen
@@ -66,7 +69,28 @@ function EventStackNavigator() {
   );
 }
 
+function CreateEventStackNavigator() {
+  return (
+    <RootStack.Navigator>
+      <RootStack.Screen
+        name="CreateEvent"
+        component={CreateEventScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <RootStack.Screen
+        name="Review Event"
+        component={ReviewCreateEventScreen}
+        options={{ headerShown: false }}
+      />
+    </RootStack.Navigator>
+  );
+}
+
 export function MainTabNavigator() {
+  const { user } = useAuth();
+
   return (
     <AppTabs.Navigator>
       <AppTabs.Screen
@@ -84,7 +108,7 @@ export function MainTabNavigator() {
       />
       <AppTabs.Screen
         name="Event Check In"
-        component={EventStackNavigator}
+        component={CheckInEventStackNavigator}
         options={{
           headerShown: true,
           headerStyle: { backgroundColor: 'black' },
@@ -98,6 +122,24 @@ export function MainTabNavigator() {
           },
         }}
       />
+      {user?.membership === 'superadmin' || user?.membership === 'admin' ? (
+        <AppTabs.Screen
+          name="Create Event"
+          component={CreateEventStackNavigator}
+          options={{
+            headerShown: true,
+            headerStyle: { backgroundColor: 'black' },
+            headerTintColor: 'white',
+            headerTitleStyle: { color: 'white' },
+            tabBarLabel: () => null,
+            tabBarIcon: () => <Icon as={AddIcon} color="white" size="2xl" />,
+            tabBarStyle: {
+              backgroundColor: '#000',
+              borderTopWidth: 0,
+            },
+          }}
+        />
+      ) : null}
       <AppTabs.Screen
         name="Profile"
         component={ProfileStackNavigator}
