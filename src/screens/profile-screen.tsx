@@ -1,7 +1,8 @@
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import dayjs from 'dayjs';
-import { SafeAreaView, ScrollView } from 'react-native';
+import { ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { EventsList } from '~/components';
 import { Badge, Box, Button, Flex, Image, Pressable, Text } from '~/components/ui';
 import { useStorageImages, useUserEvents, useUserInterests } from '~/hooks';

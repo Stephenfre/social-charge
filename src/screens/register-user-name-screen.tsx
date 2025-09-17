@@ -20,9 +20,6 @@ import { Image as ImageIcon } from 'lucide-react-native';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as ImagePicker from 'expo-image-picker';
 import 'react-native-get-random-values';
-import { v4 as uuid } from 'uuid';
-
-console.log('uuid()', uuid());
 
 interface FormData {
   firstName: string;

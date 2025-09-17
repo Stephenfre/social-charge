@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { SafeAreaView, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { Button, Flex, Pressable, Skeleton, Text } from '~/components/ui';
 import { FontAwesome } from '@expo/vector-icons';
 
@@ -16,6 +16,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '~/types/navigation.types';
 import { supabase } from '~/lib/supabase';
 import { EventCard } from '~/components/EventCard/EventCard';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type ViewEventNav = NativeStackNavigationProp<RootStackParamList, 'ViewEvent'>;
 

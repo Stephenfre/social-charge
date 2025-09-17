@@ -12,6 +12,8 @@ export function RegisterScreen() {
     navigation.navigate('RegisterUserName');
   };
 
+  // TODO: Reset form after signin
+
   return (
     <SafeAreaView className=" h-full bg-background-dark px-4">
       <KeyboardAvoidingView

@@ -3,7 +3,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import dayjs from 'dayjs';
 import { MessagesSquare, TicketX } from 'lucide-react-native';
 import React from 'react';
-import { SafeAreaView, ScrollView } from 'react-native';
+import { ScrollView } from 'react-native';
 import { Map } from '~/components';
 import { Countdown } from '~/components/Countdown/Countdown';
 import { Badge, Box, Button, Flex, Image, Text } from '~/components/ui';
@@ -15,6 +15,7 @@ import { PersonCard } from '~/types/event.types';
 import { RootStackParamList } from '~/types/navigation.types';
 import { cn } from '~/utils/cn';
 import { CancelRsvpButton } from './view-event-screen';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type HomeNav = NativeStackNavigationProp<RootStackParamList, 'HomeIndex'>;
 

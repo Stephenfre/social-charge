@@ -2,12 +2,12 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { supabase } from '~/lib/supabase';
 import type { Session } from '@supabase/supabase-js';
-import { UserRow } from '~/types/event.types';
+import { UsersRow } from '~/types/user.type';
 
 type AuthCtx = {
   session: Session | null;
   userId: string | null;
-  user: UserRow | null;
+  user: UsersRow | null;
   initializing: boolean;
 };
 
@@ -20,7 +20,7 @@ const AuthContext = createContext<AuthCtx>({
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<UserRow>();
+  const [user, setUser] = useState<UsersRow>();
   const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {

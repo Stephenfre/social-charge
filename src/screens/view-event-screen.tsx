@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import { Calendar, Clock, MapPin, MessagesSquare } from 'lucide-react-native';
-import { Alert, SafeAreaView, ScrollView, View } from 'react-native';
+import { Alert, ScrollView, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Badge, Box, Button, Flex, Image, Text } from '~/components/ui';
 import { useEventById, useStorageImages } from '~/hooks';
@@ -12,6 +12,9 @@ import { Spinner } from '~/components/ui/spinner';
 import { EventCard } from '~/components/EventCard/EventCard';
 import React from 'react';
 import { cn } from '~/utils/cn';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+// TODO: WHEN YOU CLICK ALL GO TO A SCREEN WIITH SCROLLABLE DATES AND FILTERS
 
 export function ViewEventScreen() {
   const { params } = useRouteStack<'ViewEvent'>();
@@ -58,7 +61,7 @@ export function ViewEventScreen() {
 
   const isHost = event?.event_hosts?.some((host) => host.user_id === userId);
 
-  const eventStart = dayjs(event?.starts_at);
+  // const eventStart = dayjs(event?.starts_at);
 
   const isEventOver = dayjs().isAfter(event?.ends_at);
 
