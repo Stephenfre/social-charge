@@ -3,17 +3,17 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button, Flex, Image, Input, InputField, Pressable, Text } from '~/components/ui';
 import { Calendar } from 'react-native-calendars';
-import { Platform, ScrollView, TextInput, View, Modal, Alert } from 'react-native';
+import { ScrollView, TextInput, Alert } from 'react-native';
 import { useEffect, useState } from 'react';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { cn } from '~/utils/cn';
-import { ChevronRight, PlusCircle } from 'lucide-react-native';
+
+import { ChevronDown, ChevronRight, PlusCircle } from 'lucide-react-native';
 import { INTEREST_CATEGORIES } from '~/constants/interests';
 import { categoryEmojis, interestEmojis } from '~/utils/const';
-import { useEventCreateStore } from '~/hooks';
+import { useEventCreateStore, useHosts } from '~/hooks';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '~/types/navigation';
+import { MultiModal, TimePickerModal } from '~/components';
 
 const toMinutes12 = (t: string) => {
   // "h:mm AM/PM"
@@ -53,6 +53,7 @@ function combine(dateISO: string, time12: string) {
 const eventSchema = z
   .object({
     name: z.string().min(1, 'Event name is required'),
+    host: z.string().min(1, 'Host is required'),
     description: z
       .string()
       .min(1, 'Description is required')
@@ -95,6 +96,9 @@ export type CreateEventFormValues = z.infer<typeof eventSchema>;
 
 export default function CreateEventScreen() {
   const navigation = useNavigation<NavigationProp<'Review Event'>>();
+  const [showActionsheet, setShowActionsheet] = useState(false);
+
+  const { data: hosts, isLoading: loadingHost } = useHosts();
 
   const {
     control,
@@ -107,6 +111,7 @@ export default function CreateEventScreen() {
     resolver: zodResolver(eventSchema),
     defaultValues: {
       name: '',
+      host: '',
       description: '',
       location: '',
       date: '', // YYYY-MM-DD
@@ -121,6 +126,7 @@ export default function CreateEventScreen() {
 
   const {
     name,
+    host,
     description,
     location,
     date,
@@ -132,6 +138,7 @@ export default function CreateEventScreen() {
     coverImageUri,
     setField,
     setName,
+    setHost,
     setDescription,
     setLocation,
     setDate,
@@ -148,6 +155,7 @@ export default function CreateEventScreen() {
   useEffect(() => {
     reset({
       name,
+      host,
       description,
       location,
       date,
@@ -220,6 +228,7 @@ export default function CreateEventScreen() {
 
       // Update store safely
       setName(values.name?.trim() ?? '');
+      setHost(values.host?.trim() ?? '');
       setDescription(values.description?.trim() ?? '');
       setLocation(values.location?.trim() ?? '');
       setDate(values.date);
@@ -320,7 +329,12 @@ export default function CreateEventScreen() {
               name="startTime" // string 'HH:mm' in your schema
               render={({ field: { value, onChange }, fieldState: { error } }) => (
                 <>
-                  <TimePickerModalField value={value} onChange={onChange} />
+                  <MultiModal
+                    title="Start Time"
+                    modalType="time"
+                    value={value}
+                    onChange={onChange}
+                  />
                   {error && (
                     <Text className="pt-1 text-error-500" bold size="xs">
                       {error.message}
@@ -337,7 +351,7 @@ export default function CreateEventScreen() {
               name="endTime"
               render={({ field: { value, onChange }, fieldState: { error } }) => (
                 <>
-                  <TimePickerModalField value={value} onChange={onChange} />
+                  <MultiModal title="End Time" modalType="time" value={value} onChange={onChange} />
                   {error && (
                     <Text className="pt-1 text-error-500" bold size="xs">
                       {error.message}
@@ -421,7 +435,6 @@ export default function CreateEventScreen() {
               </Text>
             )}
           </Flex>
-
           <Flex>
             <Controller
               control={control}
@@ -466,6 +479,29 @@ export default function CreateEventScreen() {
               </Text>
             )}
           </Flex>
+
+          <Controller
+            control={control}
+            name="host" // this stores the host id
+            render={({ field: { value, onChange } }) => {
+              // value is the host id string (or undefined)
+              const list = hosts ?? [];
+              const user = list.find((h) => h.id === value);
+              const display = user
+                ? `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim()
+                : 'Select Host';
+
+              return (
+                <MultiModal
+                  data={list}
+                  title={display} // show the name in the trigger
+                  modalType="select"
+                  value={value ?? undefined} // keep sending the id to the selector
+                  onChange={onChange} // selector returns id -> stored in form
+                />
+              );
+            }}
+          />
 
           <Flex>
             <Controller
@@ -538,98 +574,6 @@ export default function CreateEventScreen() {
           </Flex>
         </Flex>
       </ScrollView>
-    </Flex>
-  );
-}
-
-const formatTime = (d: Date) => {
-  let hours = d.getHours();
-  const minutes = d.getMinutes();
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  hours = hours % 12;
-  if (hours === 0) hours = 12; // midnight or noon -> 12
-  const mm = String(minutes).padStart(2, '0');
-  return `${hours}:${mm} ${ampm}`;
-};
-
-const toDate = (t?: string) => {
-  const base = new Date();
-  if (!t) return base;
-
-  // handle "hh:mm AM/PM"
-  const [time, meridian] = t.split(' ');
-  if (time) {
-    const [hh, mm] = time.split(':').map(Number);
-    let hours = hh;
-    if (meridian?.toUpperCase() === 'PM' && hh < 12) hours += 12;
-    if (meridian?.toUpperCase() === 'AM' && hh === 12) hours = 0;
-    base.setHours(hours, mm || 0, 0, 0);
-  }
-  return base;
-};
-export function TimePickerModalField({
-  value,
-  onChange,
-}: {
-  value?: string;
-  onChange: (v: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [temp, setTemp] = useState<Date>(toDate(value));
-
-  const openModal = () => {
-    setOpen(true);
-  };
-  const closeModal = () => setOpen(false);
-  const save = () => {
-    onChange(formatTime(temp));
-    closeModal();
-  };
-
-  return (
-    <Flex className="w-52">
-      <Pressable onPress={openModal}>
-        <Flex className="h-14 w-full justify-center rounded-xl bg-background-900 px-4">
-          <Text className={cn(!value ? 'text-background-700' : 'text-white', 'text-base')}>
-            {value || 'Pick start time'}
-          </Text>
-        </Flex>
-      </Pressable>
-
-      <Modal visible={open} transparent animationType="fade" onRequestClose={closeModal}>
-        {/* Backdrop */}
-        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }} onPress={closeModal} />
-
-        {/* Sheet */}
-        <View className="absolute bottom-0 left-0 right-0 rounded-t-3xl bg-background-dark p-4">
-          {/* Inline picker inside modal */}
-          <DateTimePicker
-            mode="time"
-            value={temp}
-            is24Hour={false}
-            minuteInterval={5}
-            display={Platform.OS === 'android' ? 'spinner' : 'spinner'}
-            onChange={(_, d) => {
-              console.log('d', d);
-              if (d) setTemp(d);
-            }}
-            textColor="white"
-          />
-
-          {/* Actions */}
-
-          <Pressable onPress={save} style={{ paddingVertical: 10, paddingHorizontal: 14 }}>
-            <Text weight="600" size="xl" className="text-center text-primary">
-              Save
-            </Text>
-          </Pressable>
-          <Pressable onPress={closeModal} style={{ paddingVertical: 10, paddingHorizontal: 14 }}>
-            <Text weight="600" size="xl" className="text-center text-white">
-              Cancel
-            </Text>
-          </Pressable>
-        </View>
-      </Modal>
     </Flex>
   );
 }

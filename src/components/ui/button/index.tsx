@@ -53,6 +53,7 @@ const buttonStyle = tva({
       outline:
         'bg-transparent border border-white data-[hover=true]:bg-background-50 data-[active=true]:bg-transparent',
       solid: 'bg-secondary-700  data-[active=true]:bg-secondary-700',
+      primary: 'bg-primary-700  data-[active=true]:bg-secondary-700',
       muted: 'bg-gray-400',
       tag: 'bg-primary-800',
     },
@@ -62,7 +63,7 @@ const buttonStyle = tva({
       sm: 'px-4 h-9',
       md: 'px-5 h-10',
       lg: 'px-6 h-11',
-      xl: 'px-7 h-12',
+      xl: 'px-7 h-14',
     },
   },
   compoundVariants: [
