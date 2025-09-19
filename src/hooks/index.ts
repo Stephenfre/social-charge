@@ -1,4 +1,4 @@
-export { useUserInterests } from './useUser';
+export { useHosts, useUserInterests } from './useUser';
 export {
   useUserEvents,
   useEventById,

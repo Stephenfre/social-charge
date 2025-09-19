@@ -1,6 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '~/lib/supabase';
-import { UsersInterests } from '~/types/user.type';
+import { UsersInterests, UsersRow } from '~/types/user.type';
+
+export function useHosts() {
+  return useQuery<UsersRow[]>({
+    queryKey: ['user', 'host'],
+    initialData: [],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('users').select('*').eq('role', 'host');
+      if (error) throw error;
+      return data as UsersRow[];
+    },
+  });
+}
 
 export function useUserInterests(userId: string) {
   return useQuery<UsersInterests[]>({

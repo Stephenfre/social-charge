@@ -41,7 +41,7 @@ function ProfileStackNavigator() {
         options={{
           headerShown: true,
           headerBackButtonDisplayMode: 'minimal',
-          headerStyle: { backgroundColor: 'black' },
+          headerStyle: { backgroundColor: '#0F1012' },
           headerTintColor: 'white',
           headerTitleStyle: { color: 'white' },
         }}
@@ -76,13 +76,22 @@ function CreateEventStackNavigator() {
         name="CreateEvent"
         component={CreateEventScreen}
         options={{
-          headerShown: false,
+          headerShown: true,
+          headerStyle: { backgroundColor: '#0F1012' },
+          headerTintColor: 'white',
+          headerTitleStyle: { color: 'white' },
         }}
       />
       <RootStack.Screen
         name="Review Event"
         component={ReviewCreateEventScreen}
-        options={{ headerShown: false }}
+        options={{
+          headerShown: true,
+          headerBackButtonDisplayMode: 'minimal',
+          headerStyle: { backgroundColor: '#0F1012' },
+          headerTintColor: 'white',
+          headerTitleStyle: { color: 'white' },
+        }}
       />
     </RootStack.Navigator>
   );
@@ -101,7 +110,7 @@ export function MainTabNavigator() {
           tabBarLabel: () => null,
           tabBarIcon: () => <Icon as={Home} color="white" size="2xl" />,
           tabBarStyle: {
-            backgroundColor: '#000',
+            backgroundColor: '#0F1012',
             borderTopWidth: 0,
           },
         }}
@@ -117,7 +126,7 @@ export function MainTabNavigator() {
           tabBarLabel: () => null,
           tabBarIcon: () => <Icon as={TicketCheck} color="white" size="2xl" />,
           tabBarStyle: {
-            backgroundColor: '#000',
+            backgroundColor: '#0F1012',
             borderTopWidth: 0,
           },
         }}
@@ -127,14 +136,12 @@ export function MainTabNavigator() {
           name="Create Event"
           component={CreateEventStackNavigator}
           options={{
-            headerShown: true,
-            headerStyle: { backgroundColor: 'black' },
-            headerTintColor: 'white',
-            headerTitleStyle: { color: 'white' },
+            headerShown: false,
+
             tabBarLabel: () => null,
             tabBarIcon: () => <Icon as={AddIcon} color="white" size="2xl" />,
             tabBarStyle: {
-              backgroundColor: '#000',
+              backgroundColor: '#0F1012',
               borderTopWidth: 0,
             },
           }}
@@ -148,7 +155,7 @@ export function MainTabNavigator() {
           tabBarLabel: () => null,
           tabBarIcon: () => <Icon as={User} color="white" size="2xl" />,
           tabBarStyle: {
-            backgroundColor: '#000',
+            backgroundColor: '#0F1012',
             borderTopWidth: 0,
           },
         }}

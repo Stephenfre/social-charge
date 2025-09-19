@@ -49,6 +49,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "check_ins_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_events"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "check_ins_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -98,6 +105,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "event_attendance_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_events"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "event_attendance_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -139,6 +153,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_for_current_user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_hosts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_events"
             referencedColumns: ["id"]
           },
           {
@@ -188,6 +209,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_for_current_user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_messages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_events"
             referencedColumns: ["id"]
           },
           {
@@ -290,6 +318,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "favorited_events_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_events"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "favorited_events_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -342,6 +377,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_for_current_user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "host_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_events"
             referencedColumns: ["id"]
           },
           {
@@ -437,6 +479,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_events"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "reviews_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -484,6 +533,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_for_current_user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_events"
             referencedColumns: ["id"]
           },
           {
@@ -570,7 +626,7 @@ export type Database = {
           membership: Database["public"]["Enums"]["membership_role"]
           phone_number: string | null
           profile_picture: string | null
-          role: string | null
+          role: Database["public"]["Enums"]["user_role"]
           state: string | null
           token_count: number
         }
@@ -587,7 +643,7 @@ export type Database = {
           membership?: Database["public"]["Enums"]["membership_role"]
           phone_number?: string | null
           profile_picture?: string | null
-          role?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
           state?: string | null
           token_count?: number
         }
@@ -604,7 +660,7 @@ export type Database = {
           membership?: Database["public"]["Enums"]["membership_role"]
           phone_number?: string | null
           profile_picture?: string | null
-          role?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
           state?: string | null
           token_count?: number
         }
@@ -651,14 +707,20 @@ export type Database = {
           event_status: string | null
           id: string | null
           location: string | null
-          related_at: string | null
-          rn: number | null
-          source: string | null
           starts_at: string | null
           title: string | null
           token_cost: number | null
+          user_id: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
@@ -691,6 +753,7 @@ export type Database = {
         | "Tech"
         | "Pets"
       membership_role: "superadmin" | "admin" | "basic" | "plus" | "premium"
+      user_role: "user" | "host" | "admin" | "super_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -842,6 +905,7 @@ export const Constants = {
         "Pets",
       ],
       membership_role: ["superadmin", "admin", "basic", "plus", "premium"],
+      user_role: ["user", "host", "admin", "super_admin"],
     },
   },
 } as const

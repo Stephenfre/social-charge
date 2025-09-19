@@ -27,6 +27,7 @@ const combineDateTimeToISO = (dateISO: string, time12h: string) => {
 
 type EventDraft = {
   name: string;
+  host: string;
   description: string;
   location: string;
   date: string; // 'YYYY-MM-DD'
@@ -41,6 +42,7 @@ type EventDraft = {
 type EventActions = {
   setField: <K extends keyof EventDraft>(key: K, value: EventDraft[K]) => void;
   setName: (v: string) => void;
+  setHost: (v: string) => void;
   setDescription: (v: string) => void;
   setLocation: (v: string) => void;
   setDate: (v: string) => void;
@@ -56,6 +58,8 @@ type EventActions = {
   // helpers for submission:
   buildPayload: () => {
     name: string;
+    host: string;
+
     description: string;
     location: string;
     capacity: string;
@@ -72,6 +76,7 @@ type EventActions = {
 
 const initialState: EventDraft = {
   name: '',
+  host: '',
   description: '',
   location: '',
   date: '',
@@ -90,6 +95,7 @@ export const useEventCreateStore = create<EventDraft & EventActions>()(
 
       setField: (key, value) => set({ [key]: value } as any),
       setName: (v) => set({ name: v }),
+      setHost: (v) => set({ host: v }),
       setDescription: (v) => set({ description: v }),
       setLocation: (v) => set({ location: v }),
       setDate: (v) => set({ date: v }),
@@ -122,6 +128,7 @@ export const useEventCreateStore = create<EventDraft & EventActions>()(
 
         return {
           name: s.name.trim(),
+          host: s.host.trim(),
           description: s.description.trim(),
           location: s.location.trim(),
           capacity: s.capacity,
