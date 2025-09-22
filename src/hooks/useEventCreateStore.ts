@@ -25,11 +25,20 @@ const combineDateTimeToISO = (dateISO: string, time12h: string) => {
   return combined.toISOString();
 };
 
+type location = {
+  locationText: string;
+  formattedAddress: string;
+  provider: string;
+  placeid: string;
+};
+
 type EventDraft = {
-  name: string;
-  host: string;
+  title: string;
+  hostId: string;
+  hostName: string;
+  ageLimit: string;
   description: string;
-  location: string;
+  location: location | null;
   date: string; // 'YYYY-MM-DD'
   startTime: string; // 'h:mm AM/PM'
   endTime: string; // 'h:mm AM/PM'
@@ -41,10 +50,12 @@ type EventDraft = {
 
 type EventActions = {
   setField: <K extends keyof EventDraft>(key: K, value: EventDraft[K]) => void;
-  setName: (v: string) => void;
-  setHost: (v: string) => void;
+  setTitle: (v: string) => void;
+  setHostId: (v: string) => void;
+  setHostName: (v: string) => void;
+  setAgeLimit: (v: string) => void;
   setDescription: (v: string) => void;
-  setLocation: (v: string) => void;
+  setLocation: (v: location) => void;
   setDate: (v: string) => void;
   setStartTime: (v: string) => void;
   setEndTime: (v: string) => void;
@@ -57,11 +68,12 @@ type EventActions = {
 
   // helpers for submission:
   buildPayload: () => {
-    name: string;
-    host: string;
-
+    title: string;
+    hostId: string;
+    hostName: string;
+    ageLimit: string;
     description: string;
-    location: string;
+    location: location | null;
     capacity: string;
     creditCost: string;
     startAtISO?: string;
@@ -75,10 +87,12 @@ type EventActions = {
 };
 
 const initialState: EventDraft = {
-  name: '',
-  host: '',
+  title: '',
+  hostId: '',
+  hostName: '',
+  ageLimit: '',
   description: '',
-  location: '',
+  location: null,
   date: '',
   startTime: '',
   endTime: '',
@@ -94,8 +108,10 @@ export const useEventCreateStore = create<EventDraft & EventActions>()(
       ...initialState,
 
       setField: (key, value) => set({ [key]: value } as any),
-      setName: (v) => set({ name: v }),
-      setHost: (v) => set({ host: v }),
+      setTitle: (v) => set({ title: v }),
+      setHostId: (v) => set({ hostId: v }),
+      setHostName: (v) => set({ hostName: v }),
+      setAgeLimit: (v) => set({ ageLimit: v }),
       setDescription: (v) => set({ description: v }),
       setLocation: (v) => set({ location: v }),
       setDate: (v) => set({ date: v }),
@@ -127,10 +143,12 @@ export const useEventCreateStore = create<EventDraft & EventActions>()(
         const endAtISO = s.date && s.endTime ? combineDateTimeToISO(s.date, s.endTime) : undefined;
 
         return {
-          name: s.name.trim(),
-          host: s.host.trim(),
+          title: s.title.trim(),
+          hostId: s.hostId.trim(),
+          hostName: s.hostName.trim(),
+          ageLimit: s.ageLimit.trim(),
           description: s.description.trim(),
-          location: s.location.trim(),
+          location: s.location,
           capacity: s.capacity,
           creditCost: s.creditCost,
           startAtISO,

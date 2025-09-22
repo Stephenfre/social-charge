@@ -72,7 +72,6 @@ export function TimePickerModal({
             minuteInterval={5}
             display={Platform.OS === 'android' ? 'spinner' : 'spinner'}
             onChange={(_, d) => {
-              console.log('d', d);
               if (d) setTemp(d);
             }}
             textColor="white"

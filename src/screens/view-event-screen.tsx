@@ -272,7 +272,7 @@ export function CancelRsvpButton({
   className,
 }: {
   eventId: string;
-  userId: string;
+  userId: string | undefined;
   className?: string;
 }) {
   const removeRsvp = useRemoveRsvp();
@@ -280,6 +280,7 @@ export function CancelRsvpButton({
   const label = removeRsvp.isPending ? <Spinner /> : 'Cancel Rsvp';
 
   const onCancelSubmit = () => {
+    if (!userId) return;
     removeRsvp.mutate(
       { eventId, userId },
       {

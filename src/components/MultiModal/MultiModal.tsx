@@ -13,15 +13,44 @@ type TimeModalProps = {
   data?: never; // not used
 };
 
-type SelectModalProps = {
+type HostSelectModalProps = {
   title: string;
-  modalType: 'select';
-  value?: string | undefined; // whichever you prefer to store
+  modalType: 'host';
+  value?: string; // whichever you prefer to store
   onChange: (v: string) => void;
   data: UsersRow[]; // required for select
 };
 
-type MultiModalProps = TimeModalProps | SelectModalProps;
+type AgeLimitSelectModalProps = {
+  title: string;
+  modalType: 'age';
+  value?: string; // whichever you prefer to store
+  onChange: (v: string) => void;
+  data: string[]; // required for select
+};
+
+interface TimePickerProps {
+  temp: Date;
+  setTemp: (date: Date) => void;
+  onSave: () => void;
+  onClose: () => void;
+}
+
+interface HostSelectProps {
+  defaultValue?: string;
+  value: string;
+  onChange: (val: string) => void;
+  data?: UsersRow[];
+}
+
+interface AgeLimitSelectProps {
+  defaultValue?: string;
+  value: string;
+  onChange: (val: string) => void;
+  data?: string[];
+}
+
+type MultiModalProps = TimeModalProps | HostSelectModalProps | AgeLimitSelectModalProps;
 
 const formatTime = (d: Date) => {
   let hours = d.getHours();
@@ -49,12 +78,6 @@ const toDate = (t?: string) => {
   return base;
 };
 
-function fullName(u?: UsersRow | string): string | undefined {
-  if (!u) return undefined;
-  if (typeof u === 'string') return u;
-  return [u.first_name ?? '', u.last_name ?? ''].join(' ').trim() || undefined;
-}
-
 export function MultiModal({ title, modalType, value, onChange, data }: MultiModalProps) {
   const [open, setOpen] = useState(false);
 
@@ -62,11 +85,10 @@ export function MultiModal({ title, modalType, value, onChange, data }: MultiMod
   const closeModal = () => setOpen(false);
 
   if (modalType === 'time') {
-    // ✅ value is string here
     const [temp, setTemp] = useState<Date>(() => toDate(value));
 
     const saveTimeOnPress = () => {
-      onChange(formatTime(temp)); // onChange expects string
+      onChange(formatTime(temp));
       closeModal();
     };
 
@@ -95,8 +117,39 @@ export function MultiModal({ title, modalType, value, onChange, data }: MultiMod
     );
   }
 
+  if (modalType === 'age') {
+    const onSaveAgeLimit = (age: string) => {
+      onChange(age);
+      closeModal();
+    };
+
+    return (
+      <Flex className="w-full">
+        <Pressable onPress={openModal}>
+          <Flex className="h-14 w-full justify-center rounded-xl bg-background-900 px-4">
+            <Text className={cn(!value ? 'text-background-700' : 'text-white', 'text-base')}>
+              {value || title}
+            </Text>
+          </Flex>
+        </Pressable>
+
+        <Modal visible={open} transparent animationType="fade" onRequestClose={closeModal}>
+          <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }} onPress={closeModal} />
+          <View className="absolute bottom-0 left-0 right-0 h-1/3 rounded-t-3xl bg-background-dark p-4">
+            <AgeLimitSelect data={data ?? []} value={value ?? ''} onChange={onSaveAgeLimit} />
+          </View>
+        </Modal>
+      </Flex>
+    );
+  }
+
+  const onSaveHost = (hostId: string) => {
+    onChange(hostId);
+    setOpen(false);
+  };
+
   return (
-    <Flex className="w-52">
+    <Flex className="w-full">
       <Pressable onPress={() => setOpen(true)}>
         <Flex className="h-14 w-full justify-center rounded-xl bg-background-900 px-4">
           <Text className={cn(!title ? 'text-background-700' : 'text-white', 'text-base')}>
@@ -110,24 +163,17 @@ export function MultiModal({ title, modalType, value, onChange, data }: MultiMod
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }}
           onPress={() => setOpen(false)}
         />
-        <View className="absolute bottom-0 left-0 right-0 rounded-t-3xl bg-background-dark p-4">
-          <HostSelect data={data ?? []} value={value ?? ''} onChange={onChange} />
+        <View className="absolute bottom-0 left-0 right-0  h-1/3 rounded-t-3xl bg-background-dark p-4">
+          <HostSelect data={data ?? []} value={value ?? ''} onChange={onSaveHost} />
         </View>
       </Modal>
     </Flex>
   );
 }
-interface TimePickerProps {
-  temp: Date;
-  setTemp: (date: Date) => void;
-  onSave: () => void;
-  onClose: () => void;
-}
 
 function TimePicker({ temp, setTemp, onSave, onClose }: TimePickerProps) {
   return (
     <>
-      {/* Inline picker inside modal */}
       <DateTimePicker
         mode="time"
         value={temp}
@@ -153,13 +199,8 @@ function TimePicker({ temp, setTemp, onSave, onClose }: TimePickerProps) {
     </>
   );
 }
-interface HostSelectProps {
-  defaultValue?: string;
-  value: string;
-  onChange: (val: string) => void; // better signature
-  data?: UsersRow[]; // 👈 allow undefined
-}
-function HostSelect({ defaultValue, value, onChange, data }: HostSelectProps) {
+
+function HostSelect({ value, onChange, data }: HostSelectProps) {
   return (
     <View>
       <FlatList
@@ -169,8 +210,35 @@ function HostSelect({ defaultValue, value, onChange, data }: HostSelectProps) {
           const selected = host.id === value;
           return (
             <Pressable onPress={() => onChange(host.id)} className="px-4">
-              <Text className={cn(selected ? 'text-red' : 'text-white', 'py-2')}>
+              <Text
+                size="lg"
+                bold={selected ? true : false}
+                className={cn(selected ? 'text-primary' : 'text-white', 'py-2')}>
                 {(host.first_name ?? '').trim()} {(host.last_name ?? '').trim()}
+              </Text>
+            </Pressable>
+          );
+        }}
+      />
+    </View>
+  );
+}
+
+function AgeLimitSelect({ value, onChange, data }: AgeLimitSelectProps) {
+  return (
+    <View>
+      <FlatList
+        data={data}
+        keyExtractor={(age) => age}
+        renderItem={({ item }) => {
+          const selected = item === value;
+          return (
+            <Pressable onPress={() => onChange(item)} className="px-4">
+              <Text
+                size="lg"
+                bold={selected ? true : false}
+                className={cn(selected ? 'text-primary' : 'text-white', 'py-2')}>
+                {item}
               </Text>
             </Pressable>
           );

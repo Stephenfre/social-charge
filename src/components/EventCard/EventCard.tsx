@@ -1,8 +1,9 @@
 import { Calendar, Heart, MapPin, View } from 'lucide-react-native';
 import { Button, ButtonText, Flex, Image, Pressable, Text } from '../ui';
-import { EventRow, EventWithJoins } from '~/types/event.types';
+import { EventRow, EventWithJoins, PersonCard } from '~/types/event.types';
 import dayjs from 'dayjs';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useStorageImages } from '~/hooks';
 
 interface EventCardProps {
   event: EventRow | EventWithJoins;
@@ -44,6 +45,16 @@ export function EventCard({
   imageSize,
   className,
 }: EventCardProps) {
+  const { data } = useStorageImages({
+    bucket: 'event_cover',
+    paths: [event?.cover_img], // stored in users table
+  });
+
+  const src =
+    Array.isArray(data) && data[0]
+      ? { uri: data[0] as string } // never null ✅
+      : '';
+
   return (
     <Flex className="relative">
       {featured && (
@@ -58,15 +69,7 @@ export function EventCard({
       )}
 
       <Pressable onPress={onPress} className={className}>
-        <Image
-          source={{
-            uri: event?.cover_img ?? 'https://picsum.photos/800/400', // fallback
-          }}
-          size={imageSize}
-          overlay={overlay}
-          rounded={rounded}
-          alt="image"
-        />
+        <Image source={src} size={imageSize} overlay={overlay} rounded={rounded} alt="image" />
         <LinearGradient
           colors={['transparent', '#0F1012']} // transparent top → dark bottom
           style={{
@@ -106,7 +109,7 @@ export function EventCard({
               <Flex direction="row" align="center" gap={1}>
                 <MapPin color={'white'} size={14} />
                 <Text size="lg" className="text-white">
-                  {event?.location}
+                  {event?.location_text}
                 </Text>
               </Flex>
             )}

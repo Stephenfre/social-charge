@@ -37,21 +37,20 @@ const buttonStyle = tva({
   base: 'group/button rounded bg-secondary-700 flex-row items-center justify-center data-[focus-visible=true]:web:outline-none data-[focus-visible=true]:web:ring-2 data-[disabled=true]:opacity-40 gap-2',
   variants: {
     action: {
-      primary:
-        'rounded-xl bg-primary-400 data-[hover=true]:bg-primary-600 data-[active=true]:bg-primary-400 border-black data-[hover=true]:border-black data-[active=true]:border-black data-[focus-visible=true]:web:ring-indicator-info',
-      secondary:
-        'bg-secondary-500 border-secondary-300 data-[hover=true]:bg-secondary-600 data-[hover=true]:border-secondary-400 data-[active=true]:bg-secondary-700 data-[active=true]:border-secondary-700 data-[focus-visible=true]:web:ring-indicator-info',
-      positive:
-        'bg-success-500 border-success-300 data-[hover=true]:bg-success-600 data-[hover=true]:border-success-400 data-[active=true]:bg-success-700 data-[active=true]:border-success-500 data-[focus-visible=true]:web:ring-indicator-info',
-      negative:
-        'bg-error-500 border-error-300 data-[hover=true]:bg-error-600 data-[hover=true]:border-error-400 data-[active=true]:bg-error-700 data-[active=true]:border-error-500 data-[focus-visible=true]:web:ring-indicator-info',
-      default:
-        'bg-primary-200 data-[hover=true]:bg-primary-300 data-[active=true]:bg-primary-400 border-primary-300 data-[hover=true]:border-primary-400 data-[active=true]:border-primary-500 data-[focus-visible=true]:web:ring-indicator-info',
+      // primary:
+      //   'rounded-xl bg-primary-400 data-[hover=true]:bg-primary-600 data-[active=true]:bg-primary-400 border-black data-[hover=true]:border-black data-[active=true]:border-black data-[focus-visible=true]:web:ring-indicator-info',
+      // secondary:
+      //   'bg-secondary-500 border-secondary-300 data-[hover=true]:bg-secondary-600 data-[hover=true]:border-secondary-400 data-[active=true]:bg-secondary-700 data-[active=true]:border-secondary-700 data-[focus-visible=true]:web:ring-indicator-info',
+      // positive:
+      //   'bg-success-500 border-success-300 data-[hover=true]:bg-success-600 data-[hover=true]:border-success-400 data-[active=true]:bg-success-700 data-[active=true]:border-success-500 data-[focus-visible=true]:web:ring-indicator-info',
+      // negative:
+      //   'bg-error-500 border-error-300 data-[hover=true]:bg-error-600 data-[hover=true]:border-error-400 data-[active=true]:bg-error-700 data-[active=true]:border-error-500 data-[focus-visible=true]:web:ring-indicator-info',
+      // default:
+      //   'bg-primary-200 data-[hover=true]:bg-primary-300 data-[active=true]:bg-primary-400 border-primary-300 data-[hover=true]:border-primary-400 data-[active=true]:border-primary-500 data-[focus-visible=true]:web:ring-indicator-info',
     },
     variant: {
       link: 'px-0',
-      outline:
-        'bg-transparent border border-white data-[hover=true]:bg-background-50 data-[active=true]:bg-transparent',
+      outline: 'bg-transparent border border-white ',
       solid: 'bg-secondary-700  data-[active=true]:bg-secondary-700',
       primary: 'bg-primary-700  data-[active=true]:bg-secondary-700',
       muted: 'bg-gray-400',
@@ -68,46 +67,46 @@ const buttonStyle = tva({
   },
   compoundVariants: [
     {
-      action: 'primary',
+      // action: 'primary',
       variant: 'link',
       class:
         'px-0 bg-transparent data-[hover=true]:bg-transparent data-[active=true]:bg-transparent',
     },
     {
-      action: 'secondary',
+      // action: 'secondary',
       variant: 'link',
       class:
         'px-0 bg-transparent data-[hover=true]:bg-transparent data-[active=true]:bg-transparent',
     },
     {
-      action: 'positive',
+      // action: 'positive',
       variant: 'link',
       class:
         'px-0 bg-transparent data-[hover=true]:bg-transparent data-[active=true]:bg-transparent',
     },
     {
-      action: 'negative',
+      // action: 'negative',
       variant: 'link',
       class:
         'px-0 bg-transparent data-[hover=true]:bg-transparent data-[active=true]:bg-transparent',
     },
     {
-      action: 'primary',
+      // action: 'primary',
       variant: 'outline',
       class: 'bg-transparent data-[hover=true]:bg-background-50 data-[active=true]:bg-transparent',
     },
     {
-      action: 'secondary',
+      // action: 'secondary',
       variant: 'outline',
       class: 'bg-transparent data-[hover=true]:bg-background-50 data-[active=true]:bg-transparent',
     },
     {
-      action: 'positive',
+      // action: 'positive',
       variant: 'outline',
       class: 'bg-transparent data-[hover=true]:bg-background-50 data-[active=true]:bg-transparent',
     },
     {
-      action: 'negative',
+      // action: 'negative',
       variant: 'outline',
       class: 'bg-transparent data-[hover=true]:bg-background-50 data-[active=true]:bg-transparent',
     },
@@ -118,14 +117,14 @@ const buttonTextStyle = tva({
   base: 'text-typography-0 font-semibold text-black web:select-none',
   parentVariants: {
     action: {
-      primary:
-        'text-primary-600 data-[hover=true]:text-primary-600 data-[active=true]:text-primary-700',
-      secondary:
-        'text-typography-500 data-[hover=true]:text-typography-600 data-[active=true]:text-typography-700',
-      positive:
-        'text-success-600 data-[hover=true]:text-success-600 data-[active=true]:text-success-700',
-      negative: 'text-error-600 data-[hover=true]:text-error-600 data-[active=true]:text-error-700',
-      default: 'text-white data-[hover=true]:text-white data-[active=true]:text-white',
+      // primary:
+      //   'text-primary-600 data-[hover=true]:text-primary-600 data-[active=true]:text-primary-700',
+      // secondary:
+      //   'text-typography-500 data-[hover=true]:text-typography-600 data-[active=true]:text-typography-700',
+      // positive:
+      //   'text-success-600 data-[hover=true]:text-success-600 data-[active=true]:text-success-700',
+      // negative: 'text-error-600 data-[hover=true]:text-error-600 data-[active=true]:text-error-700',
+      // default: 'text-white data-[hover=true]:text-white data-[active=true]:text-white',
     },
     variant: {
       link: '',
@@ -295,7 +294,12 @@ const Button = React.forwardRef<React.ComponentRef<typeof UIButton>, IButtonProp
     <UIButton
       ref={ref}
       {...props}
-      className={buttonStyle({ variant, size, action, class: className })}
+      className={buttonStyle({
+        variant,
+        size,
+        // action,
+        class: className,
+      })}
       context={{ variant, size, action }}
     />
   );
