@@ -74,7 +74,6 @@ export function useSignUp() {
         if (profileImageUri) {
           try {
             const imageResult = await uploadProfileImage(userId, profileImageUri);
-            console.log(imageResult);
             const { error: picErr } = await supabase
               .from('users')
               .update({ profile_picture: imageResult.path })

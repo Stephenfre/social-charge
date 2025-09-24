@@ -10,3 +10,4 @@ export { ProfileScreen } from './profile-screen';
 export { EventCheckInScreen } from './event-check-in-screen';
 export { ViewEventScreen } from './view-event-screen';
 export { ViewUserEventsScreen } from './view-user-events-screen';
+export { ReviewCreateEventScreen } from './review-create-event-screen';

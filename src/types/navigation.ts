@@ -9,6 +9,7 @@ export type RootStackParamList = {
   Interest: undefined;
   SignIn: undefined;
   Main: undefined;
+  'Review Event': undefined;
 };
 
 export type NavigationProp<T extends keyof RootStackParamList> = NativeStackNavigationProp<

@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { SafeAreaView, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { Button, Flex, Pressable, Skeleton, Text } from '~/components/ui';
 import { FontAwesome } from '@expo/vector-icons';
 
@@ -7,6 +7,7 @@ import { useAuth } from '~/providers/AuthProvider';
 import {
   useForYouEvents,
   useLowTokenEvents,
+  useThisWeekendEvents,
   // useThisWeekendEvents,
   useTrendingEvents,
   useUpcomingEvents,
@@ -16,6 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '~/types/navigation.types';
 import { supabase } from '~/lib/supabase';
 import { EventCard } from '~/components/EventCard/EventCard';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type ViewEventNav = NativeStackNavigationProp<RootStackParamList, 'ViewEvent'>;
 
@@ -27,8 +29,8 @@ export function HomeScreen() {
   const { data: forYouEvents = [], isLoading: forYouEventsLoading } = useForYouEvents(userId);
   const { data: upcomingEvents = [], isLoading: upcomingEventsLoading } = useUpcomingEvents();
   const { data: lowTokenEvents = [], isLoading: lowTokenEventsLoading } = useLowTokenEvents();
-  // const { data: thisWeekendEvents = [], isLoading: thisWeekendEventsLoading } =
-  //   useThisWeekendEvents();
+  const { data: thisWeekendEvents = [], isLoading: thisWeekendEventsLoading } =
+    useThisWeekendEvents();
   const { data: trendingEvents = [], isLoading: trendingEventsLoading } = useTrendingEvents();
 
   function splitIntoRows<T>(arr: T[], numRows: number): T[][] {
@@ -63,8 +65,8 @@ export function HomeScreen() {
               <Flex>{/* <Skeleton className="h-64 w-full" /> */}</Flex>
             ) : (
               <EventCard
-                onPress={() => handlePressNavigateToViewEvent(upcomingEvents[7]?.id)}
-                event={upcomingEvents[7]}
+                onPress={() => handlePressNavigateToViewEvent(upcomingEvents[0]?.id)}
+                event={upcomingEvents[0]}
                 featured
                 imageSize="cover"
               />
@@ -73,7 +75,7 @@ export function HomeScreen() {
 
           {/* fix to remove ongoing events */}
 
-          {/* <Flex gap={4}>
+          <Flex gap={4}>
             <Flex direction="row" justify="space-between" align="center" className="mx-4">
               <Text size="xl" bold>
                 This Weekend
@@ -94,7 +96,7 @@ export function HomeScreen() {
                   {Array.from({ length: 5 }).map((_, i) => {
                     return (
                       <Flex key={i} className="mr-2 w-96">
-                        <Skeleton className="h-64 w-full" />
+                        {/* <Skeleton className="h-64 w-full" /> */}
                       </Flex>
                     );
                   })}
@@ -118,7 +120,7 @@ export function HomeScreen() {
                 </>
               )}
             </ScrollView>
-          </Flex> */}
+          </Flex>
           <Flex gap={4}>
             <Flex direction="row" justify="space-between" align="center" className="mx-4">
               <Text size="xl" bold>
@@ -179,7 +181,7 @@ export function HomeScreen() {
                               </Text>
                               <Text size="sm" className="text-gray-500">
                                 {' '}
-                                | {event?.location}
+                                | {event?.location_text}
                               </Text>
                             </Flex>
                           </Flex>
@@ -265,7 +267,7 @@ export function HomeScreen() {
                                   </Text>
                                   <Text size="sm" className="text-gray-500">
                                     {' '}
-                                    | Venue
+                                    {event?.location_text}
                                   </Text>
                                 </Flex>
                               </Flex>
@@ -406,8 +408,7 @@ export function HomeScreen() {
                                   {dayjs(event?.starts_at).format('ddd MM/DD')}
                                 </Text>
                                 <Text size="sm" className="text-gray-500">
-                                  {' '}
-                                  | Venue
+                                  | {event?.location_text}
                                 </Text>
                               </Flex>
                             </Flex>

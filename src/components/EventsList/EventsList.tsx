@@ -5,6 +5,7 @@ import { RootStackParamList } from '~/types/navigation.types';
 import { UserEventCardRow } from '~/types/event.types';
 import { Badge, Flex, Image, Pressable, Text } from '../ui';
 import { useNavigation } from '@react-navigation/native';
+import { useStorageImages } from '~/hooks';
 
 type EventsListProp = {
   events: UserEventCardRow[];
@@ -21,13 +22,22 @@ export function EventsList({ events, loading }: EventsListProp) {
     navigation.navigate('ViewEvent', { eventId });
   };
 
+  console.log(events);
+
+  const imagePaths = events.map((event) => event.cover_img);
+
+  const { data: eventImage } = useStorageImages({
+    bucket: 'event_cover',
+    paths: imagePaths, // stored in users table
+  });
+
   if (loading) {
     <Text>Loading</Text>;
   }
 
   return (
     <Flex gap={8}>
-      {events.map((event) => {
+      {events.map((event, i) => {
         const isCurrentEvent =
           dayjs(event.starts_at).isSame(dayjs(), 'day') && dayjs().isBefore(event.ends_at);
 
@@ -35,7 +45,7 @@ export function EventsList({ events, loading }: EventsListProp) {
           <Pressable key={event.id} onPress={() => handlePressNavigateToViewEvent(event.id)}>
             <Flex direction="row" align="center" justify="space-between">
               <Flex direction="row" gap={4} align="center">
-                <Image alt="picture of host" size="sm" source={{ uri: event.cover_img ?? '' }} />
+                <Image alt="picture of host" size="sm" source={{ uri: eventImage?.[i] ?? '' }} />
                 <Flex>
                   <Text bold>{event.title}</Text>
                   <Text size="sm">{dayjs(event.starts_at).format('ddd, MMM DD, YYYY h:mm A')}</Text>

@@ -24,6 +24,7 @@ export function useStorageImages({
           return data.signedUrl;
         })
       );
+
       return results;
     },
   });

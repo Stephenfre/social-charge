@@ -1,12 +1,15 @@
 import { Home, TicketCheck, User } from 'lucide-react-native';
-import { Icon } from '~/components/ui/icon';
+import { AddIcon, Icon } from '~/components/ui/icon';
+import { useAuth } from '~/providers/AuthProvider';
 import {
   EventCheckInScreen,
   HomeScreen,
   ProfileScreen,
+  ReviewCreateEventScreen,
   ViewEventScreen,
   ViewUserEventsScreen,
 } from '~/screens';
+import CreateEventScreen from '~/screens/create-event-screen';
 import { AppTabs, RootStack } from '~/types/navigation.types';
 
 function HomeStackNavigator() {
@@ -38,7 +41,7 @@ function ProfileStackNavigator() {
         options={{
           headerShown: true,
           headerBackButtonDisplayMode: 'minimal',
-          headerStyle: { backgroundColor: 'black' },
+          headerStyle: { backgroundColor: '#0F1012' },
           headerTintColor: 'white',
           headerTitleStyle: { color: 'white' },
         }}
@@ -52,7 +55,7 @@ function ProfileStackNavigator() {
   );
 }
 
-function EventStackNavigator() {
+function CheckInEventStackNavigator() {
   return (
     <RootStack.Navigator>
       <RootStack.Screen
@@ -66,7 +69,37 @@ function EventStackNavigator() {
   );
 }
 
+function CreateEventStackNavigator() {
+  return (
+    <RootStack.Navigator>
+      <RootStack.Screen
+        name="CreateEvent"
+        component={CreateEventScreen}
+        options={{
+          headerShown: true,
+          headerStyle: { backgroundColor: '#0F1012' },
+          headerTintColor: 'white',
+          headerTitleStyle: { color: 'white' },
+        }}
+      />
+      <RootStack.Screen
+        name="Review Event"
+        component={ReviewCreateEventScreen}
+        options={{
+          headerShown: true,
+          headerBackButtonDisplayMode: 'minimal',
+          headerStyle: { backgroundColor: '#0F1012' },
+          headerTintColor: 'white',
+          headerTitleStyle: { color: 'white' },
+        }}
+      />
+    </RootStack.Navigator>
+  );
+}
+
 export function MainTabNavigator() {
+  const { user } = useAuth();
+
   return (
     <AppTabs.Navigator>
       <AppTabs.Screen
@@ -77,14 +110,14 @@ export function MainTabNavigator() {
           tabBarLabel: () => null,
           tabBarIcon: () => <Icon as={Home} color="white" size="2xl" />,
           tabBarStyle: {
-            backgroundColor: '#000',
+            backgroundColor: '#0F1012',
             borderTopWidth: 0,
           },
         }}
       />
       <AppTabs.Screen
         name="Event Check In"
-        component={EventStackNavigator}
+        component={CheckInEventStackNavigator}
         options={{
           headerShown: true,
           headerStyle: { backgroundColor: 'black' },
@@ -93,11 +126,27 @@ export function MainTabNavigator() {
           tabBarLabel: () => null,
           tabBarIcon: () => <Icon as={TicketCheck} color="white" size="2xl" />,
           tabBarStyle: {
-            backgroundColor: '#000',
+            backgroundColor: '#0F1012',
             borderTopWidth: 0,
           },
         }}
       />
+      {user?.membership === 'superadmin' || user?.membership === 'admin' ? (
+        <AppTabs.Screen
+          name="Create Event"
+          component={CreateEventStackNavigator}
+          options={{
+            headerShown: false,
+
+            tabBarLabel: () => null,
+            tabBarIcon: () => <Icon as={AddIcon} color="white" size="2xl" />,
+            tabBarStyle: {
+              backgroundColor: '#0F1012',
+              borderTopWidth: 0,
+            },
+          }}
+        />
+      ) : null}
       <AppTabs.Screen
         name="Profile"
         component={ProfileStackNavigator}
@@ -106,7 +155,7 @@ export function MainTabNavigator() {
           tabBarLabel: () => null,
           tabBarIcon: () => <Icon as={User} color="white" size="2xl" />,
           tabBarStyle: {
-            backgroundColor: '#000',
+            backgroundColor: '#0F1012',
             borderTopWidth: 0,
           },
         }}

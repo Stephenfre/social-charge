@@ -1,20 +1,21 @@
+import React from 'react';
+import dayjs from 'dayjs';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import dayjs from 'dayjs';
-import { MessagesSquare, TicketX } from 'lucide-react-native';
-import React from 'react';
-import { SafeAreaView, ScrollView } from 'react-native';
+import { TicketX } from 'lucide-react-native';
+import { ScrollView, View } from 'react-native';
 import { Map } from '~/components';
 import { Countdown } from '~/components/Countdown/Countdown';
 import { Badge, Box, Button, Flex, Image, Text } from '~/components/ui';
-import { Icon } from '~/components/ui/icon';
-import { useRsvps, useStorageImages } from '~/hooks';
+
+import { useStorageImages } from '~/hooks';
 import { useCheckInEvent } from '~/hooks/useEvents';
 import { useAuth } from '~/providers/AuthProvider';
 import { PersonCard } from '~/types/event.types';
 import { RootStackParamList } from '~/types/navigation.types';
 import { cn } from '~/utils/cn';
 import { CancelRsvpButton } from './view-event-screen';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type HomeNav = NativeStackNavigationProp<RootStackParamList, 'HomeIndex'>;
 
@@ -95,7 +96,7 @@ export function EventCheckInScreen() {
   const withinTwoHours = startsAt.diff(now, 'hour', true) <= 2; // true = fractional hours
 
   return (
-    <SafeAreaView className="h-full bg-background-dark">
+    <View className="h-full bg-background-dark">
       <ScrollView>
         <Flex flex={true} className="px-4" gap={8}>
           <Text className="text-black">hi</Text>
@@ -141,7 +142,7 @@ export function EventCheckInScreen() {
               </Flex>
             </Button>
             {!withinTwoHours && (
-              <CancelRsvpButton className="w-1/2" eventId={checkInEvent.id} userId={user.id} />
+              <CancelRsvpButton className="w-1/2" eventId={checkInEvent.id} userId={user?.id} />
             )}
           </Flex>
           <Flex direction="row" align="center" gap={4}>
@@ -241,6 +242,6 @@ export function EventCheckInScreen() {
           </Flex> */}
         </Flex>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
