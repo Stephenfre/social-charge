@@ -14,7 +14,7 @@ export function useHosts() {
   });
 }
 
-export function useUserInterests(userId: string) {
+export function useUserInterests(userId: string | null) {
   return useQuery<UsersInterests[]>({
     queryKey: ['user'],
     enabled: !!userId,
@@ -23,7 +23,7 @@ export function useUserInterests(userId: string) {
       const { data, error } = await supabase
         .from('user_interests')
         .select('*')
-        .eq('user_id', userId);
+        .eq('user_id', userId!);
       if (error) throw error;
       return data as UsersInterests[];
     },

@@ -120,7 +120,7 @@ export function InterestScreen() {
         </Flex>
         <Flex direction="row" justify="space-between" align="center">
           <Button variant="link" onPress={() => onFinish(true)}>
-            <ButtonText>Skip</ButtonText>
+            <Text>Skip</Text>
           </Button>
           <Flex direction="row" align="center" gap={4}>
             <Text weight="500">Selected {selectedInterests.length}/5</Text>

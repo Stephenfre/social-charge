@@ -44,6 +44,7 @@ export function EventCheckInScreen() {
     })) ?? [];
 
   const hostPaths = eventHosts.map((host) => host.profile_pic);
+
   const { data: hostAvatar, isLoading: hostAvatarLoading } = useStorageImages({
     bucket: 'avatars',
     paths: hostPaths, // stored in users table
@@ -55,6 +56,11 @@ export function EventCheckInScreen() {
   const { data: eventRsvpsAvatar = [], isLoading: eventRsvpsAvatarLoading } = useStorageImages({
     bucket: 'avatars',
     paths: evenRsvpsPaths,
+  });
+
+  const { data: eventImage, isLoading } = useStorageImages({
+    bucket: 'event_cover',
+    paths: [checkInEvent?.cover_img], // stored in users table
   });
 
   const handlePressNavigateToViewEvent = () => {
@@ -91,6 +97,8 @@ export function EventCheckInScreen() {
     );
   }
 
+  console.log('hostAvatar', hostAvatar);
+
   const startsAt = dayjs(checkInEvent.starts_at);
   const now = dayjs();
   const withinTwoHours = startsAt.diff(now, 'hour', true) <= 2; // true = fractional hours
@@ -110,11 +118,7 @@ export function EventCheckInScreen() {
             </Text>
           </Flex>
           <Flex direction="row" gap={4} align="center">
-            <Image
-              alt="picture of venue"
-              size="sm"
-              source={{ uri: checkInEvent?.cover_img ?? '' }}
-            />
+            <Image alt="picture of venue" size="sm" source={{ uri: eventImage?.[0] ?? '' }} />
             <Flex>
               <Text bold>{checkInEvent?.title}</Text>
               <Text size="sm">

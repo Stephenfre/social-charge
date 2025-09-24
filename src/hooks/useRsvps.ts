@@ -3,6 +3,8 @@ import { Tables, TablesInsert } from '@/database.types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '~/lib/supabase';
 import { EventRow, UserEventCardRow } from '~/types/event.types';
+import { CHECK_IN_KEYS } from './useEvents';
+import { useAuth } from '~/providers/AuthProvider';
 
 const KEYS = {
   userEvents: ['events', 'userEvents'] as const,
@@ -13,6 +15,10 @@ const KEYS = {
 
 export type RsvpRow = Tables<'rsvps'>;
 export type RsvpInsert = TablesInsert<'rsvps'>;
+type ToggleArgs = {
+  eventId: string;
+  userId: string;
+};
 
 export function useRsvps(eventId: string) {
   return useQuery({
@@ -98,6 +104,7 @@ export function useCreateRsvp() {
             title: detail.title,
             cover_img: detail.cover_img,
             starts_at: detail.starts_at,
+            ends_at: detail.ends_at,
             created_at: detail.created_at,
             event_status: status,
           };
@@ -129,61 +136,75 @@ export function useCreateRsvp() {
   });
 }
 
-type RemoveArgs = { eventId: string; userId: string };
+type RemoveArgs = { eventId: string };
 type ListSnap = [key: readonly unknown[], data: UserEventCardRow[] | undefined];
 type Ctx = { listSnaps: ListSnap[]; rsvpKey: ReturnType<typeof KEYS.rsvps>; prevRsvps: RsvpRow[] };
-
 export function useRemoveRsvp() {
   const qc = useQueryClient();
+  const { userId } = useAuth();
 
   return useMutation<void, unknown, RemoveArgs, Ctx>({
-    mutationFn: async ({ eventId, userId }) => {
-      const { error } = await supabase
+    mutationFn: async ({ eventId }) => {
+      // Always use the authenticated user for RLS
+      const { data: userRes, error: userErr } = await supabase.auth.getUser();
+      if (userErr || !userRes.user) throw userErr ?? new Error('No auth user');
+      const currentUser = userRes.user.id;
+
+      console.log('[removeRsvp] deleting', { eventId, userId: currentUser });
+
+      const { data: deletedRows, error } = await supabase
         .from('rsvps')
         .delete()
         .eq('event_id', eventId)
-        .eq('user_id', userId);
-      if (error) throw error;
+        .eq('user_id', currentUser)
+        .select('*'); // force return of deleted rows (and RLS error if blocked)
+
+      if (error) {
+        console.log('[removeRsvp] delete error', error);
+        throw error;
+      }
+
+      console.log('[removeRsvp] deleted count:', deletedRows?.length ?? 0);
+      // If 0, your filters didn’t match any rows (or RLS prevented matching).
     },
 
-    onMutate: async ({ eventId, userId }) => {
-      // Pause relevant queries
+    onMutate: async ({ eventId }) => {
+      // use auth user for optimistic update as well
+      const { data: userRes } = await supabase.auth.getUser();
+      const me = userRes?.user?.id;
       await qc.cancelQueries({ queryKey: KEYS.userEvents });
       await qc.cancelQueries({ queryKey: KEYS.checkIn });
       await qc.cancelQueries({ queryKey: KEYS.rsvps(eventId) });
 
-      // Snapshot lists for rollback
       const listSnaps = qc.getQueriesData<UserEventCardRow[]>({ queryKey: KEYS.userEvents });
 
-      // Optimistically remove event from ALL userEvents lists
+      // Optimistically remove event from userEvents
       qc.setQueriesData<UserEventCardRow[]>({ queryKey: KEYS.userEvents }, (prev) =>
         (prev ?? []).filter((e) => e.id !== eventId)
       );
 
-      // Optimistically remove user from RSVPs cache (if present)
+      // Optimistically remove from rsvps cache
       const rsvpKey = KEYS.rsvps(eventId);
       const prevRsvps = qc.getQueryData<RsvpRow[]>(rsvpKey) ?? [];
       qc.setQueryData<RsvpRow[]>(
         rsvpKey,
-        prevRsvps.filter((r) => r.user_id !== userId)
+        prevRsvps.filter((r) => (me ? r.user_id !== me : true))
       );
 
       return { listSnaps, rsvpKey, prevRsvps };
     },
 
     onError: (_err, _vars, ctx) => {
-      // Rollback lists
       ctx?.listSnaps.forEach(([key, prev]) => qc.setQueryData(key, prev));
-      // Rollback RSVPs
       if (ctx) qc.setQueryData(ctx.rsvpKey, ctx.prevRsvps);
     },
 
     onSettled: (_res, _err, { eventId }) => {
-      // Sync with server
       qc.invalidateQueries({ queryKey: KEYS.userEvents });
       qc.invalidateQueries({ queryKey: KEYS.checkIn });
       qc.invalidateQueries({ queryKey: KEYS.eventById(eventId) });
       qc.invalidateQueries({ queryKey: KEYS.rsvps(eventId) });
+      qc.invalidateQueries({ queryKey: CHECK_IN_KEYS.checkIn(userId) });
     },
   });
 }

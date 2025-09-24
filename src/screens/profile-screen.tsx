@@ -17,7 +17,7 @@ export function ProfileScreen() {
 
   const { user } = useAuth();
   const { data: events, isLoading: eventsLoading } = useUserEvents(6);
-  const { data: interests, isLoading: interestsLoading } = useUserInterests(user.id);
+  const { data: interests, isLoading: interestsLoading } = useUserInterests(user?.id!);
   const { data: userAvater, isLoading: userAvatarLoading } = useStorageImages({
     bucket: 'avatars',
     paths: [user?.profile_picture],

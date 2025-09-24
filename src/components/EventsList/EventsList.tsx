@@ -22,11 +22,9 @@ export function EventsList({ events, loading }: EventsListProp) {
     navigation.navigate('ViewEvent', { eventId });
   };
 
-  console.log(events);
-
   const imagePaths = events.map((event) => event.cover_img);
 
-  const { data: eventImage } = useStorageImages({
+  const { data: eventImage, isLoading } = useStorageImages({
     bucket: 'event_cover',
     paths: imagePaths, // stored in users table
   });
