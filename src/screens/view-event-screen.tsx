@@ -59,9 +59,7 @@ export function ViewEventScreen() {
     );
   }
 
-  const isHost = event?.event_hosts?.some((host) => host.user_id === userId);
-
-  // const eventStart = dayjs(event?.starts_at);
+  const isHost = event?.event_hosts?.some((host) => host.user?.id === userId);
 
   const isEventOver = dayjs().isAfter(event?.ends_at);
 
@@ -175,7 +173,7 @@ export function ViewEventScreen() {
           </Flex>
           <Flex gap={2}>
             <Text bold size="2xl">
-              Vibe Chack
+              Vibe Check
             </Text>
             <Flex direction="row" gap={4} wrap="wrap">
               {event?.category?.map((cat) => (
@@ -268,7 +266,6 @@ function RsvpButton({
 
 export function CancelRsvpButton({
   eventId,
-  userId,
   className,
 }: {
   eventId: string;
@@ -277,12 +274,13 @@ export function CancelRsvpButton({
 }) {
   const removeRsvp = useRemoveRsvp();
 
+  console.log(removeRsvp);
+
   const label = removeRsvp.isPending ? <Spinner /> : 'Cancel Rsvp';
 
   const onCancelSubmit = () => {
-    if (!userId) return;
     removeRsvp.mutate(
-      { eventId, userId },
+      { eventId },
       {
         onError: () => Alert.alert('Failed to cancel RSVP'),
         onSuccess: () => Alert.alert('Your RSVP was removed'),

@@ -25,27 +25,34 @@ type CheckInUser = {
   user_id: string;
   user: { id: string; first_name: string; last_name: string; profile_picture: string | null };
 };
-
 type CheckInResult = {
-  event: EventRow; // your generated type from Supabase
+  event: EventRow;
   hosts: CheckInUser[] | null;
   attendees: CheckInUser[] | null;
 };
 
+export const CHECK_IN_KEYS = {
+  checkIn: (userId?: string | null) => ['events', 'checkInEvent', userId ?? 'anon'] as const,
+};
+
 export function useCheckInEvent() {
+  const { userId } = useAuth();
+
   return useQuery<CheckInResult | null>({
-    queryKey: ['events', 'checkInEvent'],
+    queryKey: CHECK_IN_KEYS.checkIn(userId),
+    enabled: !!userId,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    staleTime: 0,
     queryFn: async () => {
       const { data, error } = await supabase
         .rpc('f_user_event_today_or_next')
-        .maybeSingle<CheckInResult>(); // 👈 add the generic
-
+        .maybeSingle<CheckInResult>();
       if (error) throw error;
-      return data; // null if none
+      return data;
     },
   });
 }
-
 export function useEventById(id: string) {
   return useQuery<EventWithJoins>({
     queryKey: ['events', 'eventById', id],

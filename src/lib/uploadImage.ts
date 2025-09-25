@@ -4,6 +4,8 @@ import 'react-native-url-polyfill/auto';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 
+// TODO: INSERT RANDOM IMAGE IF USER CHOOSE NOT TO UPLOAD ONE
+
 export const uploadProfileImage = async (userId: string, imageUri: string) => {
   try {
     const fileObj = new File(imageUri);

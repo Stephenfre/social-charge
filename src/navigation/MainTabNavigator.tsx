@@ -131,7 +131,7 @@ export function MainTabNavigator() {
           },
         }}
       />
-      {user?.membership === 'superadmin' || user?.membership === 'admin' ? (
+      {user?.role === 'super_admin' || user?.role === 'admin' ? (
         <AppTabs.Screen
           name="Create Event"
           component={CreateEventStackNavigator}

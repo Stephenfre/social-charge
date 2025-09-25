@@ -73,12 +73,7 @@ export function useSignUp() {
         // 2b) Optional image upload → save URL/path on users.profile_picture
         if (profileImageUri) {
           try {
-            const imageResult = await uploadProfileImage(userId, profileImageUri);
-            const { error: picErr } = await supabase
-              .from('users')
-              .update({ profile_picture: imageResult.path })
-              .eq('id', userId);
-            if (picErr) throw picErr;
+            await uploadProfileImage(userId, profileImageUri);
           } catch (e) {
             // don’t fail the whole flow on image upload issues
             console.warn('Failed to upload profile image:', e);

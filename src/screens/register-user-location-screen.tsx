@@ -76,7 +76,7 @@ export function RegisterLocationScreen() {
         </Flex>
         <Flex direction="row" justify="space-between" align="center">
           <Button variant="link" onPress={() => onSubmit(true)}>
-            <ButtonText>Skip</ButtonText>
+            <Text>Skip</Text>
           </Button>
           <Flex direction="row" align="center" gap={4}>
             <Button size="lg" className={'h-16 w-16 rounded-full'} onPress={() => onSubmit(false)}>
