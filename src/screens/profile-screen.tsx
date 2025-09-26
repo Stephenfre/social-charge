@@ -57,6 +57,11 @@ export function ProfileScreen() {
             {/* Add THIS TO DB */}
             <Text size="sm">@DevinBooker</Text>
             <Text size="sm">Joined in {dayjs(user?.created_at).format('YYYY')}</Text>
+            <Badge variant="primary">
+              <Text size="sm" className="uppercase text-primary-300">
+                {user?.preferred_vibe_slug}
+              </Text>
+            </Badge>
           </Flex>
           <Flex direction="row" align="center" gap={1}>
             <Pressable className="w-1/3 rounded-lg">

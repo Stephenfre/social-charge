@@ -10,7 +10,8 @@ const KEYS = {
   userEvents: ['events', 'userEvents'] as const,
   eventById: (id: string) => ['events', 'eventById', id] as const,
   rsvps: (id: string) => ['rsvps', id] as const,
-  checkIn: ['events', 'checkInEvent'] as const, // <— use this everywhere
+  checkIn: ['events', 'checkInEvent'] as const,
+  eventVibes: ['events', 'eventVibes'] as const,
 };
 
 export type RsvpRow = Tables<'rsvps'>;
@@ -131,7 +132,8 @@ export function useCreateRsvp() {
       qc.invalidateQueries({ queryKey: KEYS.rsvps(eventId) });
       qc.invalidateQueries({ queryKey: KEYS.eventById(eventId) });
       qc.invalidateQueries({ queryKey: KEYS.userEvents });
-      qc.invalidateQueries({ queryKey: KEYS.checkIn }); // <— refetch RPC
+      qc.invalidateQueries({ queryKey: KEYS.checkIn });
+      qc.invalidateQueries({ queryKey: KEYS.eventVibes });
     },
   });
 }
@@ -199,6 +201,7 @@ export function useRemoveRsvp() {
       qc.invalidateQueries({ queryKey: KEYS.checkIn });
       qc.invalidateQueries({ queryKey: KEYS.eventById(eventId) });
       qc.invalidateQueries({ queryKey: KEYS.rsvps(eventId) });
+      qc.invalidateQueries({ queryKey: KEYS.eventVibes });
       qc.invalidateQueries({ queryKey: CHECK_IN_KEYS.checkIn(userId) });
     },
   });

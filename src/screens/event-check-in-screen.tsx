@@ -9,7 +9,7 @@ import { Countdown } from '~/components/Countdown/Countdown';
 import { Badge, Box, Button, Flex, Image, Text } from '~/components/ui';
 
 import { useStorageImages } from '~/hooks';
-import { useCheckInEvent } from '~/hooks/useEvents';
+import { useCheckInEvent, useEventVibes } from '~/hooks/useEvents';
 import { useAuth } from '~/providers/AuthProvider';
 import { PersonCard } from '~/types/event.types';
 import { RootStackParamList } from '~/types/navigation.types';
@@ -24,6 +24,7 @@ export function EventCheckInScreen() {
 
   const { user } = useAuth();
   const { data: event, isLoading: loadingEvent } = useCheckInEvent();
+  const { data: eventVibes = [], isLoading: loadingEventVibes } = useEventVibes(event?.event.id!);
 
   const checkInEvent = event?.event;
   const host = event?.hosts;
@@ -72,15 +73,15 @@ export function EventCheckInScreen() {
 
   if (loadingEvent) {
     return (
-      <SafeAreaView className="h-full bg-background-dark">
+      <View className="h-full bg-background-dark">
         <Text>Loading...</Text>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (!checkInEvent) {
     return (
-      <SafeAreaView className="h-full bg-background-dark">
+      <View className="h-full bg-background-dark">
         <Flex align="center" className="m-auto" gap={4}>
           <Flex align="center">
             <TicketX size={48} color={'white'} />
@@ -93,11 +94,9 @@ export function EventCheckInScreen() {
             <Text bold>Find Events</Text>
           </Button>
         </Flex>
-      </SafeAreaView>
+      </View>
     );
   }
-
-  console.log('hostAvatar', hostAvatar);
 
   const startsAt = dayjs(checkInEvent.starts_at);
   const now = dayjs();
@@ -128,7 +127,8 @@ export function EventCheckInScreen() {
           </Flex>
           <Flex direction="row" gap={2} align="center">
             <Button
-              className={cn(isNotStartTime ? 'bg-gray-500' : 'bg-primary', 'h-14 w-1/2')}
+              size="xl"
+              className={cn(isNotStartTime ? 'bg-gray-500' : 'bg-primary', ' w-1/2')}
               onPress={() => {
                 console.log('pressed');
               }}
@@ -184,20 +184,25 @@ export function EventCheckInScreen() {
             </Text>
             <Text>{checkInEvent?.description}</Text>
           </Flex>
-          <Flex gap={2}>
+          <Flex gap={4}>
             <Text bold size="2xl">
-              Vibe Chack
+              Vibe Check
             </Text>
-            <Flex direction="row" gap={4} wrap="wrap">
-              {checkInEvent?.category?.map((cat) => (
-                <Badge key={cat} variant="primary" className="rounded-lg px-4 py-1">
-                  <Text size="sm" className="uppercase text-primary-300">
-                    {cat}
-                  </Text>
-                </Badge>
-              ))}
-            </Flex>
+            {eventVibes.length ? (
+              <Flex direction="row" flex wrap="wrap" gap={2}>
+                {eventVibes.map((vibe) => {
+                  return (
+                    <Badge key={vibe.vibe_slug} variant="primary">
+                      <Text size="sm" className="uppercase text-primary-300" key={vibe.vibe_slug}>
+                        {vibe.vibe_slug}
+                      </Text>
+                    </Badge>
+                  );
+                })}
+              </Flex>
+            ) : null}
           </Flex>
+
           {user?.membership === 'basic' && (
             <Flex gap={4}>
               <Text bold size="2xl">
@@ -231,19 +236,21 @@ export function EventCheckInScreen() {
               )}
             </Flex>
           )}
-          {/* <Flex gap={2} className="pb-4">
-            <Flex direction="row" align="center" gap={2}>
-              <MessagesSquare color={'white'} size={20} />
-              <Text bold size="2xl">
-                Discussion
-              </Text>
+
+          <Flex gap={2}>
+            <Text bold size="xl">
+              Perfect if you’re into…
+            </Text>
+            <Flex direction="row" gap={4} wrap="wrap">
+              {checkInEvent?.category?.map((cat) => (
+                <Badge key={cat} variant="primary">
+                  <Text size="sm" className="uppercase text-primary-300">
+                    {cat}
+                  </Text>
+                </Badge>
+              ))}
             </Flex>
-            {dayjs().isBefore(dayjs(checkInEvent?.starts_at).subtract(24, 'hour')) ? (
-              <Text>Chat opens 24 hours before the event begins — join the conversation!</Text>
-            ) : (
-              <Text>Show discussion</Text>
-            )}
-          </Flex> */}
+          </Flex>
         </Flex>
       </ScrollView>
     </View>

@@ -9,6 +9,7 @@ export type EventUpdate = Database['public']['Tables']['events']['Update'];
 export type EventHostRow = Tables<'event_hosts'> & { user: UsersRow };
 export type RsvpRow = Tables<'rsvps'> & { user: UsersRow };
 export type UserEventRow = Database['public']['Views']['v_user_events']['Row'];
+export type EventVibes = Database['public']['Views']['v_event_user_vibes']['Row'];
 
 export type EventWithJoins = EventRow & {
   event_hosts: EventHostRow[];

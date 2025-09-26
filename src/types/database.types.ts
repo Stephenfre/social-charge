@@ -940,6 +940,36 @@ export type Database = {
         }
         Relationships: []
       }
+      v_event_user_vibes: {
+        Row: {
+          event_id: string | null
+          vibe_count: number | null
+          vibe_slug: Database["public"]["Enums"]["vibe_slug"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_for_current_user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_events_for_current_user: {
         Row: {
           age_limit: number | null

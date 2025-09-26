@@ -105,7 +105,7 @@ export function EventCard({
                 </Text>
               </Flex>
             )}
-            {showLocation && event?.location && (
+            {showLocation && event?.location_text && (
               <Flex direction="row" align="center" gap={1}>
                 <MapPin color={'white'} size={14} />
                 <Text size="lg" className="text-white">

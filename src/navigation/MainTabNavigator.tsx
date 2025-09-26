@@ -19,7 +19,14 @@ function HomeStackNavigator() {
       <RootStack.Screen
         name="ViewEvent"
         component={ViewEventScreen}
-        options={{ headerShown: false }}
+        options={{
+          headerShown: true,
+          headerBackButtonDisplayMode: 'minimal',
+          headerStyle: { backgroundColor: '#0F1012' },
+          headerTintColor: 'white',
+          headerTitleStyle: { color: 'white' },
+          title: 'Event Details',
+        }}
       />
       <RootStack.Screen
         name="CreateEvent"
@@ -71,7 +78,14 @@ function ProfileStackNavigator() {
       <RootStack.Screen
         name="ViewEvent"
         component={ViewEventScreen}
-        options={{ headerShown: false }}
+        options={{
+          headerShown: true,
+          headerBackButtonDisplayMode: 'minimal',
+          headerStyle: { backgroundColor: '#0F1012' },
+          headerTintColor: 'white',
+          headerTitleStyle: { color: 'white' },
+          title: 'Event Details',
+        }}
       />
     </RootStack.Navigator>
   );
@@ -119,7 +133,14 @@ function CreateEventStackNavigator() {
       <RootStack.Screen
         name="ViewEvent"
         component={ViewEventScreen}
-        options={{ headerShown: false }}
+        options={{
+          headerShown: true,
+          headerBackButtonDisplayMode: 'minimal',
+          headerStyle: { backgroundColor: '#0F1012' },
+          headerTintColor: 'white',
+          headerTitleStyle: { color: 'white' },
+          title: 'Event Details',
+        }}
       />
     </RootStack.Navigator>
   );

@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import { supabase } from '~/lib/supabase';
 import { uploadEventCoverImage } from '~/lib/uploadImage';
 import { useAuth } from '~/providers/AuthProvider';
-import { EventRow, EventWithJoins, UserEventCardRow } from '~/types/event.types';
+import { EventRow, EventVibes, EventWithJoins, UserEventCardRow } from '~/types/event.types';
 
 export const KEYS = {
   events: ['events'] as const,
@@ -214,6 +214,20 @@ export function useTrendingEvents() {
   });
 }
 
+export function useEventVibes(eventId: string) {
+  return useQuery<EventVibes[]>({
+    queryKey: ['events', 'eventVibes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('v_event_user_vibes')
+        .select('*')
+        .eq('event_id', eventId);
+
+      if (error) throw error;
+      return data as EventVibes[];
+    },
+  });
+}
 /** ===== Types — align to your schema ===== */
 type UpsertEventArgs = {
   id?: string; // if present => update, else create

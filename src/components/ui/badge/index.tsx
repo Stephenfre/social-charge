@@ -11,7 +11,7 @@ import { Svg } from 'react-native-svg';
 const SCOPE = 'BADGE';
 
 const badgeStyle = tva({
-  base: 'flex-row items-center rounded-sm data-[disabled=true]:opacity-50 px-2 py-1 rounded-full',
+  base: 'flex-row items-center rounded-lg px-4 py-1',
   variants: {
     action: {
       error: 'bg-background-error border-error-300',

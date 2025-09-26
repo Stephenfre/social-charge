@@ -70,7 +70,7 @@ export function RegisterLocationScreen() {
             />
 
             <Button variant="link" onPress={getLocation}>
-              <ButtonText> Share My Location</ButtonText>
+              <Text> Share My Location</Text>
             </Button>
           </Flex>
         </Flex>
