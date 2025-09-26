@@ -45,7 +45,7 @@ export const uploadProfileImage = async (userId: string, imageUri: string) => {
 export const uploadEventCoverImage = async (eventId: string, imageUri: string) => {
   try {
     const fileObj = new File(imageUri);
-    const fh = await fileObj.open();
+    const fh = fileObj.open();
 
     const size = fh.size ?? 0; // avoid null
     if (!size) throw new Error('File size is null or zero');
