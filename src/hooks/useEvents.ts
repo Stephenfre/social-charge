@@ -1,8 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import dayjs from 'dayjs';
 import { supabase } from '~/lib/supabase';
 import { uploadEventCoverImage } from '~/lib/uploadImage';
 import { useAuth } from '~/providers/AuthProvider';
 import { EventRow, EventWithJoins, UserEventCardRow } from '~/types/event.types';
+
+export const KEYS = {
+  events: ['events'] as const,
+  eventById: (id: string) => ['event', id] as const,
+  userEvents: (uid: string) => ['user', 'events', uid] as const,
+  justForYou: (uid: string) => ['events', 'justForYou', uid] as const,
+  upcoming: ['events', 'upcoming'] as const,
+  cheap: ['events', 'cheap'] as const,
+  thisWeekend: ['events', 'thisWeekend'] as const,
+  trending: ['events', 'trending'] as const,
+};
 
 export function useUserEvents(limit?: number) {
   return useQuery<UserEventCardRow[]>({
@@ -87,11 +99,13 @@ export function useForYouEvents(userId: string | null) {
   return useQuery<EventRow[]>({
     queryKey: ['events', 'justForYou', userId],
     enabled: !!userId,
+    refetchOnMount: 'always',
     initialData: [],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('v_events_for_current_user')
         .select('*')
+        .is('deleted_at', null)
         .gte('starts_at', nowIso)
         .order('starts_at', { ascending: true })
         .limit(10);
@@ -104,10 +118,12 @@ export function useForYouEvents(userId: string | null) {
 export function useUpcomingEvents() {
   return useQuery<EventRow[]>({
     queryKey: ['events', 'upcoming'],
+    refetchOnMount: 'always',
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
         .select('*')
+        .is('deleted_at', null)
         .gt('starts_at', nowIso)
         .order('starts_at', { ascending: true })
         .limit(10);
@@ -120,10 +136,12 @@ export function useUpcomingEvents() {
 export function useLowTokenEvents() {
   return useQuery<EventRow[]>({
     queryKey: ['events', 'cheap'],
+    refetchOnMount: 'always',
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
         .select('*')
+        .is('deleted_at', null)
         .lte('token_cost', 1)
         .gte('starts_at', nowIso)
         .order('starts_at', { ascending: true })
@@ -137,6 +155,7 @@ export function useLowTokenEvents() {
 export function useThisWeekendEvents() {
   return useQuery({
     queryKey: ['events', 'thisWeekend'],
+    refetchOnMount: 'always',
     queryFn: async () => {
       const now = new Date();
       const nowIso = now.toISOString();
@@ -158,6 +177,7 @@ export function useThisWeekendEvents() {
       const { data, error } = await supabase
         .from('events')
         .select('*')
+        .is('deleted_at', null)
         // only events that start during the weekend window…
         .gte('starts_at', friday.toISOString())
         .lte('starts_at', sunday.toISOString())
@@ -174,6 +194,7 @@ export function useThisWeekendEvents() {
 export function useTrendingEvents() {
   return useQuery({
     queryKey: ['events', 'trending'],
+    refetchOnMount: 'always',
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
@@ -183,7 +204,7 @@ export function useTrendingEvents() {
           rsvps:event_id(count)
         `
         )
-        // .gte('starts_at', nowIso)
+        .is('deleted_at', null)
         .order('rsvps.count', { ascending: false })
         .limit(10);
 
@@ -211,14 +232,6 @@ type UpsertEventArgs = {
   category: string[]; // interests array
   coverImageUri: string; // local/expo file:// URI
   hostId: string; // selected host id (optional)
-};
-
-/** ===== Your query keys (same style as in useCreateRsvp) ===== */
-export const KEYS = {
-  events: ['events'] as const,
-  eventById: (id: string) => ['event', id] as const,
-  userEventCards: (uid: string | null | undefined) =>
-    ['user', 'eventCards', uid ?? 'anon'] as const,
 };
 
 async function upsertEvent(args: UpsertEventArgs, userId: string): Promise<EventRow> {
@@ -396,6 +409,59 @@ export function useUpsertEvent(userId: string | null) {
       // For create, you may want to ensure detail is in sync with server transforms:
       if (!vars.id) qc.invalidateQueries({ queryKey: KEYS.eventById(evt.id) });
       // For updates, skip broad invalidations.
+    },
+  });
+}
+
+async function softDeleteEvent(eventId: string) {
+  const { error } = await supabase
+    .from('events')
+    .update({ deleted_at: dayjs().toISOString() })
+    .eq('id', eventId);
+
+  if (error) throw error;
+  return { id: eventId };
+}
+
+export function useDeleteEvent() {
+  const { userId } = useAuth();
+
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: softDeleteEvent,
+    onMutate: async (eventId: string) => {
+      // Cancel outgoing queries
+      await qc.cancelQueries({ queryKey: KEYS.events });
+
+      // Snapshot
+      const prevEvents = qc.getQueryData<any[]>(KEYS.events);
+
+      // Optimistically remove event
+      if (prevEvents) {
+        qc.setQueryData<any[]>(
+          KEYS.events,
+          prevEvents.filter((e) => e.id !== eventId)
+        );
+      }
+
+      return { prevEvents };
+    },
+    onError: (_err, _vars, ctx) => {
+      // Rollback
+      if (ctx?.prevEvents) {
+        qc.setQueryData(KEYS.events, ctx.prevEvents);
+      }
+    },
+    onSuccess: (eventId) => {
+      qc.invalidateQueries({ queryKey: KEYS.eventById(eventId.id) });
+      qc.invalidateQueries({ queryKey: KEYS.userEvents(userId!) });
+      qc.invalidateQueries({ queryKey: KEYS.events });
+      qc.invalidateQueries({ queryKey: KEYS.justForYou(userId!) });
+      qc.invalidateQueries({ queryKey: KEYS.upcoming });
+      qc.invalidateQueries({ queryKey: KEYS.cheap });
+      qc.invalidateQueries({ queryKey: KEYS.thisWeekend });
+      qc.invalidateQueries({ queryKey: KEYS.trending });
     },
   });
 }

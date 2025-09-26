@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { EventsList } from '~/components';
 import { Badge, Box, Button, Flex, Image, Pressable, Text } from '~/components/ui';
 import { useStorageImages, useUserEvents, useUserInterests } from '~/hooks';
+import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/providers/AuthProvider';
 import { RootStackParamList } from '~/types/navigation.types';
 import { interestEmojis } from '~/utils/const';
@@ -25,6 +26,11 @@ export function ProfileScreen() {
 
   const handleViewAllPress = () => {
     navigation.navigate('Event History');
+  };
+
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    console.log(error);
   };
 
   const filterEventsByPast = events?.filter((event) => event.event_status !== 'upcoming');
@@ -110,6 +116,9 @@ export function ProfileScreen() {
           <EventsList events={events ?? []} loading={eventsLoading} />
         </Flex>
       </ScrollView>
+      <Button className="mx-4" onPress={logout}>
+        <Text>Logout</Text>
+      </Button>
     </SafeAreaView>
   );
 }

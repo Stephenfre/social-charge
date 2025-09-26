@@ -139,6 +139,7 @@ export function useCreateRsvp() {
 type RemoveArgs = { eventId: string };
 type ListSnap = [key: readonly unknown[], data: UserEventCardRow[] | undefined];
 type Ctx = { listSnaps: ListSnap[]; rsvpKey: ReturnType<typeof KEYS.rsvps>; prevRsvps: RsvpRow[] };
+
 export function useRemoveRsvp() {
   const qc = useQueryClient();
   const { userId } = useAuth();
@@ -150,22 +151,16 @@ export function useRemoveRsvp() {
       if (userErr || !userRes.user) throw userErr ?? new Error('No auth user');
       const currentUser = userRes.user.id;
 
-      console.log('[removeRsvp] deleting', { eventId, userId: currentUser });
-
-      const { data: deletedRows, error } = await supabase
+      const { error } = await supabase
         .from('rsvps')
         .delete()
         .eq('event_id', eventId)
         .eq('user_id', currentUser)
-        .select('*'); // force return of deleted rows (and RLS error if blocked)
+        .select('*');
 
       if (error) {
-        console.log('[removeRsvp] delete error', error);
         throw error;
       }
-
-      console.log('[removeRsvp] deleted count:', deletedRows?.length ?? 0);
-      // If 0, your filters didn’t match any rows (or RLS prevented matching).
     },
 
     onMutate: async ({ eventId }) => {

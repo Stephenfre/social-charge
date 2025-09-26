@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { Calendar, Clock, MapPin, MessagesSquare } from 'lucide-react-native';
+import { Calendar, Clock, MapPin, MessagesSquare, TicketX } from 'lucide-react-native';
 import { Alert, ScrollView, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Badge, Box, Button, Flex, Image, Text } from '~/components/ui';
@@ -15,6 +15,7 @@ import { cn } from '~/utils/cn';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useDeleteEvent } from '~/hooks/useEvents';
 
 type CreateEventNav = NativeStackNavigationProp<RootStackParamList, 'CreateEvent'>;
 
@@ -27,6 +28,7 @@ export function ViewEventScreen() {
   const { userId, user } = useAuth();
   const { data: event, isLoading } = useEventById(params.eventId);
   const { data: rsvps = [], isLoading: rsvpLoading } = useRsvps(params.eventId);
+  const { mutate: deleteEvent, isPending } = useDeleteEvent();
 
   const isRsvped = rsvps.some((r) => r.user_id === userId);
 
@@ -68,11 +70,45 @@ export function ViewEventScreen() {
     navigation.navigate('CreateEvent', { eventId: event?.id });
   };
 
+  const handlePressDeleteEvent = () => {
+    deleteEvent(params.eventId, {
+      onError: () => Alert.alert('Failed to delete event'),
+      onSuccess: () => Alert.alert('Event was deleted'),
+    });
+    navigation.goBack();
+  };
+
   const isHost = event?.event_hosts?.some((host) => host.user?.id === userId);
 
   const isEventOver = dayjs().isAfter(event?.ends_at);
 
   const canEdit = user?.role === 'super_admin' || user?.role === 'admin';
+  const canDelete = user?.role === 'super_admin';
+  const isEventDeleted = event?.deleted_at;
+
+  if (isEventDeleted) {
+    return (
+      <SafeAreaView className="h-full bg-background-dark">
+        <Flex align="center" className="m-auto" gap={4}>
+          <Flex align="center">
+            <TicketX size={48} color={'white'} />
+            <Text bold size="2xl">
+              Sorry this event is unavailable
+            </Text>
+          </Flex>
+          <Button
+            onPress={() =>
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Home' as never }],
+              })
+            }>
+            <Text bold>Find Events</Text>
+          </Button>
+        </Flex>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="h-full bg-background-dark">
@@ -241,6 +277,17 @@ export function ViewEventScreen() {
               ))}
             </Flex>
           </Flex>
+          {canDelete && (
+            <Button disabled={isPending} variant="alert" onPress={handlePressDeleteEvent}>
+              {!isPending ? (
+                <Text bold size="lg">
+                  Delete
+                </Text>
+              ) : (
+                <Spinner />
+              )}
+            </Button>
+          )}
         </Flex>
       </ScrollView>
     </SafeAreaView>
@@ -285,8 +332,6 @@ export function CancelRsvpButton({
   className?: string;
 }) {
   const removeRsvp = useRemoveRsvp();
-
-  console.log(removeRsvp);
 
   const label = removeRsvp.isPending ? <Spinner /> : 'Cancel Rsvp';
 
