@@ -51,10 +51,11 @@ const buttonStyle = tva({
     variant: {
       link: 'px-0',
       outline: 'bg-transparent border border-white ',
-      solid: 'bg-secondary-700  data-[active=true]:bg-secondary-700',
-      primary: 'bg-primary-700  data-[active=true]:bg-secondary-700',
+      solid: 'bg-secondary-700',
+      primary: 'bg-primary-700',
       muted: 'bg-gray-400',
       tag: 'bg-primary-800',
+      alert: 'bg-error-500',
     },
 
     size: {

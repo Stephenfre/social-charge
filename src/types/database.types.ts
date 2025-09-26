@@ -62,6 +62,13 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "check_ins_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       event_attendance: {
@@ -118,6 +125,13 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "event_attendance_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       event_hosts: {
@@ -140,6 +154,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_host_user_fk"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "event_hosts_event_id_fkey"
@@ -168,6 +189,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_hosts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -225,6 +253,13 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "event_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       events: {
@@ -235,6 +270,7 @@ export type Database = {
           cover_img: string
           created_at: string | null
           created_by: string | null
+          deleted_at: string | null
           description: string | null
           ends_at: string
           formatted_address: string | null
@@ -254,6 +290,7 @@ export type Database = {
           cover_img: string
           created_at?: string | null
           created_by?: string | null
+          deleted_at?: string | null
           description?: string | null
           ends_at: string
           formatted_address?: string | null
@@ -273,6 +310,7 @@ export type Database = {
           cover_img?: string
           created_at?: string | null
           created_by?: string | null
+          deleted_at?: string | null
           description?: string | null
           ends_at?: string
           formatted_address?: string | null
@@ -292,6 +330,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -342,6 +387,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorited_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -406,11 +458,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "host_reviews_host_id_fkey"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "host_reviews_reviewer_id_fkey"
             columns: ["reviewer_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "host_reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -441,6 +507,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_vibes_vibed_user_id_fkey"
+            columns: ["vibed_user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -504,6 +577,13 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "reviews_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       rsvps: {
@@ -534,6 +614,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "rsvp_user_fk"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "rsvps_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
@@ -560,6 +647,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvps_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -620,6 +714,13 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "token_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       user_interests: {
@@ -646,6 +747,96 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_interests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      user_vibe_history: {
+        Row: {
+          created_at: string
+          event_id: string | null
+          id: string
+          source: Database["public"]["Enums"]["vibe_source"]
+          user_id: string
+          vibe_slug: Database["public"]["Enums"]["vibe_slug"]
+          voter_id: string | null
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          source: Database["public"]["Enums"]["vibe_source"]
+          user_id: string
+          vibe_slug: Database["public"]["Enums"]["vibe_slug"]
+          voter_id?: string | null
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          source?: Database["public"]["Enums"]["vibe_source"]
+          user_id?: string
+          vibe_slug?: Database["public"]["Enums"]["vibe_slug"]
+          voter_id?: string | null
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_vibe_history_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_vibe_history_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_for_current_user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_vibe_history_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_vibe_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_vibe_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_vibe_history_voter_id_fkey"
+            columns: ["voter_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_vibe_history_voter_id_fkey"
+            columns: ["voter_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       users: {
@@ -661,6 +852,7 @@ export type Database = {
           last_name: string | null
           membership: Database["public"]["Enums"]["membership_role"]
           phone_number: string | null
+          preferred_vibe_slug: Database["public"]["Enums"]["vibe_slug"] | null
           profile_picture: string | null
           role: Database["public"]["Enums"]["user_role"]
           state: string | null
@@ -678,6 +870,7 @@ export type Database = {
           last_name?: string | null
           membership?: Database["public"]["Enums"]["membership_role"]
           phone_number?: string | null
+          preferred_vibe_slug?: Database["public"]["Enums"]["vibe_slug"] | null
           profile_picture?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           state?: string | null
@@ -695,6 +888,7 @@ export type Database = {
           last_name?: string | null
           membership?: Database["public"]["Enums"]["membership_role"]
           phone_number?: string | null
+          preferred_vibe_slug?: Database["public"]["Enums"]["vibe_slug"] | null
           profile_picture?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           state?: string | null
@@ -770,6 +964,13 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       v_user_events: {
@@ -797,6 +998,68 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      vw_user_current_vibe: {
+        Row: {
+          user_id: string | null
+          vibe_slug: Database["public"]["Enums"]["vibe_slug"] | null
+        }
+        Relationships: []
+      }
+      vw_user_peer_vibe_90d: {
+        Row: {
+          rn: number | null
+          score: number | null
+          user_id: string | null
+          vibe_slug: Database["public"]["Enums"]["vibe_slug"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_vibe_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_vibe_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      vw_user_peer_vibe_all: {
+        Row: {
+          rn: number | null
+          score: number | null
+          user_id: string | null
+          vibe_slug: Database["public"]["Enums"]["vibe_slug"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_vibe_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_vibe_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1471,6 +1734,10 @@ export type Database = {
       postgis_wagyu_version: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      set_self_vibe: {
+        Args: { vibe_slug: Database["public"]["Enums"]["vibe_slug"] }
+        Returns: undefined
       }
       spheroid_in: {
         Args: { "": unknown }
@@ -2559,6 +2826,14 @@ export type Database = {
         }
         Returns: string
       }
+      vote_user_vibe: {
+        Args: {
+          event: string
+          subject_user: string
+          vibe_slug: Database["public"]["Enums"]["vibe_slug"]
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       attend_status: "yes" | "no" | "can"
@@ -2585,6 +2860,8 @@ export type Database = {
         | "Pets"
       membership_role: "superadmin" | "admin" | "basic" | "plus" | "premium"
       user_role: "user" | "host" | "admin" | "super_admin"
+      vibe_slug: "chill" | "party-animal" | "low-key" | "adventurous"
+      vibe_source: "self" | "peer"
     }
     CompositeTypes: {
       geometry_dump: {
@@ -2745,6 +3022,8 @@ export const Constants = {
       ],
       membership_role: ["superadmin", "admin", "basic", "plus", "premium"],
       user_role: ["user", "host", "admin", "super_admin"],
+      vibe_slug: ["chill", "party-animal", "low-key", "adventurous"],
+      vibe_source: ["self", "peer"],
     },
   },
 } as const
