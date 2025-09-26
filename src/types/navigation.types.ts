@@ -33,7 +33,7 @@ export type RootStackParamList = {
   ViewEvent: { eventId: string };
   'Event History': undefined;
   EventCheckInIndex: undefined;
-  CreateEvent: undefined;
+  CreateEvent: { eventId?: string };
   'Review Event': undefined;
 };
 

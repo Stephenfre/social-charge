@@ -4,7 +4,7 @@ import { Alert, ScrollView, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Badge, Box, Button, Flex, Image, Text } from '~/components/ui';
 import { useEventById, useStorageImages } from '~/hooks';
-import { useRouteStack } from '~/types/navigation.types';
+import { RootStackParamList, useRouteStack } from '~/types/navigation.types';
 import { PersonCard } from '~/types/event.types';
 import { useRsvps, useCreateRsvp, useRemoveRsvp } from '~/hooks/useRsvps';
 import { useAuth } from '~/providers/AuthProvider';
@@ -13,39 +13,44 @@ import { EventCard } from '~/components/EventCard/EventCard';
 import React from 'react';
 import { cn } from '~/utils/cn';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+type CreateEventNav = NativeStackNavigationProp<RootStackParamList, 'CreateEvent'>;
 
 // TODO: WHEN YOU CLICK ALL GO TO A SCREEN WIITH SCROLLABLE DATES AND FILTERS
 
 export function ViewEventScreen() {
   const { params } = useRouteStack<'ViewEvent'>();
-  const { data: event, isLoading } = useEventById(params.eventId);
-  const { userId, user } = useAuth();
+  const navigation = useNavigation<CreateEventNav>();
 
+  const { userId, user } = useAuth();
+  const { data: event, isLoading } = useEventById(params.eventId);
   const { data: rsvps = [], isLoading: rsvpLoading } = useRsvps(params.eventId);
 
   const isRsvped = rsvps.some((r) => r.user_id === userId);
 
   const eventHosts: PersonCard[] =
-    event?.event_hosts.map((host) => ({
+    event?.event_hosts?.map((host) => ({
       id: host.user.id,
       name: host.user.first_name + ' ' + host.user.last_name,
       profile_pic: host.user.profile_picture,
     })) ?? [];
 
   const eventRsvps: PersonCard[] | undefined =
-    event?.rsvps.map((rsvp) => ({
+    event?.rsvps?.map((rsvp) => ({
       id: rsvp.user.id,
       name: rsvp.user.first_name + ' ' + rsvp.user.last_name,
       profile_pic: rsvp.user.profile_picture,
     })) ?? [];
 
-  const hostPaths = eventHosts.map((host) => host.profile_pic);
+  const hostPaths = eventHosts?.map((host) => host.profile_pic);
   const { data: hostAvatar, isLoading: hostAvatarLoading } = useStorageImages({
     bucket: 'avatars',
     paths: hostPaths, // stored in users table
   });
 
-  const evenRsvpsPaths = eventRsvps.map((r) => r.profile_pic);
+  const evenRsvpsPaths = eventRsvps?.map((r) => r.profile_pic);
   const { data: eventRsvpsAvatar = [], isLoading: eventRsvpsAvatarLoading } = useStorageImages({
     bucket: 'avatars',
     paths: evenRsvpsPaths,
@@ -59,9 +64,15 @@ export function ViewEventScreen() {
     );
   }
 
+  const handlePressNavigateToCreateEvent = () => {
+    navigation.navigate('CreateEvent', { eventId: event?.id });
+  };
+
   const isHost = event?.event_hosts?.some((host) => host.user?.id === userId);
 
   const isEventOver = dayjs().isAfter(event?.ends_at);
+
+  const canEdit = user?.role === 'super_admin' || user?.role === 'admin';
 
   return (
     <SafeAreaView className="h-full bg-background-dark">
@@ -77,7 +88,6 @@ export function ViewEventScreen() {
             showTitle={false}
             showToken={false}
           />
-          {/* Fade overlay */}
           <LinearGradient
             colors={['transparent', '#0F1012']} // transparent top → dark bottom
             style={{
@@ -94,6 +104,7 @@ export function ViewEventScreen() {
             <Text size="3xl" bold>
               {event?.title}
             </Text>
+
             <Flex direction="row" gap={4}>
               <Flex direction="row" align="center" gap={2}>
                 <Calendar color={'white'} size={14} />
@@ -146,18 +157,29 @@ export function ViewEventScreen() {
           </Flex>
 
           {!isEventOver ? (
-            <>
+            <Flex direction="row" flex justify="space-between">
               {!isHost &&
                 (!isRsvped ? (
                   <RsvpButton
                     userId={userId ?? ''}
                     eventId={params.eventId}
                     isLoading={rsvpLoading}
+                    canEdit={canEdit}
                   />
                 ) : (
                   <CancelRsvpButton userId={userId ?? ''} eventId={params.eventId} />
                 ))}
-            </>
+              {canEdit && (
+                <Button
+                  className="h-14 w-['48%']"
+                  variant="outline"
+                  onPress={handlePressNavigateToCreateEvent}>
+                  <Text bold size="lg">
+                    Edit
+                  </Text>
+                </Button>
+              )}
+            </Flex>
           ) : (
             <Button className=" h-14" variant="muted">
               <Text bold className="text-gray-200">
@@ -171,20 +193,7 @@ export function ViewEventScreen() {
             </Text>
             <Text>{event?.description}</Text>
           </Flex>
-          <Flex gap={2}>
-            <Text bold size="2xl">
-              Vibe Check
-            </Text>
-            <Flex direction="row" gap={4} wrap="wrap">
-              {event?.category?.map((cat) => (
-                <Badge key={cat} variant="primary" className="rounded-lg px-4 py-1">
-                  <Text size="sm" className="uppercase text-primary-300">
-                    {cat}
-                  </Text>
-                </Badge>
-              ))}
-            </Flex>
-          </Flex>
+
           {user?.membership !== 'basic' && (
             <Flex gap={4}>
               <Text bold size="2xl">
@@ -218,19 +227,20 @@ export function ViewEventScreen() {
               )}
             </Flex>
           )}
-          {/* <Flex gap={2}>
-            <Flex direction="row" align="center" gap={2}>
-              <MessagesSquare color={'white'} size={20} />
-              <Text bold size="2xl">
-                Discussion
-              </Text>
+          <Flex gap={2}>
+            <Text bold size="xl">
+              Perfect if you’re into…
+            </Text>
+            <Flex direction="row" gap={4} wrap="wrap">
+              {event?.category?.map((cat) => (
+                <Badge key={cat} variant="primary" className="rounded-lg px-4 py-1">
+                  <Text size="sm" className="uppercase text-primary-300">
+                    {cat}
+                  </Text>
+                </Badge>
+              ))}
             </Flex>
-            {dayjs().isBefore(eventStart.subtract(24, 'hour')) ? (
-              <Text>Chat opens 24 hours before the event begins — join the conversation!</Text>
-            ) : (
-              <Text>Show discussion</Text>
-            )}
-          </Flex> */}
+          </Flex>
         </Flex>
       </ScrollView>
     </SafeAreaView>
@@ -241,10 +251,12 @@ function RsvpButton({
   eventId,
   userId,
   isLoading,
+  canEdit,
 }: {
   eventId: string;
   userId: string;
   isLoading: boolean;
+  canEdit: boolean;
 }) {
   const createRsvp = useCreateRsvp();
 
@@ -254,7 +266,7 @@ function RsvpButton({
 
   return (
     <Button
-      className=" h-14 bg-primary"
+      className={cn('h-14 w-full bg-primary', canEdit && 'w-[48%]')}
       onPress={onSubmit}
       disabled={isLoading || createRsvp.isPending}>
       <Text bold size="lg">

@@ -16,7 +16,7 @@ export const eventSchema = z
       locationText: z.string().min(1, 'Place id is required'),
       formattedAddress: z.string().min(1, 'Address  is required'),
       provider: z.string().min(1, 'Provider is required'),
-      placeid: z.string().min(1, 'Place id is required'),
+      placeId: z.string().min(1, 'Place id is required'),
     }),
     date: z.string().min(1, 'Date is required'),
     startTime: z.string().min(1, 'Start time is required'),

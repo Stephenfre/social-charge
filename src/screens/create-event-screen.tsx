@@ -3,35 +3,39 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button, Flex, Image, Input, InputField, Pressable, Text } from '~/components/ui';
 import { Calendar } from 'react-native-calendars';
-import { ScrollView, TextInput, Alert, FlatList } from 'react-native';
-import { useEffect } from 'react';
+import { TextInput, Alert, FlatList } from 'react-native';
+import { useCallback, useEffect } from 'react';
 
 import { ChevronRight, PlusCircle } from 'lucide-react-native';
 import { INTEREST_CATEGORIES } from '~/constants/interests';
 import { categoryEmojis, interestEmojis } from '~/utils/const';
-import { useEventCreateStore, useHosts } from '~/hooks';
+import { useEventById, useEventCreateStore, useHosts, useStorageImages } from '~/hooks';
 import * as ImagePicker from 'expo-image-picker';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '~/types/navigation';
 import { MultiModal } from '~/components';
 import GooglePlacesTextInput from 'react-native-google-places-textinput';
 import { eventSchema } from '~/schema/event';
 import { combine } from '~/utils/datetime';
+import { useRouteStack } from '~/types/navigation.types';
+import { PersonCard } from '~/types/event.types';
+import dayjs from 'dayjs';
 
 export type location = {
   locationText: string;
   formattedAddress: string;
   provider: string;
-  placeid: string;
+  placeId: string;
 };
 
 export type CreateEventFormValues = z.infer<typeof eventSchema>;
 
 export default function CreateEventScreen() {
+  const { params } = useRouteStack<'CreateEvent'>();
   const navigation = useNavigation<NavigationProp<'Review Event'>>();
-  const route = useRoute<any>();
-
   const { data: hosts, isLoading: loadingHost } = useHosts();
+
+  const { data: event, isLoading: loadingEvent } = useEventById(params?.eventId ?? '');
 
   const defaultFormValues = {
     title: '',
@@ -62,19 +66,21 @@ export default function CreateEventScreen() {
   });
 
   const {
-    title,
-    hostId,
-    hostName,
-    ageLimit,
-    description,
-    date,
-    startTime,
-    endTime,
-    capacity,
-    creditCost,
+    // title,
+    // hostId,
+    // hostName,
+    // ageLimit,
+    // description,
+    // date,
+    // startTime,
+    // endTime,
+    // capacity,
+    // creditCost,
     selectedInterests,
     coverImageUri,
+    originalCoverImageUri,
     setTitle,
+    setEventId,
     setHostId,
     setHostName,
     setAgeLimit,
@@ -86,49 +92,88 @@ export default function CreateEventScreen() {
     setCapacity,
     setCreditCost,
     setCoverImageUri,
+    setOriginalCoverImageUri,
+    setOriginalCoverPath,
     setInterests,
     toggleInterest,
   } = useEventCreateStore();
 
-  // (1) Hydrate RHF defaults from store once
+  const eventHosts: PersonCard[] =
+    event?.event_hosts?.map((host) => ({
+      id: host.user.id,
+      name: host.user.first_name + ' ' + host.user.last_name,
+      profile_pic: host.user.profile_picture,
+    })) ?? [];
+
+  const toAgeLabel = (n?: number | null) => (n ? `${n} and over` : '');
+
+  function toTime12(dtISO: string) {
+    return dayjs(dtISO).format('h:mm A');
+  }
+  function toDateStr(dtISO: string) {
+    return dayjs(dtISO).format('YYYY-MM-DD');
+  }
+
+  const { data: coverImg } = useStorageImages({
+    bucket: 'event_cover',
+    paths: [event?.cover_img], // stored in users table
+  });
+
+  const imageUrl =
+    Array.isArray(coverImg) && coverImg[0]
+      ? coverImg[0] // never null ✅
+      : '';
+
+  const firstHost = eventHosts[0];
+
   useEffect(() => {
-    reset({
-      title,
-      hostId,
-      hostName,
-      ageLimit,
-      description,
+    if (!event) return;
+    const formVals = {
+      eventId: params.eventId,
+      title: event?.title ?? '',
+      hostId: firstHost?.id ?? '',
+      hostName: eventHosts?.length ? `${firstHost?.name}`.trim() : '',
+      ageLimit: toAgeLabel(event?.age_limit),
+      description: event?.description ?? '',
       location: {
-        locationText: '',
-        formattedAddress: '',
-        provider: '',
-        placeid: '',
+        locationText: event?.location_text ?? '',
+        formattedAddress: event?.formatted_address ?? '',
+        provider: event?.provider ?? '',
+        placeId: event?.place_id ?? '',
       },
-      date,
-      startTime,
-      endTime,
-      capacity: capacity,
-      creditCost: creditCost,
-      coverImageUri,
-      interests: selectedInterests ?? [],
+      date: event?.starts_at ? toDateStr(event?.starts_at) : '',
+      startTime: event?.starts_at ? toTime12(event?.starts_at) : '',
+      endTime: event?.ends_at ? toTime12(event?.ends_at) : '',
+      capacity: String(event?.capacity ?? ''),
+      creditCost: String(event?.token_cost ?? ''),
+      originalCoverImageUri: imageUrl,
+
+      interests: event?.category ?? [],
+    } as const;
+
+    // RHF
+    reset(formVals);
+    setEventId(formVals.eventId ?? '');
+    setTitle(formVals.title);
+    setHostId(formVals.hostId);
+    setHostName(formVals.hostName);
+    setAgeLimit(formVals.ageLimit);
+    setDescription(formVals.description);
+    setLocation({
+      locationText: formVals.location.locationText ?? '',
+      formattedAddress: formVals.location.formattedAddress ?? '',
+      provider: formVals.location.provider ?? '',
+      placeId: formVals.location.placeId ?? '',
     });
-  }, []);
-
-  // useFocusEffect(
-  //   useCallback(() => {
-  //     if (route.params?.clear) {
-  //       // 1) reset RHF
-  //       reset(defaultFormValues);
-
-  //       // 2) reset your store (if you added resetAll)
-  //       useEventCreateStore.getState().reset?.();
-
-  //       // 3) optionally clear the flag so re-focusing doesn't re-clear
-  //       navigation.setParams?.({ clear: undefined } as never);
-  //     }
-  //     return undefined;
-  //   }, [route.params?.clear])
-  // );
+    setDate(formVals.date);
+    setStartTime(event.starts_at ?? '');
+    setEndTime(event.ends_at ?? '');
+    setCapacity(formVals.capacity);
+    setCreditCost(formVals.creditCost);
+    setOriginalCoverImageUri(imageUrl);
+    setOriginalCoverPath(event?.cover_img ?? '');
+    setInterests(formVals.interests);
+  }, [event]);
 
   const handleImagePick = async (useCamera: boolean = false) => {
     try {
@@ -158,8 +203,10 @@ export default function CreateEventScreen() {
           });
 
       if (!result.canceled && result.assets[0]) {
-        const uri = result.assets[0].uri;
+        const uri = result.assets[0].uri; // file://...
         setValue('coverImageUri', uri, { shouldValidate: true, shouldDirty: true });
+        // and also reflect it in store
+        setCoverImageUri(uri);
       }
     } catch (error) {
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to pick image');
@@ -214,30 +261,32 @@ export default function CreateEventScreen() {
 
   const interestEntries = Object.entries(INTEREST_CATEGORIES);
 
-  useEffect(() => {
-    const sub = watch((vals) => {
-      setTitle(vals.title ?? '');
-      setDescription(vals.description ?? '');
-      setLocation({
-        locationText: vals.location?.locationText ?? '',
-        formattedAddress: vals.location?.formattedAddress ?? '',
-        provider: vals.location?.provider ?? '',
-        placeid: vals.location?.placeid ?? '',
+  useFocusEffect(
+    useCallback(() => {
+      const sub = watch((vals) => {
+        setTitle(vals.title ?? '');
+        setDescription(vals.description ?? '');
+        setLocation({
+          locationText: vals.location?.locationText ?? '',
+          formattedAddress: vals.location?.formattedAddress ?? '',
+          provider: vals.location?.provider ?? '',
+          placeId: vals.location?.placeId ?? '',
+        });
+        setDate(vals.date ?? '');
+        setStartTime(vals.startTime ?? '');
+        setEndTime(vals.endTime ?? '');
+        setCapacity(vals.capacity ?? '');
+        setCreditCost(vals.creditCost ?? '');
+        setCoverImageUri(vals.coverImageUri ?? '');
+        setInterests(
+          ((vals.interests ?? []) as (string | undefined)[]).filter(
+            (i): i is string => typeof i === 'string'
+          )
+        );
       });
-      setDate(vals.date ?? '');
-      setStartTime(vals.startTime ?? '');
-      setEndTime(vals.endTime ?? '');
-      setCapacity(vals.capacity ?? '');
-      setCreditCost(vals.creditCost ?? '');
-      setCoverImageUri(vals.coverImageUri ?? '');
-      setInterests(
-        ((vals.interests ?? []) as (string | undefined)[]).filter(
-          (i): i is string => typeof i === 'string'
-        )
-      );
-    });
-    return () => sub.unsubscribe();
-  }, [watch]);
+      return () => sub.unsubscribe(); // unsubscribe on blur
+    }, [watch])
+  );
 
   const GOOGLE_PLACES_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY!;
 
@@ -350,11 +399,11 @@ export default function CreateEventScreen() {
             {/* Cover image */}
             <Flex direction="column" align="center" className=" w-full px-4" gap={6}>
               <Flex direction="column" justify="center" gap={4} className="w-full">
-                {coverImageUri ? (
+                {originalCoverImageUri || coverImageUri ? (
                   <Pressable onPress={chooseImageSource}>
                     <Flex align="center" gap={2}>
                       <Image
-                        source={{ uri: coverImageUri }}
+                        source={{ uri: coverImageUri || originalCoverImageUri }}
                         className="h-28 w-full rounded-lg"
                         alt="Profile picture"
                       />
@@ -444,7 +493,7 @@ export default function CreateEventScreen() {
                           locationText: p.structuredFormat.mainText.text,
                           formattedAddress: p.structuredFormat.secondaryText?.text ?? '',
                           provider: 'google',
-                          placeid: p?.placeId,
+                          placeId: p?.placeId,
                         };
 
                         field.onChange(loc);

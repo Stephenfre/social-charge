@@ -21,6 +21,28 @@ function HomeStackNavigator() {
         component={ViewEventScreen}
         options={{ headerShown: false }}
       />
+      <RootStack.Screen
+        name="CreateEvent"
+        component={CreateEventScreen}
+        options={{
+          headerShown: true,
+          headerBackButtonDisplayMode: 'minimal',
+          headerStyle: { backgroundColor: '#0F1012' },
+          headerTintColor: 'white',
+          headerTitleStyle: { color: 'white' },
+        }}
+      />
+      <RootStack.Screen
+        name="Review Event"
+        component={ReviewCreateEventScreen}
+        options={{
+          headerShown: true,
+          headerBackButtonDisplayMode: 'minimal',
+          headerStyle: { backgroundColor: '#0F1012' },
+          headerTintColor: 'white',
+          headerTitleStyle: { color: 'white' },
+        }}
+      />
     </RootStack.Navigator>
   );
 }
@@ -92,6 +114,12 @@ function CreateEventStackNavigator() {
           headerTintColor: 'white',
           headerTitleStyle: { color: 'white' },
         }}
+      />
+      {/* 👇 Add this */}
+      <RootStack.Screen
+        name="ViewEvent"
+        component={ViewEventScreen}
+        options={{ headerShown: false }}
       />
     </RootStack.Navigator>
   );

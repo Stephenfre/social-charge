@@ -53,6 +53,7 @@ export function useCheckInEvent() {
     },
   });
 }
+
 export function useEventById(id: string) {
   return useQuery<EventWithJoins>({
     queryKey: ['events', 'eventById', id],
@@ -216,10 +217,10 @@ type UpsertEventArgs = {
 export const KEYS = {
   events: ['events'] as const,
   eventById: (id: string) => ['event', id] as const,
-  userEvents: ['user', 'events'] as const,
+  userEventCards: (uid: string | null | undefined) =>
+    ['user', 'eventCards', uid ?? 'anon'] as const,
 };
 
-/** Server mutation doing the actual upsert */
 async function upsertEvent(args: UpsertEventArgs, userId: string): Promise<EventRow> {
   const {
     id,
@@ -309,118 +310,92 @@ async function upsertEvent(args: UpsertEventArgs, userId: string): Promise<Event
   return eventRow!;
 }
 
-/** ===== Hook with optimistic updates, same style as useCreateRsvp ===== */
+type AnyKey = readonly unknown[];
+type ListSnap<T> = [AnyKey, T | undefined];
+// Your mutation context. All fields optional so returning `{}` is valid.
 type Ctx = {
-  // snapshots for rollback
-  listSnaps: [readonly unknown[], EventRow[] | undefined][];
-  prevDetail?: EventRow;
-  detailKey?: readonly unknown[];
-  createdOptimisticId?: string;
+  listSnaps?: Array<ListSnap<EventRow[]>>; // snapshots of list queries
+  prevDetail?: EventRow; // previous detail cache
+  detailKey?: AnyKey; // key used for detail cache
+  createdOptimisticId?: string; // if you create optimistic items
 };
 
 export function useUpsertEvent(userId: string | null) {
   const qc = useQueryClient();
 
   return useMutation<EventRow, unknown, UpsertEventArgs, Ctx>({
-    mutationFn: async (args) => {
+    mutationFn: async (vars) => {
       if (!userId) throw new Error('Not signed in');
-      return upsertEvent(args, userId);
+      return upsertEvent(vars, userId);
     },
 
     onMutate: async (vars) => {
-      // stop refetches that could overwrite our optimistic state
-      await qc.cancelQueries({ queryKey: KEYS.events });
-      if (vars.id) await qc.cancelQueries({ queryKey: KEYS.eventById(vars.id) });
-      await qc.cancelQueries({ queryKey: KEYS.userEvents });
+      const ctx: Ctx = {};
 
-      // snapshots
-      const listSnaps = qc.getQueriesData<EventRow[]>({ queryKey: KEYS.events });
-      const detailKey = vars.id ? KEYS.eventById(vars.id) : undefined;
-      const prevDetail = detailKey ? qc.getQueryData<EventRow>(detailKey) : undefined;
+      // Only do optimistic detail patch for updates
+      if (vars.id) {
+        const detailKey = KEYS.eventById(vars.id);
+        await qc.cancelQueries({ queryKey: detailKey });
 
-      // optimistic event object
-      const nowISO = new Date().toISOString();
-      const optimisticId = vars.id ?? `optimistic-${Date.now()}`;
-      const optimistic: EventRow = {
-        id: optimisticId,
-        title: vars.title.trim(),
-        description: vars.description?.trim() ?? null,
-        age_limit: vars.ageLimit,
-        location_text: vars.location_text,
-        formatted_address: vars.formatted_address,
-        location: null,
-        provider: vars.provider,
-        place_id: vars.place_id,
-        starts_at: vars.startAtISO,
-        ends_at: vars.endAtISO ?? null,
-        capacity: Number(vars.capacity),
-        token_cost: Number(vars.creditCost),
-        category: vars.category,
-        cover_img: '',
-        created_at: prevDetail?.created_at ?? nowISO,
-        created_by: prevDetail?.created_by ?? userId,
-      };
+        const prev = qc.getQueryData<EventRow>(detailKey);
+        if (prev) {
+          ctx.prevDetail = prev;
 
-      // update events lists
-      qc.setQueriesData<EventRow[]>({ queryKey: KEYS.events }, (prev) => {
-        const arr = prev ?? [];
-        const exists = arr.find((e) => e.id === optimistic.id);
-        return exists
-          ? arr.map((e) => (e.id === optimistic.id ? optimistic : e))
-          : [optimistic, ...arr];
-      });
+          const patch: Partial<EventRow> = {
+            title: vars.title?.trim() ?? prev.title,
+            description: vars.description ?? prev.description,
+            starts_at: vars.startAtISO ?? prev.starts_at,
+            ends_at: vars.endAtISO ?? prev.ends_at,
+            token_cost: vars.creditCost ?? prev.token_cost,
+            capacity: vars.capacity ?? prev.capacity,
+            location_text: vars.location_text ?? prev.location_text,
+            formatted_address: vars.formatted_address ?? prev.formatted_address,
+            provider: vars.provider ?? prev.provider,
+            place_id: vars.place_id ?? prev.place_id,
+            category: vars.category ?? prev.category,
+          };
 
-      // update detail cache
-      if (detailKey) {
-        qc.setQueryData<EventRow>(detailKey, optimistic);
+          qc.setQueryData<EventRow>(detailKey, { ...prev, ...patch });
+        }
       }
 
-      // optionally, update userEvents list (like your useCreateRsvp)
-      qc.setQueriesData<any[]>({ queryKey: KEYS.userEvents }, (prev) => {
-        const arr = prev ?? [];
-        const exists = arr.find((e) => e.id === optimistic.id);
-        if (exists) return arr;
-        const status: 'upcoming' | 'past' =
-          new Date(optimistic.starts_at) >= new Date() ? 'upcoming' : 'past';
-        const card = {
-          id: optimistic.id,
-          title: optimistic.title,
-          cover_img: optimistic.cover_img,
-          starts_at: optimistic.starts_at,
-          created_at: optimistic.created_at,
-          event_status: status,
-        };
-        return [card, ...arr];
-      });
-
-      return {
-        listSnaps,
-        prevDetail,
-        detailKey,
-        createdOptimisticId: vars.id ? undefined : optimisticId,
-      };
+      return ctx;
     },
 
-    onError: (_e, _vars, ctx) => {
-      // rollback lists
-      ctx?.listSnaps.forEach(([key, prev]) => qc.setQueryData(key, prev));
-      // rollback detail
-      if (ctx?.detailKey) qc.setQueryData(ctx.detailKey, ctx.prevDetail);
-      // if we created a brand new optimistic event, remove it from userEvents too
-      if (ctx?.createdOptimisticId) {
-        qc.setQueriesData<any[]>({ queryKey: KEYS.userEvents }, (prev) =>
-          (prev ?? []).filter((e) => e.id !== ctx.createdOptimisticId)
+    onError: (_err, vars, ctx) => {
+      // rollback detail if we optimistically patched
+      if (vars.id && ctx?.prevDetail) {
+        qc.setQueryData<EventRow>(KEYS.eventById(vars.id), ctx.prevDetail);
+      }
+    },
+
+    onSuccess: (evt, vars) => {
+      const isCreate = !vars.id;
+
+      // Always keep the detail fresh
+      qc.setQueryData<EventRow>(KEYS.eventById(evt.id), evt);
+
+      if (isCreate) {
+        // Only on create: lists are stale
+        qc.invalidateQueries({ queryKey: KEYS.events });
+        // if you maintain per-user cards:
+        // qc.invalidateQueries({ queryKey: KEYS.userEventCards(userId) });
+      } else {
+        // On update, avoid broad invalidations to prevent flicker/reset.
+        // If lists depend on updated fields, do a targeted patch instead:
+        qc.setQueriesData<EventRow[]>({ queryKey: KEYS.events }, (prev) =>
+          Array.isArray(prev) ? prev.map((e) => (e.id === evt.id ? evt : e)) : prev
         );
+        // same idea for userEventCards:
+        // qc.setQueriesData<EventCard[]>({ queryKey: KEYS.userEventCards(userId) }, (prev) => ...)
       }
     },
 
-    onSettled: (evt, _err, _vars) => {
-      // refetch authoritative data
-      if (evt?.id) {
-        qc.invalidateQueries({ queryKey: KEYS.eventById(evt.id) });
-      }
-      qc.invalidateQueries({ queryKey: KEYS.events });
-      qc.invalidateQueries({ queryKey: KEYS.userEvents });
+    onSettled: (evt, _err, vars) => {
+      if (!evt) return;
+      // For create, you may want to ensure detail is in sync with server transforms:
+      if (!vars.id) qc.invalidateQueries({ queryKey: KEYS.eventById(evt.id) });
+      // For updates, skip broad invalidations.
     },
   });
 }

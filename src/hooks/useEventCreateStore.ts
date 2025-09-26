@@ -29,10 +29,11 @@ type location = {
   locationText: string;
   formattedAddress: string;
   provider: string;
-  placeid: string;
+  placeId: string;
 };
 
 type EventDraft = {
+  eventId: string;
   title: string;
   hostId: string;
   hostName: string;
@@ -45,11 +46,14 @@ type EventDraft = {
   capacity: string;
   creditCost: string;
   coverImageUri: string;
+  originalCoverImageUri: string; // signed URL you display in UI
+  originalCoverPath: string;
   selectedInterests: string[];
 };
 
 type EventActions = {
   setField: <K extends keyof EventDraft>(key: K, value: EventDraft[K]) => void;
+  setEventId: (v: string) => void;
   setTitle: (v: string) => void;
   setHostId: (v: string) => void;
   setHostName: (v: string) => void;
@@ -62,12 +66,16 @@ type EventActions = {
   setCapacity: (v: string) => void;
   setCreditCost: (v: string) => void;
   setCoverImageUri: (v: string) => void;
+  setOriginalCoverImageUri: (v: string) => void;
+  setOriginalCoverPath: (v: string) => void;
+  hasCoverChanged: () => boolean;
   toggleInterest: (interest: string) => void;
   setInterests: (list: string[]) => void;
   reset: () => void;
 
   // helpers for submission:
   buildPayload: () => {
+    eventId: string;
     title: string;
     hostId: string;
     hostName: string;
@@ -83,10 +91,12 @@ type EventActions = {
     startTime: string;
     endTime: string;
     coverImageUri: string;
+    originalCoverImageUri: string;
   };
 };
 
 const initialState: EventDraft = {
+  eventId: '',
   title: '',
   hostId: '',
   hostName: '',
@@ -99,6 +109,8 @@ const initialState: EventDraft = {
   capacity: '',
   creditCost: '',
   coverImageUri: '',
+  originalCoverImageUri: '',
+  originalCoverPath: '',
   selectedInterests: [],
 };
 
@@ -108,6 +120,7 @@ export const useEventCreateStore = create<EventDraft & EventActions>()(
       ...initialState,
 
       setField: (key, value) => set({ [key]: value } as any),
+      setEventId: (v) => set({ eventId: v }),
       setTitle: (v) => set({ title: v }),
       setHostId: (v) => set({ hostId: v }),
       setHostName: (v) => set({ hostName: v }),
@@ -119,8 +132,16 @@ export const useEventCreateStore = create<EventDraft & EventActions>()(
       setEndTime: (v) => set({ endTime: v }),
       setCapacity: (v) => set({ capacity: v }),
       setCoverImageUri: (v) => set({ coverImageUri: v }),
-      setCreditCost: (v) => set({ creditCost: v }),
+      setOriginalCoverImageUri: (v) => set({ originalCoverImageUri: v }),
+      setOriginalCoverPath: (v) => set({ originalCoverPath: v }),
 
+      hasCoverChanged: () => {
+        const { coverImageUri } = get();
+        // if user picked a *local* file, it changed
+        return !!coverImageUri && coverImageUri.startsWith('file://');
+      },
+
+      setCreditCost: (v) => set({ creditCost: v }),
       toggleInterest: (interest) => {
         const { selectedInterests } = get();
         const exists = selectedInterests.includes(interest);
@@ -143,6 +164,7 @@ export const useEventCreateStore = create<EventDraft & EventActions>()(
         const endAtISO = s.date && s.endTime ? combineDateTimeToISO(s.date, s.endTime) : undefined;
 
         return {
+          eventId: s.eventId,
           title: s.title.trim(),
           hostId: s.hostId.trim(),
           hostName: s.hostName.trim(),
@@ -158,6 +180,7 @@ export const useEventCreateStore = create<EventDraft & EventActions>()(
           startTime: s.startTime,
           endTime: s.endTime,
           coverImageUri: s.coverImageUri,
+          originalCoverImageUri: s.originalCoverImageUri,
         };
       },
     }),

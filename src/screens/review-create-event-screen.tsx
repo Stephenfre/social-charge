@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import dayjs from 'dayjs';
-import { Calendar, Clock, MapPin } from 'lucide-react-native';
+import { Calendar, Clock } from 'lucide-react-native';
 import { Alert } from 'react-native';
 import { Button, Flex, Image, Text } from '~/components/ui';
 import { useEventCreateStore } from '~/hooks';
@@ -9,6 +9,8 @@ import { useAuth } from '~/providers/AuthProvider';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '~/types/navigation.types';
 import { Spinner } from '~/components/ui/spinner';
+import { isCoverUnchanged } from '~/utils/image-path-uri';
+import { uploadEventCoverImage } from '~/lib/uploadImage';
 
 type HomeNav = NativeStackNavigationProp<RootStackParamList, 'HomeIndex'>;
 
@@ -18,6 +20,7 @@ export function ReviewCreateEventScreen() {
 
   const { mutateAsync: saveEvent, isPending } = useUpsertEvent(userId);
   const {
+    eventId,
     title,
     hostId,
     hostName,
@@ -30,42 +33,54 @@ export function ReviewCreateEventScreen() {
     creditCost,
     selectedInterests,
     coverImageUri,
+    originalCoverPath,
+    hasCoverChanged,
     reset,
   } = useEventCreateStore();
 
   const parseAgeLimit = parseInt(ageLimit, 10);
 
   const onSumbit = async () => {
-    try {
-      const result = await saveEvent({
-        title,
-        description,
-        location: '',
-        location_text: location?.locationText ?? '',
-        formatted_address: location?.formattedAddress ?? '',
-        provider: location?.provider ?? '',
-        place_id: location?.placeid ?? '',
-        ageLimit: parseAgeLimit,
-        startAtISO: startTime,
-        endAtISO: endTime,
-        capacity: Number(capacity),
-        creditCost: Number(creditCost),
-        category: selectedInterests ?? [],
-        coverImageUri,
-        hostId,
-      });
+    const coverPathToSave = hasCoverChanged() && coverImageUri ? coverImageUri : originalCoverPath;
 
-      if (result) {
-        reset();
-        // after success:
+    const eventDetails = {
+      id: eventId,
+      title,
+      description,
+      location: '',
+      location_text: location?.locationText ?? '',
+      formatted_address: location?.formattedAddress ?? '',
+      provider: location?.provider ?? '',
+      place_id: location?.placeId ?? '',
+      ageLimit: parseAgeLimit,
+      startAtISO: startTime,
+      endAtISO: endTime,
+      capacity: Number(capacity),
+      creditCost: Number(creditCost),
+      category: selectedInterests ?? [],
+      coverImageUri: coverPathToSave,
+      hostId,
+    };
+    try {
+      const result = await saveEvent(eventDetails);
+      const nextId = eventId || result?.id; // prefer the fresh id
+      if (!result || !nextId) return;
+
+      if (!eventId) {
         navigation.reset({
           index: 0,
           routes: [{ name: 'CreateEvent', params: { clear: true } }],
         });
+        reset();
+      } else {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'ViewEvent', params: { eventId: nextId } }],
+        });
+        reset();
       }
     } catch (error) {
       console.log('error', error);
-
       Alert.alert('failed to create event');
     }
   };
@@ -133,7 +148,7 @@ export function ReviewCreateEventScreen() {
       <Button variant="primary" size="xl" onPress={onSumbit}>
         {!isPending ? (
           <Text bold size="xl">
-            Create
+            {!eventId ? 'Create' : 'Update'}
           </Text>
         ) : (
           <Spinner />
