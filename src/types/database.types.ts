@@ -681,6 +681,72 @@ export type Database = {
         }
         Relationships: []
       }
+      token_ledger: {
+        Row: {
+          created_at: string
+          credit: number
+          event_id: string | null
+          id: string
+          meta: Json
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credit: number
+          event_id?: string | null
+          id?: string
+          meta?: Json
+          reason: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credit?: number
+          event_id?: string | null
+          id?: string
+          meta?: Json
+          reason?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "token_ledger_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "token_ledger_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_for_current_user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "token_ledger_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "token_ledger_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "token_ledger_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       token_transactions: {
         Row: {
           amount: number
@@ -940,6 +1006,36 @@ export type Database = {
         }
         Relationships: []
       }
+      v_event_user_vibes: {
+        Row: {
+          event_id: string | null
+          vibe_count: number | null
+          vibe_slug: Database["public"]["Enums"]["vibe_slug"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_for_current_user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_events_for_current_user: {
         Row: {
           age_limit: number | null
@@ -1002,6 +1098,28 @@ export type Database = {
           {
             foreignKeyName: "events_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      v_user_token_balance: {
+        Row: {
+          balance: number | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "token_ledger_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "token_ledger_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "vw_user_current_vibe"
             referencedColumns: ["user_id"]
@@ -1258,6 +1376,10 @@ export type Database = {
         Args: { "": unknown } | { "": unknown }
         Returns: string
       }
+      check_in: {
+        Args: { event_id: string }
+        Returns: undefined
+      }
       disablelongtransactions: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -1292,6 +1414,10 @@ export type Database = {
       f_user_event_today_or_next: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      f_user_token_balance: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       geography: {
         Args: { "": string } | { "": unknown }
@@ -2811,6 +2937,10 @@ export type Database = {
       text: {
         Args: { "": unknown }
         Returns: string
+      }
+      undo_check_in: {
+        Args: { event_id: string }
+        Returns: undefined
       }
       unlockrows: {
         Args: { "": string }

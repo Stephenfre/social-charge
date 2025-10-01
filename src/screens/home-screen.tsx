@@ -14,7 +14,6 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '~/types/navigation.types';
-import { supabase } from '~/lib/supabase';
 import { EventCard } from '~/components/EventCard/EventCard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -274,17 +273,18 @@ export function HomeScreen() {
                                     </Text>
                                   </Flex>
                                 </Flex>
-                                <Flex
-                                  className="w-16 rounded-xl bg-background-900 p-2"
-                                  justify="center"
-                                  align="center">
-                                  <Text className="text-primary" weight="500">
-                                    RSVP
-                                  </Text>
-                                  <Text className="text-white" weight="500">
-                                    {event?.token_cost} $B
-                                  </Text>
-                                </Flex>
+                                {/* 
+                                TODO: IF A USER IS RSVP'D TO A EVENT SHOW A CHECK MARK? */}
+                                <Pressable className="w-16 rounded-xl bg-background-900 p-2">
+                                  <Flex justify="center" align="center">
+                                    <Text className="text-primary" weight="500">
+                                      RSVP
+                                    </Text>
+                                    <Text className="text-white" weight="500">
+                                      {event?.token_cost} $B
+                                    </Text>
+                                  </Flex>
+                                </Pressable>
                               </Flex>
                             </Pressable>
                           ))}

@@ -15,7 +15,7 @@ import { cn } from '~/utils/cn';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useDeleteEvent } from '~/hooks/useEvents';
+import { useDeleteEvent, useEventVibes } from '~/hooks/useEvents';
 
 type CreateEventNav = NativeStackNavigationProp<RootStackParamList, 'CreateEvent'>;
 
@@ -27,6 +27,7 @@ export function ViewEventScreen() {
 
   const { userId, user } = useAuth();
   const { data: event, isLoading } = useEventById(params.eventId);
+  const { data: eventVibes = [], isLoading: loadingEventVibes } = useEventVibes(params.eventId);
   const { data: rsvps = [], isLoading: rsvpLoading } = useRsvps(params.eventId);
   const { mutate: deleteEvent, isPending } = useDeleteEvent();
 
@@ -58,14 +59,6 @@ export function ViewEventScreen() {
     paths: evenRsvpsPaths,
   });
 
-  if (isLoading) {
-    return (
-      <SafeAreaView className=" h-full bg-background-dark">
-        <Text>Loading....</Text>
-      </SafeAreaView>
-    );
-  }
-
   const handlePressNavigateToCreateEvent = () => {
     navigation.navigate('CreateEvent', { eventId: event?.id });
   };
@@ -86,9 +79,17 @@ export function ViewEventScreen() {
   const canDelete = user?.role === 'super_admin';
   const isEventDeleted = event?.deleted_at;
 
+  if (isLoading) {
+    return (
+      <View className=" h-full bg-background-dark">
+        <Text>Loading....</Text>
+      </View>
+    );
+  }
+
   if (isEventDeleted) {
     return (
-      <SafeAreaView className="h-full bg-background-dark">
+      <View className="h-full bg-background-dark">
         <Flex align="center" className="m-auto" gap={4}>
           <Flex align="center">
             <TicketX size={48} color={'white'} />
@@ -106,12 +107,12 @@ export function ViewEventScreen() {
             <Text bold>Find Events</Text>
           </Button>
         </Flex>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView className="h-full bg-background-dark">
+    <View className="h-full bg-background-dark">
       <ScrollView>
         <View className="relative">
           <EventCard
@@ -157,7 +158,7 @@ export function ViewEventScreen() {
               <Flex direction="row" align="center" gap={2}>
                 <MapPin color={'white'} size={14} />
                 <Text size="lg" className="text-white">
-                  {event?.location}
+                  {event?.location_text}
                 </Text>
               </Flex>
             </Flex>
@@ -203,7 +204,11 @@ export function ViewEventScreen() {
                     canEdit={canEdit}
                   />
                 ) : (
-                  <CancelRsvpButton userId={userId ?? ''} eventId={params.eventId} />
+                  <CancelRsvpButton
+                    canEdit={canEdit}
+                    userId={userId ?? ''}
+                    eventId={params.eventId}
+                  />
                 ))}
               {canEdit && (
                 <Button
@@ -228,6 +233,25 @@ export function ViewEventScreen() {
               About this event
             </Text>
             <Text>{event?.description}</Text>
+          </Flex>
+
+          <Flex gap={4}>
+            <Text bold size="2xl">
+              Vibe Check
+            </Text>
+            {eventVibes.length ? (
+              <Flex direction="row" flex wrap="wrap" gap={2}>
+                {eventVibes.map((vibe) => {
+                  return (
+                    <Badge key={vibe.vibe_slug} variant="primary">
+                      <Text size="sm" className="uppercase text-primary-300" key={vibe.vibe_slug}>
+                        {vibe.vibe_slug}
+                      </Text>
+                    </Badge>
+                  );
+                })}
+              </Flex>
+            ) : null}
           </Flex>
 
           {user?.membership !== 'basic' && (
@@ -269,7 +293,7 @@ export function ViewEventScreen() {
             </Text>
             <Flex direction="row" gap={4} wrap="wrap">
               {event?.category?.map((cat) => (
-                <Badge key={cat} variant="primary" className="rounded-lg px-4 py-1">
+                <Badge key={cat} variant="primary">
                   <Text size="sm" className="uppercase text-primary-300">
                     {cat}
                   </Text>
@@ -290,7 +314,7 @@ export function ViewEventScreen() {
           )}
         </Flex>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -305,17 +329,17 @@ function RsvpButton({
   isLoading: boolean;
   canEdit: boolean;
 }) {
-  const createRsvp = useCreateRsvp();
+  const { mutate: createRsvp, isPending } = useCreateRsvp();
 
-  const label = createRsvp.isPending ? <Spinner /> : 'Rsvp';
+  const label = isPending ? <Spinner /> : 'Rsvp';
   const onSubmit = () =>
-    createRsvp.mutate({ eventId, userId }, { onError: () => Alert.alert('Something went wrong') });
+    createRsvp({ eventId, userId }, { onError: () => Alert.alert('Something went wrong') });
 
   return (
     <Button
       className={cn('h-14 w-full bg-primary', canEdit && 'w-[48%]')}
       onPress={onSubmit}
-      disabled={isLoading || createRsvp.isPending}>
+      disabled={isLoading || isPending}>
       <Text bold size="lg">
         {label}
       </Text>
@@ -326,17 +350,19 @@ function RsvpButton({
 export function CancelRsvpButton({
   eventId,
   className,
+  canEdit,
 }: {
   eventId: string;
   userId: string | undefined;
   className?: string;
+  canEdit?: boolean;
 }) {
-  const removeRsvp = useRemoveRsvp();
+  const { mutate: removeRsvp, isPending } = useRemoveRsvp();
 
-  const label = removeRsvp.isPending ? <Spinner /> : 'Cancel Rsvp';
+  const label = isPending ? <Spinner /> : 'Cancel Rsvp';
 
   const onCancelSubmit = () => {
-    removeRsvp.mutate(
+    removeRsvp(
       { eventId },
       {
         onError: () => Alert.alert('Failed to cancel RSVP'),
@@ -347,9 +373,11 @@ export function CancelRsvpButton({
 
   return (
     <Button
-      className={cn(className, 'h-14 bg-primary')}
+      size="xl"
+      variant="primary"
+      className={cn(className ? className : 'w-full', canEdit && 'w-[48%]')}
       onPress={onCancelSubmit}
-      disabled={removeRsvp.isPending}>
+      disabled={isPending}>
       <Text bold size="lg">
         {label}
       </Text>

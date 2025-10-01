@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { EventsList } from '~/components';
 import { Badge, Box, Button, Flex, Image, Pressable, Text } from '~/components/ui';
 import { useStorageImages, useUserEvents, useUserInterests } from '~/hooks';
+import { useMyTokenBalance } from '~/hooks/useEvents';
 import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/providers/AuthProvider';
 import { RootStackParamList } from '~/types/navigation.types';
@@ -19,10 +20,13 @@ export function ProfileScreen() {
   const { user } = useAuth();
   const { data: events, isLoading: eventsLoading } = useUserEvents(6);
   const { data: interests, isLoading: interestsLoading } = useUserInterests(user?.id!);
+  const { data: tokens, isLoading: tokensLoading } = useMyTokenBalance();
   const { data: userAvater, isLoading: userAvatarLoading } = useStorageImages({
     bucket: 'avatars',
     paths: [user?.profile_picture],
   });
+
+  console.log('tokens', tokens);
 
   const handleViewAllPress = () => {
     navigation.navigate('Event History');
@@ -57,6 +61,11 @@ export function ProfileScreen() {
             {/* Add THIS TO DB */}
             <Text size="sm">@DevinBooker</Text>
             <Text size="sm">Joined in {dayjs(user?.created_at).format('YYYY')}</Text>
+            <Badge variant="primary">
+              <Text size="sm" className="uppercase text-primary-300">
+                {user?.preferred_vibe_slug}
+              </Text>
+            </Badge>
           </Flex>
           <Flex direction="row" align="center" gap={1}>
             <Pressable className="w-1/3 rounded-lg">
@@ -80,7 +89,7 @@ export function ProfileScreen() {
             <Pressable className="w-1/3 rounded-lg">
               <Flex align="center" className="p-6">
                 <Text size="2xl" bold>
-                  25
+                  {tokens ? tokens : '--'}
                 </Text>
                 <Text size="sm">Credits</Text>
               </Flex>
