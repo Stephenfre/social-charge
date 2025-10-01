@@ -5,6 +5,7 @@ import { UsersRow } from './user.type';
 export type EventRow = Database['public']['Tables']['events']['Row'];
 export type EventInsert = Database['public']['Tables']['events']['Insert'];
 export type EventUpdate = Database['public']['Tables']['events']['Update'];
+export type EventCheckIn = Database['public']['Tables']['check_ins']['Row'];
 
 export type EventHostRow = Tables<'event_hosts'> & { user: UsersRow };
 export type RsvpRow = Tables<'rsvps'> & { user: UsersRow };

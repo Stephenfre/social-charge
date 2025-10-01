@@ -3,9 +3,15 @@ import dayjs from 'dayjs';
 import { supabase } from '~/lib/supabase';
 import { uploadEventCoverImage } from '~/lib/uploadImage';
 import { useAuth } from '~/providers/AuthProvider';
-import { EventRow, EventVibes, EventWithJoins, UserEventCardRow } from '~/types/event.types';
+import {
+  EventCheckIn,
+  EventRow,
+  EventVibes,
+  EventWithJoins,
+  UserEventCardRow,
+} from '~/types/event.types';
 
-export const KEYS = {
+export const EVENT_KEYS = {
   events: ['events'] as const,
   eventById: (id: string) => ['event', id] as const,
   userEvents: (uid: string) => ['user', 'events', uid] as const,
@@ -14,6 +20,10 @@ export const KEYS = {
   cheap: ['events', 'cheap'] as const,
   thisWeekend: ['events', 'thisWeekend'] as const,
   trending: ['events', 'trending'] as const,
+  userTokenBalance: (uid: string | null | undefined) => ['user', 'tokenBalance', uid] as const,
+  checkIn: (userId?: string | null) => ['events', 'checkInEvent', userId] as const,
+  userCheckedIn: (userId?: string | null, eventId?: string | null) =>
+    ['events', 'checkIn', 'byUserEvent', userId, eventId] as const,
 };
 
 export function useUserEvents(limit?: number) {
@@ -33,25 +43,21 @@ export function useUserEvents(limit?: number) {
   });
 }
 
-type CheckInUser = {
+type ViewCheckInUser = {
   user_id: string;
   user: { id: string; first_name: string; last_name: string; profile_picture: string | null };
 };
-type CheckInResult = {
+type ViewCheckInResult = {
   event: EventRow;
-  hosts: CheckInUser[] | null;
-  attendees: CheckInUser[] | null;
+  hosts: ViewCheckInUser[] | null;
+  attendees: ViewCheckInUser[] | null;
 };
 
-export const CHECK_IN_KEYS = {
-  checkIn: (userId?: string | null) => ['events', 'checkInEvent', userId ?? 'anon'] as const,
-};
-
-export function useCheckInEvent() {
+export function useViewCheckInEvent() {
   const { userId } = useAuth();
 
-  return useQuery<CheckInResult | null>({
-    queryKey: CHECK_IN_KEYS.checkIn(userId),
+  return useQuery<ViewCheckInResult | null>({
+    queryKey: EVENT_KEYS.checkIn(userId),
     enabled: !!userId,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
@@ -59,10 +65,67 @@ export function useCheckInEvent() {
     queryFn: async () => {
       const { data, error } = await supabase
         .rpc('f_user_event_today_or_next')
-        .maybeSingle<CheckInResult>();
+        .maybeSingle<ViewCheckInResult>();
       if (error) throw error;
       return data;
     },
+  });
+}
+
+export function useUserCheckedInEvent(eventId: string | null) {
+  const { userId } = useAuth();
+
+  return useQuery<EventCheckIn | null>({
+    queryKey: EVENT_KEYS.userCheckedIn(userId, eventId),
+    enabled: !!userId && !!eventId,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('check_ins')
+        .select('event_id,user_id')
+        .eq('user_id', userId!) // current user
+        .eq('event_id', eventId!) // ✅ correct column name
+        .maybeSingle<EventCheckIn>();
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useCheckIn() {
+  const { userId } = useAuth();
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (eventId: string) => {
+      const { error } = await supabase.rpc('check_in', { event_id: eventId });
+      if (error) throw error;
+      return true;
+    },
+    onSuccess: (_res, eventId) => {
+      // re-fetch the stuff that depends on check-ins and balance
+      qc.invalidateQueries({ queryKey: EVENT_KEYS.userTokenBalance(userId) });
+      qc.invalidateQueries({ queryKey: EVENT_KEYS.checkIn(eventId) });
+    },
+  });
+}
+
+export function useMyTokenBalance() {
+  const { userId } = useAuth();
+  return useQuery({
+    queryKey: EVENT_KEYS.userTokenBalance(userId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('v_user_token_balance')
+        .select('balance')
+        .eq('user_id', userId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.balance ?? 0;
+    },
+    staleTime: 15_000,
   });
 }
 
@@ -361,7 +424,7 @@ export function useUpsertEvent(userId: string | null) {
 
       // Only do optimistic detail patch for updates
       if (vars.id) {
-        const detailKey = KEYS.eventById(vars.id);
+        const detailKey = EVENT_KEYS.eventById(vars.id);
         await qc.cancelQueries({ queryKey: detailKey });
 
         const prev = qc.getQueryData<EventRow>(detailKey);
@@ -392,7 +455,7 @@ export function useUpsertEvent(userId: string | null) {
     onError: (_err, vars, ctx) => {
       // rollback detail if we optimistically patched
       if (vars.id && ctx?.prevDetail) {
-        qc.setQueryData<EventRow>(KEYS.eventById(vars.id), ctx.prevDetail);
+        qc.setQueryData<EventRow>(EVENT_KEYS.eventById(vars.id), ctx.prevDetail);
       }
     },
 
@@ -400,28 +463,28 @@ export function useUpsertEvent(userId: string | null) {
       const isCreate = !vars.id;
 
       // Always keep the detail fresh
-      qc.setQueryData<EventRow>(KEYS.eventById(evt.id), evt);
+      qc.setQueryData<EventRow>(EVENT_KEYS.eventById(evt.id), evt);
 
       if (isCreate) {
         // Only on create: lists are stale
-        qc.invalidateQueries({ queryKey: KEYS.events });
+        qc.invalidateQueries({ queryKey: EVENT_KEYS.events });
         // if you maintain per-user cards:
-        // qc.invalidateQueries({ queryKey: KEYS.userEventCards(userId) });
+        // qc.invalidateQueries({ queryKey: EVENT_KEYS.userEventCards(userId) });
       } else {
         // On update, avoid broad invalidations to prevent flicker/reset.
         // If lists depend on updated fields, do a targeted patch instead:
-        qc.setQueriesData<EventRow[]>({ queryKey: KEYS.events }, (prev) =>
+        qc.setQueriesData<EventRow[]>({ queryKey: EVENT_KEYS.events }, (prev) =>
           Array.isArray(prev) ? prev.map((e) => (e.id === evt.id ? evt : e)) : prev
         );
         // same idea for userEventCards:
-        // qc.setQueriesData<EventCard[]>({ queryKey: KEYS.userEventCards(userId) }, (prev) => ...)
+        // qc.setQueriesData<EventCard[]>({ queryKey: EVENT_KEYS.userEventCards(userId) }, (prev) => ...)
       }
     },
 
     onSettled: (evt, _err, vars) => {
       if (!evt) return;
       // For create, you may want to ensure detail is in sync with server transforms:
-      if (!vars.id) qc.invalidateQueries({ queryKey: KEYS.eventById(evt.id) });
+      if (!vars.id) qc.invalidateQueries({ queryKey: EVENT_KEYS.eventById(evt.id) });
       // For updates, skip broad invalidations.
     },
   });
@@ -446,15 +509,15 @@ export function useDeleteEvent() {
     mutationFn: softDeleteEvent,
     onMutate: async (eventId: string) => {
       // Cancel outgoing queries
-      await qc.cancelQueries({ queryKey: KEYS.events });
+      await qc.cancelQueries({ queryKey: EVENT_KEYS.events });
 
       // Snapshot
-      const prevEvents = qc.getQueryData<any[]>(KEYS.events);
+      const prevEvents = qc.getQueryData<any[]>(EVENT_KEYS.events);
 
       // Optimistically remove event
       if (prevEvents) {
         qc.setQueryData<any[]>(
-          KEYS.events,
+          EVENT_KEYS.events,
           prevEvents.filter((e) => e.id !== eventId)
         );
       }
@@ -464,18 +527,18 @@ export function useDeleteEvent() {
     onError: (_err, _vars, ctx) => {
       // Rollback
       if (ctx?.prevEvents) {
-        qc.setQueryData(KEYS.events, ctx.prevEvents);
+        qc.setQueryData(EVENT_KEYS.events, ctx.prevEvents);
       }
     },
     onSuccess: (eventId) => {
-      qc.invalidateQueries({ queryKey: KEYS.eventById(eventId.id) });
-      qc.invalidateQueries({ queryKey: KEYS.userEvents(userId!) });
-      qc.invalidateQueries({ queryKey: KEYS.events });
-      qc.invalidateQueries({ queryKey: KEYS.justForYou(userId!) });
-      qc.invalidateQueries({ queryKey: KEYS.upcoming });
-      qc.invalidateQueries({ queryKey: KEYS.cheap });
-      qc.invalidateQueries({ queryKey: KEYS.thisWeekend });
-      qc.invalidateQueries({ queryKey: KEYS.trending });
+      qc.invalidateQueries({ queryKey: EVENT_KEYS.eventById(eventId.id) });
+      qc.invalidateQueries({ queryKey: EVENT_KEYS.userEvents(userId!) });
+      qc.invalidateQueries({ queryKey: EVENT_KEYS.events });
+      qc.invalidateQueries({ queryKey: EVENT_KEYS.justForYou(userId!) });
+      qc.invalidateQueries({ queryKey: EVENT_KEYS.upcoming });
+      qc.invalidateQueries({ queryKey: EVENT_KEYS.cheap });
+      qc.invalidateQueries({ queryKey: EVENT_KEYS.thisWeekend });
+      qc.invalidateQueries({ queryKey: EVENT_KEYS.trending });
     },
   });
 }

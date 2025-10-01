@@ -3,13 +3,18 @@ import dayjs from 'dayjs';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { TicketX } from 'lucide-react-native';
-import { ScrollView, View } from 'react-native';
+import { Alert, ScrollView, View } from 'react-native';
 import { Map } from '~/components';
 import { Countdown } from '~/components/Countdown/Countdown';
 import { Badge, Box, Button, Flex, Image, Text } from '~/components/ui';
 
 import { useStorageImages } from '~/hooks';
-import { useCheckInEvent, useEventVibes } from '~/hooks/useEvents';
+import {
+  useViewCheckInEvent,
+  useEventVibes,
+  useCheckIn,
+  useUserCheckedInEvent,
+} from '~/hooks/useEvents';
 import { useAuth } from '~/providers/AuthProvider';
 import { PersonCard } from '~/types/event.types';
 import { RootStackParamList } from '~/types/navigation.types';
@@ -23,8 +28,12 @@ export function EventCheckInScreen() {
   const navigation = useNavigation<HomeNav>();
 
   const { user } = useAuth();
-  const { data: event, isLoading: loadingEvent } = useCheckInEvent();
+  const { data: event, isLoading: loadingEvent } = useViewCheckInEvent();
   const { data: eventVibes = [], isLoading: loadingEventVibes } = useEventVibes(event?.event.id!);
+  const { data: userCheckedIn, isLoading: loadingUserCheckedIn } = useUserCheckedInEvent(
+    event?.event.id!
+  );
+  const { mutate: checkIn, isPending } = useCheckIn();
 
   const checkInEvent = event?.event;
   const host = event?.hosts;
@@ -51,8 +60,6 @@ export function EventCheckInScreen() {
     paths: hostPaths, // stored in users table
   });
 
-  const isNotStartTime = dayjs().isBefore(dayjs(checkInEvent?.starts_at));
-
   const evenRsvpsPaths = eventRsvps.map((r) => r.profile_pic);
   const { data: eventRsvpsAvatar = [], isLoading: eventRsvpsAvatarLoading } = useStorageImages({
     bucket: 'avatars',
@@ -70,6 +77,24 @@ export function EventCheckInScreen() {
       routes: [{ name: 'Home' as never }],
     });
   };
+
+  const handlePressCheckIn = () => {
+    if (!event?.event.id) return;
+    checkIn(event.event.id, {
+      onSuccess: () => {
+        Alert.alert('Success', 'You have checked into the event!');
+      },
+      onError: (err) => {
+        Alert.alert('Check-in Failed', err.message ?? 'Something went wrong.');
+      },
+    });
+  };
+
+  const eventId = checkInEvent?.id;
+
+  const isNotStartTime = dayjs().isBefore(dayjs(checkInEvent?.starts_at));
+  const isUserCheckedIn =
+    eventId === userCheckedIn?.event_id && user?.id === userCheckedIn?.user_id;
 
   if (loadingEvent) {
     return (
@@ -128,21 +153,18 @@ export function EventCheckInScreen() {
           <Flex direction="row" gap={2} align="center">
             <Button
               size="xl"
-              className={cn(isNotStartTime ? 'bg-gray-500' : 'bg-primary', ' w-1/2')}
-              onPress={() => {
-                console.log('pressed');
-              }}
-              disabled={isNotStartTime}>
+              className={cn(
+                'w-1/2',
+                isNotStartTime || isUserCheckedIn ? 'bg-gray-500' : 'bg-primary',
+                withinTwoHours && 'w-full'
+              )}
+              onPress={handlePressCheckIn}
+              disabled={isNotStartTime || isUserCheckedIn}>
               <Flex align="center">
                 <Text bold size="lg">
-                  Check In
+                  {!isUserCheckedIn ? 'Check In' : 'Checked In'}
                 </Text>
-                {checkInEvent && (
-                  <Countdown
-                    to={checkInEvent?.starts_at}
-                    onComplete={() => console.log('Event started!')}
-                  />
-                )}
+                {checkInEvent && <Countdown to={checkInEvent?.starts_at} />}
               </Flex>
             </Button>
             {!withinTwoHours && (
@@ -188,19 +210,30 @@ export function EventCheckInScreen() {
             <Text bold size="2xl">
               Vibe Check
             </Text>
-            {eventVibes.length ? (
-              <Flex direction="row" flex wrap="wrap" gap={2}>
-                {eventVibes.map((vibe) => {
-                  return (
-                    <Badge key={vibe.vibe_slug} variant="primary">
-                      <Text size="sm" className="uppercase text-primary-300" key={vibe.vibe_slug}>
-                        {vibe.vibe_slug}
-                      </Text>
-                    </Badge>
-                  );
-                })}
-              </Flex>
-            ) : null}
+            {!loadingEventVibes ? (
+              <>
+                {eventVibes.length ? (
+                  <Flex direction="row" flex wrap="wrap" gap={2}>
+                    {eventVibes.map((vibe) => {
+                      return (
+                        <Badge key={vibe.vibe_slug} variant="primary">
+                          <Text
+                            size="sm"
+                            className="uppercase text-primary-300"
+                            key={vibe.vibe_slug}>
+                            {vibe.vibe_slug}
+                          </Text>
+                        </Badge>
+                      );
+                    })}
+                  </Flex>
+                ) : (
+                  <Text>No Vibes</Text>
+                )}
+              </>
+            ) : (
+              <Text>Loading...</Text>
+            )}
           </Flex>
 
           {user?.membership === 'basic' && (

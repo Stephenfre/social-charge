@@ -3,10 +3,10 @@ import { Tables, TablesInsert } from '@/database.types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '~/lib/supabase';
 import { EventRow, UserEventCardRow } from '~/types/event.types';
-import { CHECK_IN_KEYS } from './useEvents';
+import { EVENT_KEYS } from './useEvents';
 import { useAuth } from '~/providers/AuthProvider';
 
-const KEYS = {
+const RSVP_KEYS = {
   userEvents: ['events', 'userEvents'] as const,
   eventById: (id: string) => ['events', 'eventById', id] as const,
   rsvps: (id: string) => ['rsvps', id] as const,
@@ -67,12 +67,12 @@ export function useCreateRsvp() {
     },
 
     onMutate: async ({ eventId, userId }) => {
-      await qc.cancelQueries({ queryKey: KEYS.userEvents });
-      await qc.cancelQueries({ queryKey: KEYS.checkIn });
-      await qc.cancelQueries({ queryKey: KEYS.rsvps(eventId) });
+      await qc.cancelQueries({ queryKey: RSVP_KEYS.userEvents });
+      await qc.cancelQueries({ queryKey: RSVP_KEYS.checkIn });
+      await qc.cancelQueries({ queryKey: RSVP_KEYS.rsvps(eventId) });
 
-      const listSnaps = qc.getQueriesData<UserEventCardRow[]>({ queryKey: KEYS.userEvents });
-      const rsvpKey = KEYS.rsvps(eventId);
+      const listSnaps = qc.getQueriesData<UserEventCardRow[]>({ queryKey: RSVP_KEYS.userEvents });
+      const rsvpKey = RSVP_KEYS.rsvps(eventId);
       const prevRsvps = qc.getQueryData<RsvpRow[]>(rsvpKey) ?? [];
       const isRsvped = prevRsvps.some((r) => r.user_id === userId);
 
@@ -82,7 +82,7 @@ export function useCreateRsvp() {
           prevRsvps.filter((r) => r.user_id !== userId)
         );
         // update ONLY userEvents lists
-        qc.setQueriesData<UserEventCardRow[]>({ queryKey: KEYS.userEvents }, (prev) =>
+        qc.setQueriesData<UserEventCardRow[]>({ queryKey: RSVP_KEYS.userEvents }, (prev) =>
           (prev ?? []).filter((e) => e.id !== eventId)
         );
       } else {
@@ -95,7 +95,7 @@ export function useCreateRsvp() {
         qc.setQueryData<RsvpRow[]>(rsvpKey, [optimistic, ...prevRsvps]);
 
         // try to add to userEvents from cached event detail
-        const detail = qc.getQueryData<EventRow>(KEYS.eventById(eventId));
+        const detail = qc.getQueryData<EventRow>(RSVP_KEYS.eventById(eventId));
         if (detail) {
           const status: 'upcoming' | 'past' =
             new Date(detail.starts_at) >= new Date() ? 'upcoming' : 'past';
@@ -110,7 +110,7 @@ export function useCreateRsvp() {
             event_status: status,
           };
 
-          qc.setQueriesData<UserEventCardRow[]>({ queryKey: KEYS.userEvents }, (prev) => {
+          qc.setQueriesData<UserEventCardRow[]>({ queryKey: RSVP_KEYS.userEvents }, (prev) => {
             const arr = prev ?? [];
             return arr.some((e) => e.id === card.id) ? arr : [card, ...arr];
           });
@@ -129,18 +129,22 @@ export function useCreateRsvp() {
     },
 
     onSettled: (_res, _err, { eventId }) => {
-      qc.invalidateQueries({ queryKey: KEYS.rsvps(eventId) });
-      qc.invalidateQueries({ queryKey: KEYS.eventById(eventId) });
-      qc.invalidateQueries({ queryKey: KEYS.userEvents });
-      qc.invalidateQueries({ queryKey: KEYS.checkIn });
-      qc.invalidateQueries({ queryKey: KEYS.eventVibes });
+      qc.invalidateQueries({ queryKey: RSVP_KEYS.rsvps(eventId) });
+      qc.invalidateQueries({ queryKey: RSVP_KEYS.eventById(eventId) });
+      qc.invalidateQueries({ queryKey: RSVP_KEYS.userEvents });
+      qc.invalidateQueries({ queryKey: RSVP_KEYS.checkIn });
+      qc.invalidateQueries({ queryKey: RSVP_KEYS.eventVibes });
     },
   });
 }
 
 type RemoveArgs = { eventId: string };
 type ListSnap = [key: readonly unknown[], data: UserEventCardRow[] | undefined];
-type Ctx = { listSnaps: ListSnap[]; rsvpKey: ReturnType<typeof KEYS.rsvps>; prevRsvps: RsvpRow[] };
+type Ctx = {
+  listSnaps: ListSnap[];
+  rsvpKey: ReturnType<typeof RSVP_KEYS.rsvps>;
+  prevRsvps: RsvpRow[];
+};
 
 export function useRemoveRsvp() {
   const qc = useQueryClient();
@@ -169,19 +173,19 @@ export function useRemoveRsvp() {
       // use auth user for optimistic update as well
       const { data: userRes } = await supabase.auth.getUser();
       const me = userRes?.user?.id;
-      await qc.cancelQueries({ queryKey: KEYS.userEvents });
-      await qc.cancelQueries({ queryKey: KEYS.checkIn });
-      await qc.cancelQueries({ queryKey: KEYS.rsvps(eventId) });
+      await qc.cancelQueries({ queryKey: RSVP_KEYS.userEvents });
+      await qc.cancelQueries({ queryKey: RSVP_KEYS.checkIn });
+      await qc.cancelQueries({ queryKey: RSVP_KEYS.rsvps(eventId) });
 
-      const listSnaps = qc.getQueriesData<UserEventCardRow[]>({ queryKey: KEYS.userEvents });
+      const listSnaps = qc.getQueriesData<UserEventCardRow[]>({ queryKey: RSVP_KEYS.userEvents });
 
       // Optimistically remove event from userEvents
-      qc.setQueriesData<UserEventCardRow[]>({ queryKey: KEYS.userEvents }, (prev) =>
+      qc.setQueriesData<UserEventCardRow[]>({ queryKey: RSVP_KEYS.userEvents }, (prev) =>
         (prev ?? []).filter((e) => e.id !== eventId)
       );
 
       // Optimistically remove from rsvps cache
-      const rsvpKey = KEYS.rsvps(eventId);
+      const rsvpKey = RSVP_KEYS.rsvps(eventId);
       const prevRsvps = qc.getQueryData<RsvpRow[]>(rsvpKey) ?? [];
       qc.setQueryData<RsvpRow[]>(
         rsvpKey,
@@ -197,12 +201,12 @@ export function useRemoveRsvp() {
     },
 
     onSettled: (_res, _err, { eventId }) => {
-      qc.invalidateQueries({ queryKey: KEYS.userEvents });
-      qc.invalidateQueries({ queryKey: KEYS.checkIn });
-      qc.invalidateQueries({ queryKey: KEYS.eventById(eventId) });
-      qc.invalidateQueries({ queryKey: KEYS.rsvps(eventId) });
-      qc.invalidateQueries({ queryKey: KEYS.eventVibes });
-      qc.invalidateQueries({ queryKey: CHECK_IN_KEYS.checkIn(userId) });
+      qc.invalidateQueries({ queryKey: RSVP_KEYS.userEvents });
+      qc.invalidateQueries({ queryKey: RSVP_KEYS.checkIn });
+      qc.invalidateQueries({ queryKey: RSVP_KEYS.eventById(eventId) });
+      qc.invalidateQueries({ queryKey: RSVP_KEYS.rsvps(eventId) });
+      qc.invalidateQueries({ queryKey: RSVP_KEYS.eventVibes });
+      qc.invalidateQueries({ queryKey: EVENT_KEYS.checkIn(userId) });
     },
   });
 }
