@@ -3,6 +3,7 @@ import { AddIcon, Icon } from '~/components/ui/icon';
 import { useAuth } from '~/providers/AuthProvider';
 import {
   EventCheckInScreen,
+  EventReviewScreen,
   HomeScreen,
   ProfileScreen,
   ReviewCreateEventScreen,
@@ -85,6 +86,18 @@ function ProfileStackNavigator() {
           headerTintColor: 'white',
           headerTitleStyle: { color: 'white' },
           title: 'Event Details',
+        }}
+      />
+      <RootStack.Screen
+        name="EventReview"
+        component={EventReviewScreen}
+        options={{
+          headerShown: true,
+          headerBackButtonDisplayMode: 'minimal',
+          headerStyle: { backgroundColor: '#0F1012' },
+          headerTintColor: 'white',
+          headerTitleStyle: { color: 'white' },
+          title: 'Review Event',
         }}
       />
     </RootStack.Navigator>

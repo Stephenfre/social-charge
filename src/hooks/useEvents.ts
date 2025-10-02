@@ -133,7 +133,6 @@ export function useEventById(id: string) {
   return useQuery<EventWithJoins>({
     queryKey: ['events', 'eventById', id],
     enabled: !!id,
-    initialData: undefined,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
@@ -145,17 +144,20 @@ export function useEventById(id: string) {
           ),
           rsvps:rsvps!rsvps_event_id_fkey (
             user:users!rsvps_user_id_fkey ( id, first_name, last_name, profile_picture )
+          ),
+          check_ins:check_ins!check_ins_event_id_fkey (
+            user:users!check_ins_user_id_fkey ( id, first_name, last_name, profile_picture )
           )
         `
         )
         .eq('id', id)
         .maybeSingle();
+
       if (error) throw error;
       return data as EventWithJoins;
     },
   });
 }
-
 const nowIso = new Date().toISOString();
 
 export function useForYouEvents(userId: string | null) {
@@ -296,11 +298,12 @@ type UpsertEventArgs = {
   id?: string; // if present => update, else create
   title: string; // if your form calls it "name", map before calling
   description: string;
-  location: string;
   location_text: string;
   formatted_address: string;
   provider: string;
   place_id: string;
+  longitude: number | undefined;
+  latitude: number | undefined;
   ageLimit: number;
   startAtISO: string; // e.g. combine(...).toISOString()
   endAtISO: string; // if you don't store end, remove it below
@@ -316,11 +319,12 @@ async function upsertEvent(args: UpsertEventArgs, userId: string): Promise<Event
     id,
     title,
     description,
-    location,
     location_text,
     formatted_address,
     provider,
     place_id,
+    longitude,
+    latitude,
     ageLimit,
     startAtISO,
     endAtISO,
@@ -335,11 +339,12 @@ async function upsertEvent(args: UpsertEventArgs, userId: string): Promise<Event
   const base = {
     title: title.trim(),
     description: description?.trim() ?? null,
-    location: location?.trim() ?? null,
     location_text: location_text.trim(),
     formatted_address: formatted_address.trim(),
     provider: provider.trim(),
     place_id: place_id.trim(),
+    longitude: longitude,
+    latitude: latitude,
     age_limit: ageLimit,
     starts_at: startAtISO,
     ends_at: endAtISO ?? null,

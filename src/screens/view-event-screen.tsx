@@ -12,18 +12,17 @@ import { Spinner } from '~/components/ui/spinner';
 import { EventCard } from '~/components/EventCard/EventCard';
 import React from 'react';
 import { cn } from '~/utils/cn';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useDeleteEvent, useEventVibes } from '~/hooks/useEvents';
 
-type CreateEventNav = NativeStackNavigationProp<RootStackParamList, 'CreateEvent'>;
+type EventNav = NativeStackNavigationProp<RootStackParamList, 'CreateEvent', 'EventReview'>;
 
-// TODO: WHEN YOU CLICK ALL GO TO A SCREEN WIITH SCROLLABLE DATES AND FILTERS
+// TODO: WHEN YOU CLICK VIEW ALL GO TO A SCREEN WIITH SCROLLABLE DATES AND FILTERS
 
 export function ViewEventScreen() {
   const { params } = useRouteStack<'ViewEvent'>();
-  const navigation = useNavigation<CreateEventNav>();
+  const navigation = useNavigation<EventNav>();
 
   const { userId, user } = useAuth();
   const { data: event, isLoading } = useEventById(params.eventId);
@@ -59,8 +58,18 @@ export function ViewEventScreen() {
     paths: evenRsvpsPaths,
   });
 
-  const handlePressNavigateToCreateEvent = () => {
-    navigation.navigate('CreateEvent', { eventId: event?.id });
+  const handlePressNavigate = (type: string) => {
+    switch (type) {
+      case 'CreateEvent':
+        navigation.navigate('CreateEvent', { eventId: event?.id });
+        break;
+      case 'EventReview':
+        navigation.navigate('EventReview', { eventId: event?.id });
+        break;
+      default:
+        console.warn(`Unknown navigation type: ${type}`);
+        break;
+    }
   };
 
   const handlePressDeleteEvent = () => {
@@ -152,7 +161,8 @@ export function ViewEventScreen() {
               <Flex direction="row" align="center" gap={2}>
                 <Clock color={'white'} size={14} />
                 <Text size="lg" className="text-white">
-                  {dayjs(event?.starts_at).format('h:mm A')}
+                  {dayjs(event?.starts_at).format('h:mm A')} -{' '}
+                  {dayjs(event?.ends_at).format('h:mm A')}
                 </Text>
               </Flex>
               <Flex direction="row" align="center" gap={2}>
@@ -214,7 +224,7 @@ export function ViewEventScreen() {
                 <Button
                   className="h-14 w-['48%']"
                   variant="outline"
-                  onPress={handlePressNavigateToCreateEvent}>
+                  onPress={() => handlePressNavigate('CreateEvent')}>
                   <Text bold size="lg">
                     Edit
                   </Text>
@@ -222,11 +232,19 @@ export function ViewEventScreen() {
               )}
             </Flex>
           ) : (
-            <Button className=" h-14" variant="muted">
-              <Text bold className="text-gray-200">
+            <Flex gap={2}>
+              <Text alert bold className="text-center">
                 This Event Has Ended
               </Text>
-            </Button>
+              <Button
+                className=" h-14"
+                variant="solid"
+                onPress={() => handlePressNavigate('EventReview')}>
+                <Text bold className="text-gray-200">
+                  Review Event
+                </Text>
+              </Button>
+            </Flex>
           )}
           <Flex>
             <Text bold size="2xl">
@@ -301,7 +319,7 @@ export function ViewEventScreen() {
               ))}
             </Flex>
           </Flex>
-          {canDelete && (
+          {canDelete && !isEventOver && (
             <Button disabled={isPending} variant="alert" onPress={handlePressDeleteEvent}>
               {!isPending ? (
                 <Text bold size="lg">

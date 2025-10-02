@@ -35,6 +35,7 @@ export type RootStackParamList = {
   EventCheckInIndex: undefined;
   CreateEvent: { eventId?: string };
   'Review Event': undefined;
+  EventReview: { eventId?: string };
 };
 
 /** ----- Navigator creators with types (optional re-exports) ----- */

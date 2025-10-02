@@ -9,13 +9,16 @@ export type EventCheckIn = Database['public']['Tables']['check_ins']['Row'];
 
 export type EventHostRow = Tables<'event_hosts'> & { user: UsersRow };
 export type RsvpRow = Tables<'rsvps'> & { user: UsersRow };
+export type CheckInsRow = Tables<'check_ins'> & { user: UsersRow };
 export type UserEventRow = Database['public']['Views']['v_user_events']['Row'];
 export type EventVibes = Database['public']['Views']['v_event_user_vibes']['Row'];
 
-export type EventWithJoins = EventRow & {
-  event_hosts: EventHostRow[];
-  rsvps: RsvpRow[];
-};
+export type EventWithJoins = EventRow &
+  EventCheckIn & {
+    event_hosts: EventHostRow[];
+    rsvps: RsvpRow[];
+    check_ins: CheckInsRow[];
+  };
 
 // (optional, handy for UI mapping)
 export type PersonCard = {

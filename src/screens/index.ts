@@ -11,3 +11,4 @@ export { EventCheckInScreen } from './event-check-in-screen';
 export { ViewEventScreen } from './view-event-screen';
 export { ViewUserEventsScreen } from './view-user-events-screen';
 export { ReviewCreateEventScreen } from './review-create-event-screen';
+export { EventReviewScreen } from './event-review-screen';

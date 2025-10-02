@@ -275,8 +275,9 @@ export type Database = {
           ends_at: string
           formatted_address: string | null
           id: string
-          location: string | null
+          latitude: number | null
           location_text: string | null
+          longitude: number | null
           place_id: string | null
           provider: string | null
           starts_at: string
@@ -295,8 +296,9 @@ export type Database = {
           ends_at: string
           formatted_address?: string | null
           id?: string
-          location?: string | null
+          latitude?: number | null
           location_text?: string | null
+          longitude?: number | null
           place_id?: string | null
           provider?: string | null
           starts_at: string
@@ -315,8 +317,9 @@ export type Database = {
           ends_at?: string
           formatted_address?: string | null
           id?: string
-          location?: string | null
+          latitude?: number | null
           location_text?: string | null
+          longitude?: number | null
           place_id?: string | null
           provider?: string | null
           starts_at?: string
@@ -1044,10 +1047,16 @@ export type Database = {
           cover_img: string | null
           created_at: string | null
           created_by: string | null
+          deleted_at: string | null
           description: string | null
           ends_at: string | null
+          formatted_address: string | null
           id: string | null
-          location: string | null
+          latitude: number | null
+          location_text: string | null
+          longitude: number | null
+          place_id: string | null
+          provider: string | null
           starts_at: string | null
           title: string | null
           token_cost: number | null
@@ -1077,11 +1086,17 @@ export type Database = {
           cover_img: string | null
           created_at: string | null
           created_by: string | null
+          deleted_at: string | null
           description: string | null
           ends_at: string | null
           event_status: string | null
+          formatted_address: string | null
           id: string | null
-          location: string | null
+          latitude: number | null
+          location_text: string | null
+          longitude: number | null
+          place_id: string | null
+          provider: string | null
           starts_at: string | null
           title: string | null
           token_cost: number | null
@@ -1410,6 +1425,10 @@ export type Database = {
       equals: {
         Args: { geom1: unknown; geom2: unknown }
         Returns: boolean
+      }
+      f_user_event_current_or_next: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       f_user_event_today_or_next: {
         Args: Record<PropertyKey, never>

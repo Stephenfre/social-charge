@@ -26,6 +26,8 @@ export type location = {
   formattedAddress: string;
   provider: string;
   placeId: string;
+  long: number;
+  lat: number;
 };
 
 export type CreateEventFormValues = z.infer<typeof eventSchema>;
@@ -140,6 +142,8 @@ export default function CreateEventScreen() {
         formattedAddress: event?.formatted_address ?? '',
         provider: event?.provider ?? '',
         placeId: event?.place_id ?? '',
+        long: event?.longitude ?? undefined,
+        lat: event?.latitude ?? undefined,
       },
       date: event?.starts_at ? toDateStr(event?.starts_at) : '',
       startTime: event?.starts_at ? toTime12(event?.starts_at) : '',
@@ -164,6 +168,8 @@ export default function CreateEventScreen() {
       formattedAddress: formVals.location.formattedAddress ?? '',
       provider: formVals.location.provider ?? '',
       placeId: formVals.location.placeId ?? '',
+      long: formVals.location.long ?? undefined,
+      lat: formVals.location.lat ?? undefined,
     });
     setDate(formVals.date);
     setStartTime(event.starts_at ?? '');
@@ -222,6 +228,7 @@ export default function CreateEventScreen() {
     ]);
   };
   const onSubmit: SubmitHandler<CreateEventFormValues> = async (values) => {
+    console.log(values);
     try {
       // Defensive checks
       if (!values.date || !values.startTime || !values.endTime) {
@@ -271,6 +278,8 @@ export default function CreateEventScreen() {
           formattedAddress: vals.location?.formattedAddress ?? '',
           provider: vals.location?.provider ?? '',
           placeId: vals.location?.placeId ?? '',
+          long: vals.location?.long,
+          lat: vals.location?.lat,
         });
         setDate(vals.date ?? '');
         setStartTime(vals.startTime ?? '');
@@ -469,6 +478,7 @@ export default function CreateEventScreen() {
                 render={({ field }) => (
                   <Flex className="relative" style={{ zIndex: 1000 }}>
                     <GooglePlacesTextInput
+                      fetchDetails={true}
                       apiKey={GOOGLE_PLACES_API_KEY}
                       placeHolderText="Search for a place"
                       scrollEnabled
@@ -489,9 +499,15 @@ export default function CreateEventScreen() {
                         placeholder: { color: '#46474c' },
                       }}
                       onPlaceSelect={(p) => {
+                        const locationLon = p.details?.location.longitude;
+                        const locationLat = p.details?.location.latitude;
+
+                        console.log(locationLat, locationLon);
                         const loc = {
                           locationText: p.structuredFormat.mainText.text,
                           formattedAddress: p.structuredFormat.secondaryText?.text ?? '',
+                          long: locationLon,
+                          lat: locationLat,
                           provider: 'google',
                           placeId: p?.placeId,
                         };

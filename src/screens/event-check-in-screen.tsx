@@ -20,7 +20,6 @@ import { PersonCard } from '~/types/event.types';
 import { RootStackParamList } from '~/types/navigation.types';
 import { cn } from '~/utils/cn';
 import { CancelRsvpButton } from './view-event-screen';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 type HomeNav = NativeStackNavigationProp<RootStackParamList, 'HomeIndex'>;
 
@@ -93,6 +92,7 @@ export function EventCheckInScreen() {
   const eventId = checkInEvent?.id;
 
   const isNotStartTime = dayjs().isBefore(dayjs(checkInEvent?.starts_at));
+  const isAfterStartTime = dayjs().isAfter(dayjs(checkInEvent?.starts_at));
   const isUserCheckedIn =
     eventId === userCheckedIn?.event_id && user?.id === userCheckedIn?.user_id;
 
@@ -123,16 +123,23 @@ export function EventCheckInScreen() {
     );
   }
 
+  const checkedInText = !isUserCheckedIn ? 'Check In' : 'Checked In';
+
   const startsAt = dayjs(checkInEvent.starts_at);
   const now = dayjs();
-  const withinTwoHours = startsAt.diff(now, 'hour', true) <= 2; // true = fractional hours
+  const withinTwoHours = startsAt.diff(now, 'hour', true) <= 2;
 
   return (
     <View className="h-full bg-background-dark">
       <ScrollView>
         <Flex flex={true} className="px-4" gap={8}>
-          <Text className="text-black">hi</Text>
-          <Map height={350} />
+          <Map
+            height={350}
+            location={{
+              latitude: checkInEvent.latitude ?? undefined,
+              longitude: checkInEvent.longitude ?? undefined,
+            }}
+          />
           <Flex>
             <Text bold size="2xl" className="text-center">
               You're almost there!
@@ -162,7 +169,7 @@ export function EventCheckInScreen() {
               disabled={isNotStartTime || isUserCheckedIn}>
               <Flex align="center">
                 <Text bold size="lg">
-                  {!isUserCheckedIn ? 'Check In' : 'Checked In'}
+                  {!isAfterStartTime ? checkedInText : 'Event Started'}
                 </Text>
                 {checkInEvent && <Countdown to={checkInEvent?.starts_at} />}
               </Flex>
