@@ -26,6 +26,8 @@ export type location = {
   formattedAddress: string;
   provider: string;
   placeId: string;
+  long: number;
+  lat: number;
 };
 
 export type CreateEventFormValues = z.infer<typeof eventSchema>;
@@ -98,13 +100,6 @@ export default function CreateEventScreen() {
     toggleInterest,
   } = useEventCreateStore();
 
-  const eventHosts: PersonCard[] =
-    event?.event_hosts?.map((host) => ({
-      id: host.user.id,
-      name: host.user.first_name + ' ' + host.user.last_name,
-      profile_pic: host.user.profile_picture,
-    })) ?? [];
-
   const toAgeLabel = (n?: number | null) => (n ? `${n} and over` : '');
 
   function toTime12(dtISO: string) {
@@ -124,7 +119,7 @@ export default function CreateEventScreen() {
       ? coverImg[0] // never null ✅
       : '';
 
-  const firstHost = eventHosts[0];
+  const firstHost = event?.event_hosts?.[0];
 
   useEffect(() => {
     if (!event) return;
@@ -132,7 +127,9 @@ export default function CreateEventScreen() {
       eventId: params.eventId,
       title: event?.title ?? '',
       hostId: firstHost?.id ?? '',
-      hostName: eventHosts?.length ? `${firstHost?.name}`.trim() : '',
+      hostName: event?.event_hosts?.length
+        ? `${firstHost?.first_name + ' ' + firstHost?.last_name}`.trim()
+        : '',
       ageLimit: toAgeLabel(event?.age_limit),
       description: event?.description ?? '',
       location: {
@@ -140,6 +137,8 @@ export default function CreateEventScreen() {
         formattedAddress: event?.formatted_address ?? '',
         provider: event?.provider ?? '',
         placeId: event?.place_id ?? '',
+        long: event?.longitude ?? undefined,
+        lat: event?.latitude ?? undefined,
       },
       date: event?.starts_at ? toDateStr(event?.starts_at) : '',
       startTime: event?.starts_at ? toTime12(event?.starts_at) : '',
@@ -164,6 +163,8 @@ export default function CreateEventScreen() {
       formattedAddress: formVals.location.formattedAddress ?? '',
       provider: formVals.location.provider ?? '',
       placeId: formVals.location.placeId ?? '',
+      long: formVals.location.long ?? undefined,
+      lat: formVals.location.lat ?? undefined,
     });
     setDate(formVals.date);
     setStartTime(event.starts_at ?? '');
@@ -222,6 +223,7 @@ export default function CreateEventScreen() {
     ]);
   };
   const onSubmit: SubmitHandler<CreateEventFormValues> = async (values) => {
+    console.log(values);
     try {
       // Defensive checks
       if (!values.date || !values.startTime || !values.endTime) {
@@ -271,6 +273,8 @@ export default function CreateEventScreen() {
           formattedAddress: vals.location?.formattedAddress ?? '',
           provider: vals.location?.provider ?? '',
           placeId: vals.location?.placeId ?? '',
+          long: vals.location?.long,
+          lat: vals.location?.lat,
         });
         setDate(vals.date ?? '');
         setStartTime(vals.startTime ?? '');
@@ -469,6 +473,7 @@ export default function CreateEventScreen() {
                 render={({ field }) => (
                   <Flex className="relative" style={{ zIndex: 1000 }}>
                     <GooglePlacesTextInput
+                      fetchDetails={true}
                       apiKey={GOOGLE_PLACES_API_KEY}
                       placeHolderText="Search for a place"
                       scrollEnabled
@@ -489,9 +494,15 @@ export default function CreateEventScreen() {
                         placeholder: { color: '#46474c' },
                       }}
                       onPlaceSelect={(p) => {
+                        const locationLon = p.details?.location.longitude;
+                        const locationLat = p.details?.location.latitude;
+
+                        console.log(locationLat, locationLon);
                         const loc = {
                           locationText: p.structuredFormat.mainText.text,
                           formattedAddress: p.structuredFormat.secondaryText?.text ?? '',
+                          long: locationLon,
+                          lat: locationLat,
                           provider: 'google',
                           placeId: p?.placeId,
                         };

@@ -12,18 +12,17 @@ import { Spinner } from '~/components/ui/spinner';
 import { EventCard } from '~/components/EventCard/EventCard';
 import React from 'react';
 import { cn } from '~/utils/cn';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useDeleteEvent, useEventVibes } from '~/hooks/useEvents';
 
-type CreateEventNav = NativeStackNavigationProp<RootStackParamList, 'CreateEvent'>;
+type EventNav = NativeStackNavigationProp<RootStackParamList, 'CreateEvent', 'EventReview'>;
 
-// TODO: WHEN YOU CLICK ALL GO TO A SCREEN WIITH SCROLLABLE DATES AND FILTERS
+// TODO: WHEN YOU CLICK VIEW ALL GO TO A SCREEN WIITH SCROLLABLE DATES AND FILTERS
 
 export function ViewEventScreen() {
   const { params } = useRouteStack<'ViewEvent'>();
-  const navigation = useNavigation<CreateEventNav>();
+  const navigation = useNavigation<EventNav>();
 
   const { userId, user } = useAuth();
   const { data: event, isLoading } = useEventById(params.eventId);
@@ -33,34 +32,30 @@ export function ViewEventScreen() {
 
   const isRsvped = rsvps.some((r) => r.user_id === userId);
 
-  const eventHosts: PersonCard[] =
-    event?.event_hosts?.map((host) => ({
-      id: host.user.id,
-      name: host.user.first_name + ' ' + host.user.last_name,
-      profile_pic: host.user.profile_picture,
-    })) ?? [];
-
-  const eventRsvps: PersonCard[] | undefined =
-    event?.rsvps?.map((rsvp) => ({
-      id: rsvp.user.id,
-      name: rsvp.user.first_name + ' ' + rsvp.user.last_name,
-      profile_pic: rsvp.user.profile_picture,
-    })) ?? [];
-
-  const hostPaths = eventHosts?.map((host) => host.profile_pic);
+  const hostPaths = event?.event_hosts?.map((host) => host.profile_picture);
   const { data: hostAvatar, isLoading: hostAvatarLoading } = useStorageImages({
     bucket: 'avatars',
-    paths: hostPaths, // stored in users table
+    paths: hostPaths ?? [], // stored in users table
   });
 
-  const evenRsvpsPaths = eventRsvps?.map((r) => r.profile_pic);
+  const evenRsvpsPaths = event?.rsvps?.map((r) => r.profile_picture);
   const { data: eventRsvpsAvatar = [], isLoading: eventRsvpsAvatarLoading } = useStorageImages({
     bucket: 'avatars',
-    paths: evenRsvpsPaths,
+    paths: evenRsvpsPaths ?? [],
   });
 
-  const handlePressNavigateToCreateEvent = () => {
-    navigation.navigate('CreateEvent', { eventId: event?.id });
+  const handlePressNavigate = (type: string) => {
+    switch (type) {
+      case 'CreateEvent':
+        navigation.navigate('CreateEvent', { eventId: event?.id ?? '' });
+        break;
+      case 'EventReview':
+        navigation.navigate('EventReview', { eventId: event?.id ?? '' });
+        break;
+      default:
+        console.warn(`Unknown navigation type: ${type}`);
+        break;
+    }
   };
 
   const handlePressDeleteEvent = () => {
@@ -71,7 +66,7 @@ export function ViewEventScreen() {
     navigation.goBack();
   };
 
-  const isHost = event?.event_hosts?.some((host) => host.user?.id === userId);
+  const isHost = event?.event_hosts?.some((host) => host?.id === userId);
 
   const isEventOver = dayjs().isAfter(event?.ends_at);
 
@@ -117,7 +112,7 @@ export function ViewEventScreen() {
         <View className="relative">
           <EventCard
             event={event!}
-            favorited={eventHosts.some((host) => host.id !== userId)}
+            favorited={event?.event_hosts?.some((host) => host?.id !== userId)}
             imageSize="cover"
             rounded="none"
             showDate={false}
@@ -142,7 +137,7 @@ export function ViewEventScreen() {
               {event?.title}
             </Text>
 
-            <Flex direction="row" gap={4}>
+            <Flex direction="row" gap={4} wrap="wrap">
               <Flex direction="row" align="center" gap={2}>
                 <Calendar color={'white'} size={14} />
                 <Text size="lg" className="text-white">
@@ -152,7 +147,8 @@ export function ViewEventScreen() {
               <Flex direction="row" align="center" gap={2}>
                 <Clock color={'white'} size={14} />
                 <Text size="lg" className="text-white">
-                  {dayjs(event?.starts_at).format('h:mm A')}
+                  {dayjs(event?.starts_at).format('h:mm A')} -{' '}
+                  {dayjs(event?.ends_at).format('h:mm A')}
                 </Text>
               </Flex>
               <Flex direction="row" align="center" gap={2}>
@@ -164,9 +160,9 @@ export function ViewEventScreen() {
             </Flex>
           </Flex>
           <Flex direction="row" align="center" gap={4}>
-            {eventHosts.length ? (
+            {event?.event_hosts?.length ? (
               <>
-                {eventHosts.map((host, i) => {
+                {event?.event_hosts?.map((host, i) => {
                   return (
                     <React.Fragment key={host.id}>
                       {hostAvatar && !hostAvatarLoading ? (
@@ -180,7 +176,7 @@ export function ViewEventScreen() {
                       )}
                       <Flex>
                         <Text bold size="xl">
-                          {host.name}
+                          {host.first_name + ' ' + host.last_name}
                         </Text>
                         <Text>Host</Text>
                       </Flex>
@@ -214,7 +210,7 @@ export function ViewEventScreen() {
                 <Button
                   className="h-14 w-['48%']"
                   variant="outline"
-                  onPress={handlePressNavigateToCreateEvent}>
+                  onPress={() => handlePressNavigate('CreateEvent')}>
                   <Text bold size="lg">
                     Edit
                   </Text>
@@ -222,11 +218,19 @@ export function ViewEventScreen() {
               )}
             </Flex>
           ) : (
-            <Button className=" h-14" variant="muted">
-              <Text bold className="text-gray-200">
+            <Flex gap={2}>
+              <Text alert bold className="text-center">
                 This Event Has Ended
               </Text>
-            </Button>
+              <Button
+                className=" h-14"
+                variant="solid"
+                onPress={() => handlePressNavigate('EventReview')}>
+                <Text bold className="text-gray-200">
+                  Review Event
+                </Text>
+              </Button>
+            </Flex>
           )}
           <Flex>
             <Text bold size="2xl">
@@ -251,7 +255,9 @@ export function ViewEventScreen() {
                   );
                 })}
               </Flex>
-            ) : null}
+            ) : (
+              <Text>Rvsp to chage the vibe</Text>
+            )}
           </Flex>
 
           {user?.membership !== 'basic' && (
@@ -259,15 +265,15 @@ export function ViewEventScreen() {
               <Text bold size="2xl">
                 Attendees
               </Text>
-              {eventRsvps?.length ? (
+              {event?.rsvps?.length ? (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                   <Flex direction="row" align="center" gap={10}>
-                    {eventRsvps?.map((rsvp, i) => {
+                    {event?.rsvps?.map((rsvp, i) => {
                       return (
-                        <Flex key={rsvp.id} align="center" gap={4}>
+                        <Flex key={rsvp.user_id} align="center" gap={4}>
                           {eventRsvpsAvatar && !eventRsvpsAvatarLoading ? (
                             <Image
-                              key={rsvp.id}
+                              key={rsvp.user_id}
                               alt="picture of guest"
                               source={{ uri: eventRsvpsAvatar[i] ?? '' }}
                               rounded="full"
@@ -276,7 +282,7 @@ export function ViewEventScreen() {
                           ) : (
                             <Box className="h-28 w-28 rounded-full bg-slate-500" />
                           )}
-                          <Text>{rsvp.name}</Text>
+                          <Text>{rsvp.first_name + ' ' + rsvp.last_name}</Text>
                         </Flex>
                       );
                     })}
@@ -301,7 +307,7 @@ export function ViewEventScreen() {
               ))}
             </Flex>
           </Flex>
-          {canDelete && (
+          {canDelete && !isEventOver && (
             <Button disabled={isPending} variant="alert" onPress={handlePressDeleteEvent}>
               {!isPending ? (
                 <Text bold size="lg">

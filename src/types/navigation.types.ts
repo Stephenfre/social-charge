@@ -16,6 +16,7 @@ export type AppTabParamList = {
   Profile: undefined;
   'Event Check In': undefined;
   'Create Event': undefined;
+  Wallet: undefined;
 };
 
 /** ----- Root stack params ----- */
@@ -35,6 +36,8 @@ export type RootStackParamList = {
   EventCheckInIndex: undefined;
   CreateEvent: { eventId?: string };
   'Review Event': undefined;
+  EventReview: { eventId?: string };
+  WalletIndex: undefined;
 };
 
 /** ----- Navigator creators with types (optional re-exports) ----- */

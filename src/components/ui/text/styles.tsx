@@ -24,6 +24,9 @@ export const textStyle = tva({
     muted: {
       true: 'text-gray-400',
     },
+    alert: {
+      true: 'text-red-500',
+    },
     size: {
       '2xs': 'text-2xs',
       xs: 'text-xs',

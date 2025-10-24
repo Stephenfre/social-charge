@@ -30,6 +30,8 @@ type location = {
   formattedAddress: string;
   provider: string;
   placeId: string;
+  long: number | undefined;
+  lat: number | undefined;
 };
 
 type EventDraft = {

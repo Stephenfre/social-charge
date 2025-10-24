@@ -9,8 +9,6 @@ import { useAuth } from '~/providers/AuthProvider';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '~/types/navigation.types';
 import { Spinner } from '~/components/ui/spinner';
-import { isCoverUnchanged } from '~/utils/image-path-uri';
-import { uploadEventCoverImage } from '~/lib/uploadImage';
 
 type HomeNav = NativeStackNavigationProp<RootStackParamList, 'HomeIndex'>;
 
@@ -47,11 +45,12 @@ export function ReviewCreateEventScreen() {
       id: eventId,
       title,
       description,
-      location: '',
       location_text: location?.locationText ?? '',
       formatted_address: location?.formattedAddress ?? '',
       provider: location?.provider ?? '',
       place_id: location?.placeId ?? '',
+      longitude: location?.long,
+      latitude: location?.lat,
       ageLimit: parseAgeLimit,
       startAtISO: startTime,
       endAtISO: endTime,
