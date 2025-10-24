@@ -1,8 +1,10 @@
 import gluestackPlugin from '@gluestack-ui/nativewind-utils/tailwind-plugin';
 
+const withAlpha = (variable) => `rgb(var(${variable})/<alpha-value>)`;
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: 'media',
+  darkMode: 'class',
   content: [
     'App.{tsx,jsx,ts,js}',
     'src/components/**/*.{tsx,jsx,ts,js}',
@@ -19,58 +21,79 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          50: '#e6f0ff',
-          100: '#cce0ff',
-          200: '#99c2ff',
-          300: '#66a3ff',
-          400: '#3385ff',
-          500: '#007BFF', // main
-          600: '#0069d9',
-          700: '#0056b3',
-          800: '#00408a',
-          900: '#002a5c',
-          DEFAULT: '#007BFF',
+          0: withAlpha('--color-primary-0'),
+          50: withAlpha('--color-primary-50'),
+          100: withAlpha('--color-primary-100'),
+          200: withAlpha('--color-primary-200'),
+          300: withAlpha('--color-primary-300'),
+          400: withAlpha('--color-primary-400'),
+          500: withAlpha('--color-primary-500'),
+          600: withAlpha('--color-primary-600'),
+          700: withAlpha('--color-primary-700'),
+          800: withAlpha('--color-primary-800'),
+          900: withAlpha('--color-primary-900'),
+          950: withAlpha('--color-primary-950'),
+          DEFAULT: withAlpha('--color-primary-500'),
         },
 
         // Secondary — Neon Green (#00E676)
         secondary: {
-          50: '#e6fff5',
-          100: '#ccffeb',
-          200: '#99ffd6',
-          300: '#66ffbf',
-          400: '#33ffa6',
-          500: '#00E676', // main
-          600: '#00c96a',
-          700: '#00a857',
-          800: '#008746',
-          900: '#005c2f',
-          DEFAULT: '#00E676',
+          0: withAlpha('--color-secondary-0'),
+          50: withAlpha('--color-secondary-50'),
+          100: withAlpha('--color-secondary-100'),
+          200: withAlpha('--color-secondary-200'),
+          300: withAlpha('--color-secondary-300'),
+          400: withAlpha('--color-secondary-400'),
+          500: withAlpha('--color-secondary-500'),
+          600: withAlpha('--color-secondary-600'),
+          700: withAlpha('--color-secondary-700'),
+          800: withAlpha('--color-secondary-800'),
+          900: withAlpha('--color-secondary-900'),
+          950: withAlpha('--color-secondary-950'),
+          DEFAULT: withAlpha('--color-secondary-500'),
         },
 
         // Backgrounds
         background: {
-          light: '#FFFFFF', // Pure White
-          dark: '#0F1012', // Deep Navy
-          50: '#e8e8e9', // very light gray
-          100: '#d1d1d2',
-          200: '#bababc',
-          300: '#a3a3a5',
-          400: '#8c8c8f',
-          500: '#747579',
-          600: '#5d5e62',
-          700: '#46474c',
-          800: '#2f3035',
-          900: '#18191f', // your darkest navy
-          DEFAULT: '#0F1012',
+          0: withAlpha('--color-background-0'),
+          50: withAlpha('--color-background-50'),
+          100: withAlpha('--color-background-100'),
+          200: withAlpha('--color-background-200'),
+          300: withAlpha('--color-background-300'),
+          400: withAlpha('--color-background-400'),
+          500: withAlpha('--color-background-500'),
+          600: withAlpha('--color-background-600'),
+          700: withAlpha('--color-background-700'),
+          800: withAlpha('--color-background-800'),
+          900: withAlpha('--color-background-900'),
+          950: withAlpha('--color-background-950'),
+          error: withAlpha('--color-background-error'),
+          warning: withAlpha('--color-background-warning'),
+          muted: withAlpha('--color-background-muted'),
+          success: withAlpha('--color-background-success'),
+          info: withAlpha('--color-background-info'),
+          light: withAlpha('--color-background-200'),
+          dark: withAlpha('--color-background-0'),
+          DEFAULT: withAlpha('--color-background-0'),
         },
 
         // Typography (text colors)
         typography: {
-          900: '#1C1C1C', // Text Dark — Charcoal Gray (headlines / primary)
-          50: '#F2F2F2', // Text Light — Soft White (on dark bg)
-          dark: '#1C1C1C',
-          light: '#F2F2F2',
-          DEFAULT: '#1C1C1C',
+          0: withAlpha('--color-typography-0'),
+          50: withAlpha('--color-typography-50'),
+          100: withAlpha('--color-typography-100'),
+          200: withAlpha('--color-typography-200'),
+          300: withAlpha('--color-typography-300'),
+          400: withAlpha('--color-typography-400'),
+          500: withAlpha('--color-typography-500'),
+          600: withAlpha('--color-typography-600'),
+          700: withAlpha('--color-typography-700'),
+          800: withAlpha('--color-typography-800'),
+          900: withAlpha('--color-typography-900'),
+          950: withAlpha('--color-typography-950'),
+          light: withAlpha('--color-typography-900'),
+          dark: withAlpha('--color-typography-100'),
+          DEFAULT: withAlpha('--color-typography-900'),
         },
 
         tertiary: {

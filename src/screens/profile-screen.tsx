@@ -1,16 +1,16 @@
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import dayjs from 'dayjs';
-import { ScrollView } from 'react-native';
+import { ScrollView, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EventsList } from '~/components';
 import { Badge, Box, Button, Flex, Image, Pressable, Text } from '~/components/ui';
-import { useStorageImages, useUserEvents, useUserInterests } from '~/hooks';
-import { useMyTokenBalance } from '~/hooks/useEvents';
+import { useMyTokenBalance, useStorageImages, useUserEvents, useUserInterests } from '~/hooks';
 import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/providers/AuthProvider';
 import { RootStackParamList } from '~/types/navigation.types';
 import { interestEmojis } from '~/utils/const';
+import { useTheme } from '~/providers/ThemeProvider';
 
 type EventHistory = NativeStackNavigationProp<RootStackParamList, 'Event History'>;
 
@@ -25,6 +25,7 @@ export function ProfileScreen() {
     bucket: 'avatars',
     paths: [user?.profile_picture],
   });
+  const { isDark, setMode, palette } = useTheme();
 
   const handleViewAllPress = () => {
     navigation.navigate('Event History');
@@ -112,6 +113,25 @@ export function ProfileScreen() {
               </Flex>
             </>
           )}
+          <Flex className="rounded-2xl bg-background-900 p-4">
+            <Flex direction="row" justify="space-between" align="center">
+              <Flex gap={1}>
+                <Text bold size="lg">
+                  Dark Mode
+                </Text>
+                <Text size="sm" className="text-typography-500">
+                  Switch between light and dark appearance.
+                </Text>
+              </Flex>
+              <Switch
+                value={isDark}
+                onValueChange={(value) => setMode(value ? 'dark' : 'light')}
+                trackColor={{ false: '#a1a1aa', true: palette.accent }}
+                thumbColor={isDark ? palette.inverseText : '#f4f4f5'}
+                ios_backgroundColor="#a1a1aa"
+              />
+            </Flex>
+          </Flex>
           <Flex direction="row" justify="space-between" className="my-2">
             <Text size="2xl" bold>
               Events History

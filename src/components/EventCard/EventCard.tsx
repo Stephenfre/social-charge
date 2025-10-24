@@ -4,6 +4,7 @@ import { EventRow, EventWithJoins, PersonCard, VEventWithFullDetails } from '~/t
 import dayjs from 'dayjs';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useStorageImages } from '~/hooks';
+import { useTheme } from '~/providers/ThemeProvider';
 
 interface EventCardProps {
   event: EventRow | EventWithJoins | VEventWithFullDetails;
@@ -27,7 +28,8 @@ interface EventCardProps {
     | 'full'
     | '2xs'
     | 'xs'
-    | 'cover';
+    | 'cover'
+    | 'background';
   className?: string;
 }
 
@@ -49,6 +51,7 @@ export function EventCard({
     bucket: 'event_cover',
     paths: [event?.cover_img], // stored in users table
   });
+  const { palette, isDark } = useTheme();
 
   const src =
     Array.isArray(data) && data[0]
@@ -71,13 +74,20 @@ export function EventCard({
       <Pressable onPress={onPress} className={className}>
         <Image source={src} size={imageSize} overlay={overlay} rounded={rounded} alt="image" />
         <LinearGradient
-          colors={['transparent', '#0F1012']} // transparent top → dark bottom
+          colors={['transparent', isDark ? 'rgba(15,16,18,0.95)' : 'rgba(0,0,0,0.55)']} // transparent top → dark bottom
           style={{
             position: 'absolute',
             bottom: 0,
             left: 0,
             right: 0,
-            height: imageSize === 'sm' ? 20 : imageSize === 'xl-wide' ? 50 : 125, // how tall the fade should be
+            height:
+              imageSize === 'sm'
+                ? 20
+                : imageSize === 'xl-wide'
+                  ? 50
+                  : imageSize === 'background'
+                    ? 150
+                    : 125, // how tall the fade should be
           }}
         />
       </Pressable>
@@ -90,7 +100,7 @@ export function EventCard({
         )}
 
         {showTitle && event?.title && (
-          <Text size="lg" bold className="text-white">
+          <Text size="lg" bold style={{ color: palette.inverseText }}>
             {event?.title}
           </Text>
         )}
@@ -99,16 +109,16 @@ export function EventCard({
           <Flex direction="row" gap={4}>
             {showDate && event?.starts_at && (
               <Flex direction="row" align="center" gap={1}>
-                <Calendar color={'white'} size={14} />
-                <Text size="lg" className="text-white">
+                <Calendar color={palette.inverseText} size={14} />
+                <Text size="lg" style={{ color: palette.inverseText }}>
                   {dayjs(event?.starts_at).format('MMM DD')}
                 </Text>
               </Flex>
             )}
             {showLocation && event?.location_text && (
               <Flex direction="row" align="center" gap={1}>
-                <MapPin color={'white'} size={14} />
-                <Text size="lg" className="text-white">
+                <MapPin color={palette.inverseText} size={14} />
+                <Text size="lg" style={{ color: palette.inverseText }}>
                   {event?.location_text}
                 </Text>
               </Flex>

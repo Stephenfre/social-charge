@@ -2,7 +2,6 @@
 import dayjs from 'dayjs';
 import { Calendar, Clock, MapPin, TicketX } from 'lucide-react-native';
 import { Alert, Modal, Pressable, ScrollView, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Badge, Box, Button, Flex, Image, Text } from '~/components/ui';
 import { useEventById, useStorageImages, useMyTokenBalance } from '~/hooks';
 import { RootStackParamList, useRouteStack } from '~/types/navigation.types';
@@ -18,6 +17,7 @@ import { useDeleteEvent, useEventVibes } from '~/hooks/useEvents';
 import { supabase } from '~/lib/supabase';
 import BottomSheet, { BottomSheetScrollView, BottomSheetView } from '@gorhom/bottom-sheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '~/providers/ThemeProvider';
 
 type EventNav = NativeStackNavigationProp<RootStackParamList, 'CreateEvent', 'EventReview'>;
 
@@ -25,6 +25,7 @@ export function ViewEventScreen() {
   const { params } = useRouteStack<'ViewEvent'>();
   const navigation = useNavigation<EventNav>();
   const insets = useSafeAreaInsets();
+  const { palette } = useTheme();
 
   const { userId, user } = useAuth();
   const { data: event, isLoading } = useEventById(params.eventId);
@@ -201,7 +202,7 @@ export function ViewEventScreen() {
       <View className="h-full bg-background-dark">
         <Flex align="center" className="m-auto" gap={4}>
           <Flex align="center">
-            <TicketX size={48} color={'white'} />
+            <TicketX size={48} color={palette.text} />
             <Text bold size="2xl">
               Sorry this event is unavailable
             </Text>
@@ -221,11 +222,11 @@ export function ViewEventScreen() {
   }
 
   return (
-    <Flex flex className=" bg-background-dark">
+    <Flex flex className=" h- bg-background-dark">
       <EventCard
         event={event!}
         favorited={event?.event_hosts?.some((host) => host?.id !== userId)}
-        imageSize="cover"
+        imageSize="background"
         rounded="none"
         showDate={false}
         showLocation={false}
@@ -236,11 +237,11 @@ export function ViewEventScreen() {
       {/* PERSISTENT BOTTOM SHEET ACTION BAR */}
       <BottomSheet
         index={0}
-        snapPoints={['70%', '90%']}
+        snapPoints={['75%']}
         enablePanDownToClose={false}
         handleIndicatorStyle={{ backgroundColor: 'transparent' }}
         backgroundStyle={{
-          backgroundColor: '#18191f',
+          backgroundColor: palette.modal,
           borderTopLeftRadius: 24,
           borderTopRightRadius: 24,
         }}>
@@ -255,27 +256,27 @@ export function ViewEventScreen() {
           nestedScrollEnabled>
           <Flex className="px-4" gap={6}>
             <Flex>
-              <Text size="3xl" bold>
+              <Text size="5xl" bold>
                 {event?.title}
               </Text>
 
               <Flex direction="row" gap={4} wrap="wrap">
                 <Flex direction="row" align="center" gap={2}>
-                  <Calendar color={'white'} size={14} />
-                  <Text size="lg" className="text-white">
+                  <Calendar color={palette.text} size={14} />
+                  <Text size="lg" style={{ color: palette.text }}>
                     {dayjs(event?.starts_at).format('ddd, MMM DD')}
                   </Text>
                 </Flex>
                 <Flex direction="row" align="center" gap={2}>
-                  <Clock color={'white'} size={14} />
-                  <Text size="lg" className="text-white">
+                  <Clock color={palette.text} size={14} />
+                  <Text size="lg" style={{ color: palette.text }}>
                     {dayjs(event?.starts_at).format('h:mm A')} -{' '}
                     {dayjs(event?.ends_at).format('h:mm A')}
                   </Text>
                 </Flex>
                 <Flex direction="row" align="center" gap={2}>
-                  <MapPin color={'white'} size={14} />
-                  <Text size="lg" className="text-white">
+                  <MapPin color={palette.text} size={14} />
+                  <Text size="lg" style={{ color: palette.text }}>
                     {event?.location_text}
                   </Text>
                 </Flex>
@@ -310,6 +311,21 @@ export function ViewEventScreen() {
               )}
             </Flex>
 
+            <Flex gap={2}>
+              <Text bold size="xl">
+                Perfect if you’re into…
+              </Text>
+              <Flex direction="row" gap={4} wrap="wrap">
+                {event?.category?.map((cat) => (
+                  <Badge key={cat} variant="primary">
+                    <Text size="sm" className="uppercase text-primary-300">
+                      {cat}
+                    </Text>
+                  </Badge>
+                ))}
+              </Flex>
+            </Flex>
+
             <Flex>
               <Text bold size="2xl">
                 About this event
@@ -317,29 +333,10 @@ export function ViewEventScreen() {
               <Text>{event?.description}</Text>
             </Flex>
 
-            <Flex gap={4}>
-              <Text bold size="2xl">
-                Vibe Check
-              </Text>
-              {eventVibes.length ? (
-                <Flex direction="row" flex wrap="wrap" gap={2}>
-                  {eventVibes.map((vibe) => (
-                    <Badge key={vibe.vibe_slug} variant="primary">
-                      <Text size="sm" className="uppercase text-primary-300">
-                        {vibe.vibe_slug}
-                      </Text>
-                    </Badge>
-                  ))}
-                </Flex>
-              ) : (
-                <Text>Rvsp to chage the vibe</Text>
-              )}
-            </Flex>
-
             {user?.membership !== 'basic' && (
               <Flex gap={4}>
                 <Text bold size="2xl">
-                  Attendees
+                  Who's Going?
                 </Text>
                 {event?.rsvps?.length ? (
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled>
@@ -368,34 +365,41 @@ export function ViewEventScreen() {
               </Flex>
             )}
 
-            <Flex gap={2}>
-              <Text bold size="xl">
-                Perfect if you’re into…
+            <Flex gap={4}>
+              <Text bold size="2xl">
+                Vibe Check
               </Text>
-              <Flex direction="row" gap={4} wrap="wrap">
-                {event?.category?.map((cat) => (
-                  <Badge key={cat} variant="primary">
-                    <Text size="sm" className="uppercase text-primary-300">
-                      {cat}
-                    </Text>
-                  </Badge>
-                ))}
-              </Flex>
+              {eventVibes.length ? (
+                <Flex direction="row" flex wrap="wrap" gap={2}>
+                  {eventVibes.map((vibe) => (
+                    <Badge key={vibe.vibe_slug} variant="primary">
+                      <Text size="sm" className="uppercase text-primary-300">
+                        {vibe.vibe_slug}
+                      </Text>
+                    </Badge>
+                  ))}
+                </Flex>
+              ) : (
+                <Text>Rvsp to chage the vibe</Text>
+              )}
             </Flex>
           </Flex>
         </BottomSheetScrollView>
       </BottomSheet>
       <View
-        className="absolute bottom-0 left-0 right-0 border border-background-800 bg-background-900 px-14 pt-3"
+        className="absolute bottom-0 left-0 right-0 px-14 pt-3"
         style={{
           paddingBottom: insets.bottom + 10,
+          backgroundColor: palette.modal,
+          borderTopWidth: 1,
+          borderColor: palette.border,
         }}>
         <Flex direction="row" align="center" justify="space-between">
           <Flex align="center">
-            <Text bold size="md" className="text-white">
+            <Text bold size="md" style={{ color: palette.text }}>
               Tokens Cost
             </Text>
-            <Text size="2xl" bold className="text-primary-300">
+            <Text size="2xl" bold style={{ color: palette.accent }}>
               {event?.token_cost ?? 0}
             </Text>
           </Flex>
@@ -432,13 +436,15 @@ function RsvpButton({
   isLoading?: boolean;
   canEdit?: boolean;
 }) {
+  const { palette } = useTheme();
   const label = isLoading ? <Spinner /> : 'RSVP';
   return (
     <Button
-      className={cn('h-14 w-full bg-primary', canEdit && 'w-[48%]')}
+      className={cn('h-14 w-full', canEdit && 'w-[48%]')}
+      style={{ backgroundColor: palette.accent }}
       onPress={onPress}
       disabled={isLoading}>
-      <Text bold size="lg">
+      <Text bold size="lg" style={{ color: palette.inverseText }}>
         {label}
       </Text>
     </Button>
@@ -470,6 +476,8 @@ function RsvpConfirmationModal({
   balanceLoading,
   errorMessage,
 }: ConfirmationProps) {
+  const { palette } = useTheme();
+
   return (
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onCancel}>
       <Flex className="relative flex-1 items-center justify-center bg-black/70 px-6">
@@ -485,7 +493,7 @@ function RsvpConfirmationModal({
           </Text>
           <Text>
             You are about to RSVP for{' '}
-            <Text bold className="text-white">
+            <Text bold style={{ color: palette.text }}>
               {eventTitle}
             </Text>
             .

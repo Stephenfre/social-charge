@@ -7,6 +7,7 @@ import { Alert, ScrollView, View } from 'react-native';
 import { Map } from '~/components';
 import { Countdown } from '~/components/Countdown/Countdown';
 import { Badge, Box, Button, Flex, Image, Text } from '~/components/ui';
+import { useTheme } from '~/providers/ThemeProvider';
 
 import { useStorageImages } from '~/hooks';
 import {
@@ -25,6 +26,7 @@ type HomeNav = NativeStackNavigationProp<RootStackParamList, 'HomeIndex'>;
 
 export function EventCheckInScreen() {
   const navigation = useNavigation<HomeNav>();
+  const { palette } = useTheme();
 
   const { user } = useAuth();
   const { data: event, isLoading: loadingEvent } = useViewCheckInEvent();
@@ -109,7 +111,7 @@ export function EventCheckInScreen() {
       <View className="h-full bg-background-dark">
         <Flex align="center" className="m-auto" gap={4}>
           <Flex align="center">
-            <TicketX size={48} color={'white'} />
+            <TicketX size={48} color={palette.text} />
             <Text bold size="2xl">
               Looks like your calendar’s clear
             </Text>

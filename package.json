@@ -2,15 +2,15 @@
   "name": "my-expo-app",
   "version": "1.0.0",
   "scripts": {
-    "android": "DARK_MODE=media expo start --android",
-    "ios": "DARK_MODE=media expo start --ios",
+    "android": "DARK_MODE=class expo start --android",
+    "ios": "DARK_MODE=class expo start --ios",
     "start": "expo start",
     "prebuild": "expo prebuild",
     "lint": "eslint \"**/*.{js,jsx,ts,tsx}\" && prettier -c \"**/*.{js,jsx,ts,tsx,json}\"",
     "lint:src": "eslint src --ext .ts,.tsx",
     "lint:src:fix": "eslint src --ext .ts,.tsx --fix",
     "format": "eslint \"**/*.{js,jsx,ts,tsx}\" --fix && prettier \"**/*.{js,jsx,ts,tsx,json}\" --write",
-    "web": "DARK_MODE=media expo start --web",
+    "web": "DARK_MODE=class expo start --web",
     "db:types": "supabase gen types typescript --project-id qdyrtjzvauhrvyszydnu --schema public > src/types/database.types.ts"
   },
   "dependencies": {

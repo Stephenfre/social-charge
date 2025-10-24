@@ -4,6 +4,7 @@ import { Icon } from '~/components/ui/icon';
 import { AddIcon } from '~/components/ui/icon';
 import { Home, TicketCheck, User, Wallet as WalletIcon } from 'lucide-react-native';
 import { useAuth } from '~/providers/AuthProvider';
+import { useTheme } from '~/providers/ThemeProvider';
 
 import { RootStack, AppTabs, RootStackParamList, AppTabParamList } from '~/types/navigation.types';
 
@@ -32,6 +33,8 @@ function HomeStackNavigator() {
 }
 
 function ProfileStackNavigator() {
+  const { palette } = useTheme();
+
   return (
     <RootStack.Navigator>
       <RootStack.Screen
@@ -45,9 +48,9 @@ function ProfileStackNavigator() {
         options={{
           headerShown: true,
           headerBackButtonDisplayMode: 'minimal',
-          headerStyle: { backgroundColor: '#0F1012' },
-          headerTintColor: 'white',
-          headerTitleStyle: { color: 'white' },
+          headerStyle: { backgroundColor: palette.header },
+          headerTintColor: palette.text,
+          headerTitleStyle: { color: palette.text },
         }}
       />
     </RootStack.Navigator>
@@ -55,18 +58,22 @@ function ProfileStackNavigator() {
 }
 
 function CheckInEventStackNavigator() {
+  const { palette } = useTheme();
+
   return (
     <RootStack.Navigator>
       <RootStack.Screen
         name="EventCheckInIndex"
         component={EventCheckInScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: false, headerStyle: { backgroundColor: palette.header } }}
       />
     </RootStack.Navigator>
   );
 }
 
 function WalletStackNavigator() {
+  const { palette } = useTheme();
+
   return (
     <RootStack.Navigator>
       <RootStack.Screen
@@ -75,9 +82,9 @@ function WalletStackNavigator() {
         options={{
           headerShown: true,
           headerBackButtonDisplayMode: 'minimal',
-          headerStyle: { backgroundColor: '#0F1012' },
-          headerTintColor: 'white',
-          headerTitleStyle: { color: 'white' },
+          headerStyle: { backgroundColor: palette.header },
+          headerTintColor: palette.text,
+          headerTitleStyle: { color: palette.text },
           title: 'Wallet',
         }}
       />
@@ -95,9 +102,10 @@ function EmptyScreen() {
  *  --------------------------- */
 function Tabs() {
   const { user } = useAuth();
+  const { palette } = useTheme();
 
   const baseTabBar = {
-    backgroundColor: '#0F1012',
+    backgroundColor: palette.tabBar,
     borderTopWidth: 0,
   } as const;
 
@@ -109,7 +117,7 @@ function Tabs() {
         options={{
           headerShown: false,
           tabBarLabel: () => null,
-          tabBarIcon: () => <Icon as={Home} color="white" size="2xl" />,
+          tabBarIcon: () => <Icon as={Home} color={palette.text} size="2xl" />,
           tabBarStyle: baseTabBar,
         }}
       />
@@ -119,11 +127,11 @@ function Tabs() {
         component={CheckInEventStackNavigator}
         options={{
           headerShown: true,
-          headerStyle: { backgroundColor: 'black' },
-          headerTintColor: 'white',
-          headerTitleStyle: { color: 'white' },
+          headerStyle: { backgroundColor: palette.header },
+          headerTintColor: palette.text,
+          headerTitleStyle: { color: palette.text },
           tabBarLabel: () => null,
-          tabBarIcon: () => <Icon as={TicketCheck} color="white" size="2xl" />,
+          tabBarIcon: () => <Icon as={TicketCheck} color={palette.text} size="2xl" />,
           tabBarStyle: baseTabBar,
         }}
       />
@@ -142,7 +150,7 @@ function Tabs() {
           options={{
             headerShown: false,
             tabBarLabel: () => null,
-            tabBarIcon: () => <Icon as={AddIcon} color="white" size="2xl" />,
+            tabBarIcon: () => <Icon as={AddIcon} color={palette.text} size="2xl" />,
             tabBarStyle: baseTabBar,
           }}
         />
@@ -154,7 +162,7 @@ function Tabs() {
         options={{
           headerShown: false,
           tabBarLabel: () => null,
-          tabBarIcon: () => <Icon as={WalletIcon} color="white" size="2xl" />,
+          tabBarIcon: () => <Icon as={WalletIcon} color={palette.text} size="2xl" />,
           tabBarStyle: baseTabBar,
         }}
       />
@@ -165,7 +173,7 @@ function Tabs() {
         options={{
           headerShown: false,
           tabBarLabel: () => null,
-          tabBarIcon: () => <Icon as={User} color="white" size="2xl" />,
+          tabBarIcon: () => <Icon as={User} color={palette.text} size="2xl" />,
           tabBarStyle: baseTabBar,
         }}
       />
@@ -179,6 +187,8 @@ function Tabs() {
  *  Detail screens (no tab bar) live here too
  *  --------------------------- */
 export function MainTabNavigator() {
+  const { palette } = useTheme();
+
   return (
     <RootStack.Navigator screenOptions={{ headerShown: false }}>
       {/* Tabs shell */}
@@ -206,9 +216,9 @@ export function MainTabNavigator() {
         options={{
           headerShown: true,
           headerBackButtonDisplayMode: 'minimal',
-          headerStyle: { backgroundColor: '#0F1012' },
-          headerTintColor: 'white',
-          headerTitleStyle: { color: 'white' },
+          headerStyle: { backgroundColor: palette.header },
+          headerTintColor: palette.text,
+          headerTitleStyle: { color: palette.text },
           title: 'Create / Edit Event',
         }}
       />
@@ -219,9 +229,9 @@ export function MainTabNavigator() {
         options={{
           headerShown: true,
           headerBackButtonDisplayMode: 'minimal',
-          headerStyle: { backgroundColor: '#0F1012' },
-          headerTintColor: 'white',
-          headerTitleStyle: { color: 'white' },
+          headerStyle: { backgroundColor: palette.header },
+          headerTintColor: palette.text,
+          headerTitleStyle: { color: palette.text },
         }}
       />
 
@@ -231,9 +241,9 @@ export function MainTabNavigator() {
         options={{
           headerShown: true,
           headerBackButtonDisplayMode: 'minimal',
-          headerStyle: { backgroundColor: '#0F1012' },
-          headerTintColor: 'white',
-          headerTitleStyle: { color: 'white' },
+          headerStyle: { backgroundColor: palette.header },
+          headerTintColor: palette.text,
+          headerTitleStyle: { color: palette.text },
           title: 'Review Event',
         }}
       />

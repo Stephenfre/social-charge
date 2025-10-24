@@ -9,12 +9,14 @@ import { useAuth } from '~/providers/AuthProvider';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '~/types/navigation.types';
 import { Spinner } from '~/components/ui/spinner';
+import { useTheme } from '~/providers/ThemeProvider';
 
 type HomeNav = NativeStackNavigationProp<RootStackParamList, 'HomeIndex'>;
 
 export function ReviewCreateEventScreen() {
   const { userId } = useAuth();
   const navigation = useNavigation<HomeNav>();
+  const { palette } = useTheme();
 
   const { mutateAsync: saveEvent, isPending } = useUpsertEvent(userId);
   const {
@@ -103,14 +105,14 @@ export function ReviewCreateEventScreen() {
             </Text>
             <Flex direction="row" gap={4}>
               <Flex direction="row" align="center" gap={2}>
-                <Calendar color={'white'} size={14} />
-                <Text size="lg" className="text-white">
+                <Calendar color={palette.text} size={14} />
+                <Text size="lg" style={{ color: palette.text }}>
                   {dayjs(startTime).format('ddd, MMM DD')}
                 </Text>
               </Flex>
               <Flex direction="row" align="center" gap={2}>
-                <Clock color={'white'} size={14} />
-                <Text size="lg" className="text-white">
+                <Clock color={palette.text} size={14} />
+                <Text size="lg" style={{ color: palette.text }}>
                   {dayjs(startTime).format('h:mm A')} - {dayjs(endTime).format('h:mm A')}
                 </Text>
               </Flex>

@@ -50,7 +50,7 @@ export function HomeScreen() {
   };
 
   return (
-    <SafeAreaView className=" h-full bg-background-dark">
+    <SafeAreaView className="flex flex-1" edges={['top']}>
       <ScrollView className="my-2">
         <Flex gap={4}>
           {upcomingEvents.length ? (

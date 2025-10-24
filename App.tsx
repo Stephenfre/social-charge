@@ -1,6 +1,9 @@
-import { GluestackUIProvider } from '~/components/ui/gluestack-ui-provider';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { NavigationContainer } from '@react-navigation/native';
+import {
+  DarkTheme as NavigationDarkTheme,
+  DefaultTheme as NavigationDefaultTheme,
+  NavigationContainer,
+} from '@react-navigation/native';
 import { MainTabNavigator } from '~/navigation/MainTabNavigator';
 import {
   InterestScreen,
@@ -17,6 +20,8 @@ import { RootStack } from '~/types/navigation.types';
 import { ActivityIndicator, StatusBar, View } from 'react-native';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import React, { useMemo } from 'react';
+import { ThemeProvider, useTheme } from '~/providers/ThemeProvider';
 
 const queryClient = new QueryClient();
 
@@ -26,12 +31,9 @@ export default function App() {
       <AuthProvider>
         <QueryClientProvider client={queryClient}>
           <BottomSheetModalProvider>
-            <NavigationContainer>
-              <GluestackUIProvider>
-                <StatusBar barStyle="light-content" backgroundColor="black" />
-                <RootNavigator />
-              </GluestackUIProvider>
-            </NavigationContainer>
+            <ThemeProvider>
+              <AppNavigation />
+            </ThemeProvider>
           </BottomSheetModalProvider>
         </QueryClientProvider>
       </AuthProvider>
@@ -39,7 +41,37 @@ export default function App() {
   );
 }
 
+function AppNavigation() {
+  const { mode, palette } = useTheme();
+
+  const navigationTheme = useMemo(() => {
+    const base = mode === 'dark' ? NavigationDarkTheme : NavigationDefaultTheme;
+    return {
+      ...base,
+      colors: {
+        ...base.colors,
+        background: palette.background,
+        card: palette.header,
+        border: palette.border,
+        text: palette.text,
+        primary: palette.accent,
+      },
+    };
+  }, [mode, palette]);
+
+  return (
+    <NavigationContainer theme={navigationTheme}>
+      <StatusBar
+        barStyle={mode === 'dark' ? 'light-content' : 'dark-content'}
+        backgroundColor={palette.header}
+      />
+      <RootNavigator />
+    </NavigationContainer>
+  );
+}
+
 function RootNavigator() {
+  const { palette } = useTheme();
   const { session, initializing } = useAuth();
 
   if (initializing) {
@@ -47,7 +79,7 @@ function RootNavigator() {
       <View
         style={{
           flex: 1,
-          backgroundColor: '#000',
+          backgroundColor: palette.background,
           alignItems: 'center',
           justifyContent: 'center',
         }}>
