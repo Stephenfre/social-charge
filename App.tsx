@@ -76,13 +76,7 @@ function RootNavigator() {
 
   if (initializing) {
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: palette.background,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}>
+      <View className="flex-1 items-center justify-center bg-background-0">
         <ActivityIndicator size="large" />
       </View>
     );

@@ -3,21 +3,19 @@ import dayjs from 'dayjs';
 import { Calendar, Clock } from 'lucide-react-native';
 import { Alert } from 'react-native';
 import { Button, Flex, Image, Text } from '~/components/ui';
+import { Icon } from '~/components/ui/icon';
 import { useEventCreateStore } from '~/hooks';
 import { useUpsertEvent } from '~/hooks/useEvents';
 import { useAuth } from '~/providers/AuthProvider';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '~/types/navigation.types';
 import { Spinner } from '~/components/ui/spinner';
-import { useTheme } from '~/providers/ThemeProvider';
 
 type HomeNav = NativeStackNavigationProp<RootStackParamList, 'HomeIndex'>;
 
 export function ReviewCreateEventScreen() {
   const { userId } = useAuth();
   const navigation = useNavigation<HomeNav>();
-  const { palette } = useTheme();
-
   const { mutateAsync: saveEvent, isPending } = useUpsertEvent(userId);
   const {
     eventId,
@@ -105,14 +103,12 @@ export function ReviewCreateEventScreen() {
             </Text>
             <Flex direction="row" gap={4}>
               <Flex direction="row" align="center" gap={2}>
-                <Calendar color={palette.text} size={14} />
-                <Text size="lg" style={{ color: palette.text }}>
-                  {dayjs(startTime).format('ddd, MMM DD')}
-                </Text>
+                <Icon as={Calendar} size={14} className="text-typography-light" />
+                <Text size="lg">{dayjs(startTime).format('ddd, MMM DD')}</Text>
               </Flex>
               <Flex direction="row" align="center" gap={2}>
-                <Clock color={palette.text} size={14} />
-                <Text size="lg" style={{ color: palette.text }}>
+                <Icon as={Clock} size={14} className="text-typography-light" />
+                <Text size="lg">
                   {dayjs(startTime).format('h:mm A')} - {dayjs(endTime).format('h:mm A')}
                 </Text>
               </Flex>

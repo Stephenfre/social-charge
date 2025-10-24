@@ -117,7 +117,7 @@ function Tabs() {
         options={{
           headerShown: false,
           tabBarLabel: () => null,
-          tabBarIcon: () => <Icon as={Home} color={palette.text} size="2xl" />,
+          tabBarIcon: () => <Icon as={Home} size="2xl" className="text-typography-light" />,
           tabBarStyle: baseTabBar,
         }}
       />
@@ -131,7 +131,7 @@ function Tabs() {
           headerTintColor: palette.text,
           headerTitleStyle: { color: palette.text },
           tabBarLabel: () => null,
-          tabBarIcon: () => <Icon as={TicketCheck} color={palette.text} size="2xl" />,
+          tabBarIcon: () => <Icon as={TicketCheck} size="2xl" className="text-typography-light" />,
           tabBarStyle: baseTabBar,
         }}
       />
@@ -150,7 +150,7 @@ function Tabs() {
           options={{
             headerShown: false,
             tabBarLabel: () => null,
-            tabBarIcon: () => <Icon as={AddIcon} color={palette.text} size="2xl" />,
+            tabBarIcon: () => <Icon as={AddIcon} size="2xl" className="text-typography-light" />,
             tabBarStyle: baseTabBar,
           }}
         />
@@ -162,7 +162,7 @@ function Tabs() {
         options={{
           headerShown: false,
           tabBarLabel: () => null,
-          tabBarIcon: () => <Icon as={WalletIcon} color={palette.text} size="2xl" />,
+          tabBarIcon: () => <Icon as={WalletIcon} size="2xl" className="text-typography-light" />,
           tabBarStyle: baseTabBar,
         }}
       />
@@ -173,7 +173,7 @@ function Tabs() {
         options={{
           headerShown: false,
           tabBarLabel: () => null,
-          tabBarIcon: () => <Icon as={User} color={palette.text} size="2xl" />,
+          tabBarIcon: () => <Icon as={User} size="2xl" className="text-typography-light" />,
           tabBarStyle: baseTabBar,
         }}
       />

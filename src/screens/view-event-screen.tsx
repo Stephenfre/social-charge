@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import { Calendar, Clock, MapPin, TicketX } from 'lucide-react-native';
 import { Alert, Modal, Pressable, ScrollView, View } from 'react-native';
 import { Badge, Box, Button, Flex, Image, Text } from '~/components/ui';
+import { Icon } from '~/components/ui/icon';
 import { useEventById, useStorageImages, useMyTokenBalance } from '~/hooks';
 import { RootStackParamList, useRouteStack } from '~/types/navigation.types';
 import { useRsvps, useCreateRsvp, useRemoveRsvp } from '~/hooks/useRsvps';
@@ -202,7 +203,7 @@ export function ViewEventScreen() {
       <View className="h-full bg-background-dark">
         <Flex align="center" className="m-auto" gap={4}>
           <Flex align="center">
-            <TicketX size={48} color={palette.text} />
+            <Icon as={TicketX} size={48} className="text-typography-light" />
             <Text bold size="2xl">
               Sorry this event is unavailable
             </Text>
@@ -262,21 +263,21 @@ export function ViewEventScreen() {
 
               <Flex direction="row" gap={4} wrap="wrap">
                 <Flex direction="row" align="center" gap={2}>
-                  <Calendar color={palette.text} size={14} />
-                  <Text size="lg" style={{ color: palette.text }}>
+                  <Icon as={Calendar} size={14} className="text-typography-light" />
+                  <Text size="lg">
                     {dayjs(event?.starts_at).format('ddd, MMM DD')}
                   </Text>
                 </Flex>
                 <Flex direction="row" align="center" gap={2}>
-                  <Clock color={palette.text} size={14} />
-                  <Text size="lg" style={{ color: palette.text }}>
+                  <Icon as={Clock} size={14} className="text-typography-light" />
+                  <Text size="lg">
                     {dayjs(event?.starts_at).format('h:mm A')} -{' '}
                     {dayjs(event?.ends_at).format('h:mm A')}
                   </Text>
                 </Flex>
                 <Flex direction="row" align="center" gap={2}>
-                  <MapPin color={palette.text} size={14} />
-                  <Text size="lg" style={{ color: palette.text }}>
+                  <Icon as={MapPin} size={14} className="text-typography-light" />
+                  <Text size="lg">
                     {event?.location_text}
                   </Text>
                 </Flex>
@@ -387,23 +388,20 @@ export function ViewEventScreen() {
         </BottomSheetScrollView>
       </BottomSheet>
       <View
-        className="absolute bottom-0 left-0 right-0 px-14 pt-3"
+        className="absolute bottom-0 left-0 right-0 border-t border-outline-200 bg-background-900 px-14 pt-3 dark:border-outline-700"
         style={{
           paddingBottom: insets.bottom + 10,
-          backgroundColor: palette.modal,
-          borderTopWidth: 1,
-          borderColor: palette.border,
         }}>
         <Flex direction="row" align="center" justify="space-between">
           <Flex align="center">
-            <Text bold size="md" style={{ color: palette.text }}>
+            <Text bold size="md">
               Tokens Cost
             </Text>
-            <Text size="2xl" bold style={{ color: palette.accent }}>
+            <Text size="2xl" bold className="text-primary">
               {event?.token_cost ?? 0}
             </Text>
           </Flex>
-          <Flex style={{ width: '50%' }}>
+          <Flex className="w-1/2">
             <RsvpButton onPress={openRsvpModal} />
           </Flex>
         </Flex>
@@ -436,15 +434,14 @@ function RsvpButton({
   isLoading?: boolean;
   canEdit?: boolean;
 }) {
-  const { palette } = useTheme();
   const label = isLoading ? <Spinner /> : 'RSVP';
   return (
     <Button
-      className={cn('h-14 w-full', canEdit && 'w-[48%]')}
-      style={{ backgroundColor: palette.accent }}
+      variant="primary"
+      className={cn('h-14 w-full bg-primary-700', canEdit && 'w-[48%]')}
       onPress={onPress}
       disabled={isLoading}>
-      <Text bold size="lg" style={{ color: palette.inverseText }}>
+      <Text bold size="lg" className="text-white dark:text-black">
         {label}
       </Text>
     </Button>
@@ -476,8 +473,6 @@ function RsvpConfirmationModal({
   balanceLoading,
   errorMessage,
 }: ConfirmationProps) {
-  const { palette } = useTheme();
-
   return (
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onCancel}>
       <Flex className="relative flex-1 items-center justify-center bg-black/70 px-6">
@@ -492,11 +487,7 @@ function RsvpConfirmationModal({
             Confirm RSVP
           </Text>
           <Text>
-            You are about to RSVP for{' '}
-            <Text bold style={{ color: palette.text }}>
-              {eventTitle}
-            </Text>
-            .
+            You are about to RSVP for <Text bold>{eventTitle}</Text>.
           </Text>
           <Flex gap={2} className="rounded-xl bg-background-dark p-4">
             <Flex direction="row" justify="space-between">

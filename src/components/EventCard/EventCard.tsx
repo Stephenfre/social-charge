@@ -1,5 +1,6 @@
-import { Calendar, Heart, MapPin, View } from 'lucide-react-native';
+import { Calendar, MapPin } from 'lucide-react-native';
 import { Button, ButtonText, Flex, Image, Pressable, Text } from '../ui';
+import { Icon } from '../ui/icon';
 import { EventRow, EventWithJoins, PersonCard, VEventWithFullDetails } from '~/types/event.types';
 import dayjs from 'dayjs';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -51,7 +52,7 @@ export function EventCard({
     bucket: 'event_cover',
     paths: [event?.cover_img], // stored in users table
   });
-  const { palette, isDark } = useTheme();
+  const { isDark } = useTheme();
 
   const src =
     Array.isArray(data) && data[0]
@@ -100,7 +101,7 @@ export function EventCard({
         )}
 
         {showTitle && event?.title && (
-          <Text size="lg" bold style={{ color: palette.inverseText }}>
+          <Text size="lg" bold className="text-white dark:text-black">
             {event?.title}
           </Text>
         )}
@@ -109,16 +110,16 @@ export function EventCard({
           <Flex direction="row" gap={4}>
             {showDate && event?.starts_at && (
               <Flex direction="row" align="center" gap={1}>
-                <Calendar color={palette.inverseText} size={14} />
-                <Text size="lg" style={{ color: palette.inverseText }}>
+                <Icon as={Calendar} size={14} className="text-white dark:text-black" />
+                <Text size="lg" className="text-white dark:text-black">
                   {dayjs(event?.starts_at).format('MMM DD')}
                 </Text>
               </Flex>
             )}
             {showLocation && event?.location_text && (
               <Flex direction="row" align="center" gap={1}>
-                <MapPin color={palette.inverseText} size={14} />
-                <Text size="lg" style={{ color: palette.inverseText }}>
+                <Icon as={MapPin} size={14} className="text-white dark:text-black" />
+                <Text size="lg" className="text-white dark:text-black">
                   {event?.location_text}
                 </Text>
               </Flex>
