@@ -35,6 +35,7 @@ export function useRsvps(eventId: string) {
 
 export function useCreateRsvp() {
   const qc = useQueryClient();
+  const { userId } = useAuth();
 
   return useMutation<'added' | 'removed', unknown, ToggleArgs, Ctx>({
     mutationFn: async ({ eventId, userId }) => {
@@ -134,6 +135,8 @@ export function useCreateRsvp() {
       qc.invalidateQueries({ queryKey: RSVP_KEYS.userEvents });
       qc.invalidateQueries({ queryKey: RSVP_KEYS.checkIn });
       qc.invalidateQueries({ queryKey: RSVP_KEYS.eventVibes });
+      qc.invalidateQueries({ queryKey: EVENT_KEYS.userTokenBalance(userId) });
+      qc.invalidateQueries({ queryKey: EVENT_KEYS.userTokenTransaction(userId) });
     },
   });
 }

@@ -15,21 +15,27 @@ import { RegisterUserBirthDateScreen } from '~/screens/register-user-birthdate-s
 import { AuthProvider, useAuth } from '~/providers/AuthProvider';
 import { RootStack } from '~/types/navigation.types';
 import { ActivityIndicator, StatusBar, View } from 'react-native';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const queryClient = new QueryClient();
 
 export default function App() {
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClient}>
-        <NavigationContainer>
-          <GluestackUIProvider>
-            <StatusBar barStyle="light-content" backgroundColor="black" />
-            <RootNavigator />
-          </GluestackUIProvider>
-        </NavigationContainer>
-      </QueryClientProvider>
-    </AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <BottomSheetModalProvider>
+            <NavigationContainer>
+              <GluestackUIProvider>
+                <StatusBar barStyle="light-content" backgroundColor="black" />
+                <RootNavigator />
+              </GluestackUIProvider>
+            </NavigationContainer>
+          </BottomSheetModalProvider>
+        </QueryClientProvider>
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }
 

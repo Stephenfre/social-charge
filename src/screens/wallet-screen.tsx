@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import { Minus, Plus } from 'lucide-react-native';
 import { ScrollView } from 'react-native';
 import { Box, Button, Flex, Text } from '~/components/ui';
-import { useMyTokenBalance, useTokenTransactionsByUserId } from '~/hooks/useEvents';
+import { useMyTokenBalance, useTokenTransactionsByUserId } from '~/hooks';
 
 export function WalletScreen() {
   const { data: tokens, isLoading: Loadingtokens } = useMyTokenBalance();
