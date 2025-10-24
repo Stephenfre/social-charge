@@ -45,6 +45,13 @@ export type Database = {
             foreignKeyName: "check_ins_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "v_event_with_host_rsvp_checkin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "check_ins_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "v_events_for_current_user"
             referencedColumns: ["id"]
           },
@@ -102,6 +109,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendance_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_with_host_rsvp_checkin"
             referencedColumns: ["id"]
           },
           {
@@ -173,6 +187,13 @@ export type Database = {
             foreignKeyName: "event_hosts_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "v_event_with_host_rsvp_checkin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_hosts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "v_events_for_current_user"
             referencedColumns: ["id"]
           },
@@ -236,6 +257,13 @@ export type Database = {
             foreignKeyName: "event_messages_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "v_event_with_host_rsvp_checkin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_messages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "v_events_for_current_user"
             referencedColumns: ["id"]
           },
@@ -256,6 +284,82 @@ export type Database = {
           {
             foreignKeyName: "event_messages_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      event_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          event_id: string
+          id: string
+          is_anonymous: boolean
+          rating: number
+          reviewer_id: string
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          event_id: string
+          id?: string
+          is_anonymous?: boolean
+          rating: number
+          reviewer_id: string
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          is_anonymous?: boolean
+          rating?: number
+          reviewer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_with_host_rsvp_checkin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_for_current_user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
             isOneToOne: false
             referencedRelation: "vw_user_current_vibe"
             referencedColumns: ["user_id"]
@@ -374,6 +478,13 @@ export type Database = {
             foreignKeyName: "favorited_events_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "v_event_with_host_rsvp_checkin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorited_events_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "v_events_for_current_user"
             referencedColumns: ["id"]
           },
@@ -443,6 +554,13 @@ export type Database = {
             foreignKeyName: "host_reviews_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "v_event_with_host_rsvp_checkin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "host_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "v_events_for_current_user"
             referencedColumns: ["id"]
           },
@@ -485,104 +603,76 @@ export type Database = {
       }
       review_vibes: {
         Row: {
-          review_id: string
-          vibed_user_id: string
-        }
-        Insert: {
-          review_id: string
-          vibed_user_id: string
-        }
-        Update: {
-          review_id?: string
-          vibed_user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "review_vibes_review_id_fkey"
-            columns: ["review_id"]
-            isOneToOne: false
-            referencedRelation: "reviews"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "review_vibes_vibed_user_id_fkey"
-            columns: ["vibed_user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "review_vibes_vibed_user_id_fkey"
-            columns: ["vibed_user_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
-          },
-        ]
-      }
-      reviews: {
-        Row: {
-          attendees_rating: number | null
-          comment: string | null
-          created_at: string | null
           event_id: string | null
-          host_rating: number | null
-          id: string
-          user_id: string | null
-          venue_rating: number | null
+          review_id: string
+          vibe_user_id: string
+          voter_id: string | null
         }
         Insert: {
-          attendees_rating?: number | null
-          comment?: string | null
-          created_at?: string | null
           event_id?: string | null
-          host_rating?: number | null
-          id?: string
-          user_id?: string | null
-          venue_rating?: number | null
+          review_id: string
+          vibe_user_id: string
+          voter_id?: string | null
         }
         Update: {
-          attendees_rating?: number | null
-          comment?: string | null
-          created_at?: string | null
           event_id?: string | null
-          host_rating?: number | null
-          id?: string
-          user_id?: string | null
-          venue_rating?: number | null
+          review_id?: string
+          vibe_user_id?: string
+          voter_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "reviews_event_id_fkey"
+            foreignKeyName: "review_vibes_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "reviews_event_id_fkey"
+            foreignKeyName: "review_vibes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_with_host_rsvp_checkin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_vibes_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_events_for_current_user"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "reviews_event_id_fkey"
+            foreignKeyName: "review_vibes_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "v_user_events"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "reviews_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "review_vibes_vibe_user_id_fkey"
+            columns: ["vibe_user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "reviews_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "review_vibes_vibe_user_id_fkey"
+            columns: ["vibe_user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "review_vibes_voter_id_fkey"
+            columns: ["voter_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_vibes_voter_id_fkey"
+            columns: ["voter_id"]
             isOneToOne: false
             referencedRelation: "vw_user_current_vibe"
             referencedColumns: ["user_id"]
@@ -628,6 +718,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_with_host_rsvp_checkin"
             referencedColumns: ["id"]
           },
           {
@@ -718,6 +815,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "token_ledger_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_with_host_rsvp_checkin"
             referencedColumns: ["id"]
           },
           {
@@ -868,6 +972,13 @@ export type Database = {
             foreignKeyName: "user_vibe_history_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "v_event_with_host_rsvp_checkin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_vibe_history_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "v_events_for_current_user"
             referencedColumns: ["id"]
           },
@@ -965,6 +1076,122 @@ export type Database = {
         }
         Relationships: []
       }
+      venue_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          event_id: string | null
+          id: string
+          is_anonymous: boolean
+          place_id: string
+          rating: number
+          reviewer_id: string
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          is_anonymous?: boolean
+          place_id: string
+          rating: number
+          reviewer_id: string
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          is_anonymous?: boolean
+          place_id?: string
+          rating?: number
+          reviewer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_with_host_rsvp_checkin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_for_current_user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_reviews_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["place_id"]
+          },
+          {
+            foreignKeyName: "venue_reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      venues: {
+        Row: {
+          created_at: string
+          formatted_address: string
+          lat: number | null
+          lon: number | null
+          name: string
+          place_id: string
+          provider: string
+        }
+        Insert: {
+          created_at?: string
+          formatted_address: string
+          lat?: number | null
+          lon?: number | null
+          name: string
+          place_id: string
+          provider?: string
+        }
+        Update: {
+          created_at?: string
+          formatted_address?: string
+          lat?: number | null
+          lon?: number | null
+          name?: string
+          place_id?: string
+          provider?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       geography_columns: {
@@ -1009,6 +1236,43 @@ export type Database = {
         }
         Relationships: []
       }
+      v_event_ratings: {
+        Row: {
+          avg_rating: number | null
+          event_id: string | null
+          review_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_with_host_rsvp_checkin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_for_current_user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_event_user_vibes: {
         Row: {
           event_id: string | null
@@ -1027,6 +1291,13 @@ export type Database = {
             foreignKeyName: "rsvps_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "v_event_with_host_rsvp_checkin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "v_events_for_current_user"
             referencedColumns: ["id"]
           },
@@ -1036,6 +1307,57 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_user_events"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_event_with_host_rsvp_checkin: {
+        Row: {
+          age_limit: number | null
+          capacity: number | null
+          category: string[] | null
+          check_ins:
+            | Database["public"]["CompositeTypes"]["checkin_info"][]
+            | null
+          cover_img: string | null
+          created_at: string | null
+          created_by: string | null
+          current_user_checked_in_at: string | null
+          current_user_rsvp_at: string | null
+          deleted_at: string | null
+          description: string | null
+          ends_at: string | null
+          event_hosts:
+            | Database["public"]["CompositeTypes"]["host_info"][]
+            | null
+          formatted_address: string | null
+          id: string | null
+          is_current_user_checked_in: boolean | null
+          is_current_user_host: boolean | null
+          is_current_user_rsvped: boolean | null
+          latitude: number | null
+          location_text: string | null
+          longitude: number | null
+          place_id: string | null
+          provider: string | null
+          rsvps: Database["public"]["CompositeTypes"]["rsvp_info"][] | null
+          starts_at: string | null
+          title: string | null
+          token_cost: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1072,6 +1394,29 @@ export type Database = {
           {
             foreignKeyName: "events_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      v_host_ratings: {
+        Row: {
+          avg_rating: number | null
+          host_id: string | null
+          review_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "host_reviews_host_id_fkey"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "host_reviews_host_id_fkey"
+            columns: ["host_id"]
             isOneToOne: false
             referencedRelation: "vw_user_current_vibe"
             referencedColumns: ["user_id"]
@@ -1138,6 +1483,22 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vw_user_current_vibe"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      v_venue_ratings: {
+        Row: {
+          avg_rating: number | null
+          place_id: string | null
+          review_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_reviews_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["place_id"]
           },
         ]
       }
@@ -2953,6 +3314,16 @@ export type Database = {
         Args: { "": unknown }
         Returns: number
       }
+      submit_full_review: {
+        Args: {
+          p_attendee_vibes?: Json
+          p_event_comment?: string
+          p_event_id: string
+          p_event_rating?: number
+          p_host_reviews?: Json
+        }
+        Returns: Json
+      }
       text: {
         Args: { "": unknown }
         Returns: string
@@ -3013,9 +3384,29 @@ export type Database = {
       vibe_source: "self" | "peer"
     }
     CompositeTypes: {
+      checkin_info: {
+        user_id: string | null
+        check_in_at: string | null
+        first_name: string | null
+        last_name: string | null
+        profile_picture: string | null
+      }
       geometry_dump: {
         path: number[] | null
         geom: unknown | null
+      }
+      host_info: {
+        id: string | null
+        first_name: string | null
+        last_name: string | null
+        profile_picture: string | null
+      }
+      rsvp_info: {
+        user_id: string | null
+        rsvp_at: string | null
+        first_name: string | null
+        last_name: string | null
+        profile_picture: string | null
       }
       valid_detail: {
         valid: boolean | null

@@ -7,6 +7,8 @@ export {
   useLowTokenEvents,
   useThisWeekendEvents,
   useTrendingEvents,
+  useSubmitEventReview,
+  useTokenTransactionsByUserId,
 } from './useEvents';
 export { useRsvps, useCreateRsvp, useRemoveRsvp } from './useRsvps';
 export { useStorageImages } from './useStorageImage';

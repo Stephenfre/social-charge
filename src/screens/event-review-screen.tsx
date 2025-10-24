@@ -1,12 +1,12 @@
 import { ScrollView, View, TextInput, Alert } from 'react-native';
 import { Box, Button, Flex, Image, Text } from '~/components/ui';
-import { useEventById, useStorageImages } from '~/hooks';
-import { PersonCard } from '~/types/event.types';
+import { useEventById, useStorageImages, useSubmitEventReview } from '~/hooks';
 import { useRouteStack } from '~/types/navigation.types';
 
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { VibeSlug } from '~/hooks/useEvents';
 
 // --- Vibe options (use your canonical set) ---
 const VIBE_OPTIONS = [
@@ -15,8 +15,6 @@ const VIBE_OPTIONS = [
   { slug: 'low-key', label: 'Low-key' },
   { slug: 'adventurous', label: 'Adventurous' },
 ] as const;
-
-type VibeSlug = (typeof VIBE_OPTIONS)[number]['slug'];
 
 // --- Zod Schema ---
 const reviewSchema = z.object({
@@ -31,8 +29,8 @@ const reviewSchema = z.object({
 
   // attendeeVibes: { [userId: string]: 'chill' | 'party-animal' | 'low-key' | 'adventurous' | undefined }
   attendeeVibes: z.record(
-    z.string(), // the user_id key
-    z.enum(['chill', 'party-animal', 'low-key', 'adventurous']).optional() // the value
+    z.string(), // user_id key
+    z.enum(['chill', 'party-animal', 'low-key', 'adventurous']).optional()
   ),
 });
 type ReviewFormValues = z.infer<typeof reviewSchema>;
@@ -41,29 +39,21 @@ export function EventReviewScreen() {
   const { params } = useRouteStack<'EventReview'>();
   const { data: event, isLoading } = useEventById(params.eventId!);
 
-  // Map check-ins -> PersonCard
-  const eventCheckIns: PersonCard[] =
-    event?.check_ins?.map((person) => ({
-      id: person.user.id,
-      name: `${person.user.first_name} ${person.user.last_name}`,
-      profile_pic: person.user.profile_picture,
-    })) ?? [];
-
-  // Load avatars
-  const checkInAvatarPaths = eventCheckIns.map((r) => r.profile_pic);
+  // Load avatars for checked-in attendees
+  const checkInAvatarPaths = event?.check_ins?.map((r) => r.profile_picture) ?? [];
   const { data: eventCheckInUserAvatar = [], isLoading: eventCheckInUserAvatarLoading } =
     useStorageImages({
       bucket: 'avatars',
       paths: checkInAvatarPaths,
     });
 
+  const { mutateAsync: submitReview, isPending } = useSubmitEventReview();
+
   // --- Form setup ---
   const {
     control,
     handleSubmit,
-    watch,
-    setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<ReviewFormValues>({
     resolver: zodResolver(reviewSchema),
     defaultValues: {
@@ -73,34 +63,9 @@ export function EventReviewScreen() {
       venueComment: '',
       hostRating: 0,
       hostComment: '',
-      attendeeVibes: {}, // empty until user selects
+      attendeeVibes: {},
     },
   });
-
-  // --- Submit handler ---
-  const onSubmit: SubmitHandler<ReviewFormValues> = (values) => {
-    // Transform attendeeVibes record into an array for API consumption
-    const attendeeVotes = Object.entries(values.attendeeVibes)
-      .filter(([, vibe]) => !!vibe)
-      .map(([userId, vibe]) => ({
-        userId,
-        vibe: vibe as VibeSlug,
-      }));
-
-    const payload = {
-      eventId: params.eventId!,
-      ratings: {
-        event: { rating: values.eventRating, comment: values.eventComment || null },
-        venue: { rating: values.venueRating, comment: values.venueComment || null },
-        host: { rating: values.hostRating, comment: values.hostComment || null },
-      },
-      attendeeVibes: attendeeVotes, // [{ userId, vibe }]
-    };
-
-    // TODO: call your API/mutations here
-    console.log('Submitting review payload:', payload);
-    Alert.alert('Thanks!', 'Your review has been submitted.');
-  };
 
   // Helper UI: 1–5 rating row
   const RatingRow = ({ value, onChange }: { value: number; onChange: (n: number) => void }) => (
@@ -132,6 +97,31 @@ export function EventReviewScreen() {
       ))}
     </Flex>
   );
+
+  const onSubmit: SubmitHandler<ReviewFormValues> = async (values) => {
+    try {
+      // Convert record -> array for RPC
+      const attendeeVibesArray =
+        Object.entries(values.attendeeVibes)
+          .filter(([, vibe]) => !!vibe)
+          .map(([user_id, vibe]) => ({ user_id, vibe_slug: vibe as VibeSlug })) ?? [];
+
+      await submitReview({
+        eventId: params.eventId!,
+        ratings: {
+          event: { rating: values.eventRating, comment: values.eventComment || null },
+          venue: { rating: values.venueRating, comment: values.venueComment || null },
+          host: { rating: values.hostRating, comment: values.hostComment || null },
+        },
+        attendeeVibes: attendeeVibesArray,
+      });
+
+      Alert.alert('Thanks!', 'Your review has been submitted.');
+    } catch (err: any) {
+      console.log('submit review error', err);
+      Alert.alert('Error', err?.message ?? 'Failed to submit review.');
+    }
+  };
 
   return (
     <View className="h-full bg-background-dark p-4">
@@ -232,17 +222,17 @@ export function EventReviewScreen() {
             <Text bold size="xl">
               Attendee Vibes
             </Text>
-            {eventCheckIns?.length ? (
+            {event?.check_ins?.length ? (
               <Flex gap={8}>
-                {eventCheckIns.map((att, i) => {
+                {event.check_ins.map((att, i) => {
                   const imgUri =
                     !eventCheckInUserAvatarLoading && eventCheckInUserAvatar[i]
                       ? eventCheckInUserAvatar[i]
                       : undefined;
-                  const fieldName = `attendeeVibes.${att.id}` as const;
+                  const fieldName = `attendeeVibes.${att.user_id}` as const;
 
                   return (
-                    <Flex key={att.id} gap={4} className="rounded-xl bg-background-900 p-3">
+                    <Flex key={att.user_id} gap={4} className="rounded-xl bg-background-900 p-3">
                       <Flex direction="row" align="center" gap={10}>
                         {imgUri ? (
                           <Image
@@ -255,7 +245,7 @@ export function EventReviewScreen() {
                           <Box className="h-28 w-28 rounded-full bg-slate-500" />
                         )}
                         <Text size="lg" bold>
-                          {att.name}
+                          {att.first_name + ' ' + att.last_name}
                         </Text>
                       </Flex>
 
@@ -276,9 +266,9 @@ export function EventReviewScreen() {
           </Flex>
 
           {/* Submit */}
-          <Button onPress={handleSubmit(onSubmit)} className="mt-6" disabled={isSubmitting}>
+          <Button onPress={handleSubmit(onSubmit)} className="mt-6" disabled={isPending}>
             <Text bold className="text-white">
-              {isSubmitting ? 'Submitting…' : 'Submit Review'}
+              {isPending ? 'Submitting…' : 'Submit Review'}
             </Text>
           </Button>
         </Flex>

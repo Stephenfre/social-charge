@@ -26,8 +26,6 @@ export function ProfileScreen() {
     paths: [user?.profile_picture],
   });
 
-  console.log('tokens', tokens);
-
   const handleViewAllPress = () => {
     navigation.navigate('Event History');
   };

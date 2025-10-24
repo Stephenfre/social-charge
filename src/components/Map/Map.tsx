@@ -14,8 +14,8 @@ export function Map({ location, height }: MapScreenProps) {
   const deltas = { latitudeDelta: 0.02, longitudeDelta: 0.02 };
 
   // derive target coords
-  const lat = location.latitude ?? fallback.latitude;
-  const lng = location.longitude ?? fallback.longitude;
+  const lat = location?.latitude ?? fallback.latitude;
+  const lng = location?.longitude ?? fallback.longitude;
 
   // initialize region once (on mount)
   useEffect(() => {

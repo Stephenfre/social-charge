@@ -14,7 +14,7 @@ import './global.css';
 import { RegisterUserBirthDateScreen } from '~/screens/register-user-birthdate-screen';
 import { AuthProvider, useAuth } from '~/providers/AuthProvider';
 import { RootStack } from '~/types/navigation.types';
-import { StatusBar } from 'react-native';
+import { ActivityIndicator, StatusBar, View } from 'react-native';
 
 const queryClient = new QueryClient();
 
@@ -35,7 +35,20 @@ export default function App() {
 
 function RootNavigator() {
   const { session, initializing } = useAuth();
-  if (initializing) return null; // or splash
+
+  if (initializing) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: '#000',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return session ? <AppStack /> : <AuthStack />;
 }

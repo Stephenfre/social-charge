@@ -1,12 +1,12 @@
 import { Calendar, Heart, MapPin, View } from 'lucide-react-native';
 import { Button, ButtonText, Flex, Image, Pressable, Text } from '../ui';
-import { EventRow, EventWithJoins, PersonCard } from '~/types/event.types';
+import { EventRow, EventWithJoins, PersonCard, VEventWithFullDetails } from '~/types/event.types';
 import dayjs from 'dayjs';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useStorageImages } from '~/hooks';
 
 interface EventCardProps {
-  event: EventRow | EventWithJoins;
+  event: EventRow | EventWithJoins | VEventWithFullDetails;
   onPress?: () => void;
   featured?: boolean;
   favorited?: boolean;
@@ -62,11 +62,11 @@ export function EventCard({
           <ButtonText className="text-sm text-white">FEATURED</ButtonText>
         </Button>
       )}
-      {favorited && (
+      {/* {favorited && (
         <Pressable className="absolute right-0 top-0 z-50 mr-2 mt-3 h-6 rounded-md px-4">
           <Heart size={18} color="white" />
         </Pressable>
-      )}
+      )} */}
 
       <Pressable onPress={onPress} className={className}>
         <Image source={src} size={imageSize} overlay={overlay} rounded={rounded} alt="image" />

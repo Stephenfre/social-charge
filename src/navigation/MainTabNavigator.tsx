@@ -1,4 +1,4 @@
-import { Home, TicketCheck, User } from 'lucide-react-native';
+import { Home, TicketCheck, User, Wallet } from 'lucide-react-native';
 import { AddIcon, Icon } from '~/components/ui/icon';
 import { useAuth } from '~/providers/AuthProvider';
 import {
@@ -9,6 +9,7 @@ import {
   ReviewCreateEventScreen,
   ViewEventScreen,
   ViewUserEventsScreen,
+  WalletScreen,
 } from '~/screens';
 import CreateEventScreen from '~/screens/create-event-screen';
 import { AppTabs, RootStack } from '~/types/navigation.types';
@@ -118,6 +119,25 @@ function CheckInEventStackNavigator() {
   );
 }
 
+function WalletStackNavigator() {
+  return (
+    <RootStack.Navigator>
+      <RootStack.Screen
+        name="WalletIndex"
+        component={WalletScreen}
+        options={{
+          headerShown: true,
+          headerBackButtonDisplayMode: 'minimal',
+          headerStyle: { backgroundColor: '#0F1012' },
+          headerTintColor: 'white',
+          headerTitleStyle: { color: 'white' },
+          title: 'Wallet',
+        }}
+      />
+    </RootStack.Navigator>
+  );
+}
+
 function CreateEventStackNavigator() {
   return (
     <RootStack.Navigator>
@@ -209,6 +229,19 @@ export function MainTabNavigator() {
           }}
         />
       ) : null}
+      <AppTabs.Screen
+        name="Wallet"
+        component={WalletStackNavigator}
+        options={{
+          headerShown: false,
+          tabBarLabel: () => null,
+          tabBarIcon: () => <Icon as={Wallet} color="white" size="2xl" />,
+          tabBarStyle: {
+            backgroundColor: '#0F1012',
+            borderTopWidth: 0,
+          },
+        }}
+      />
       <AppTabs.Screen
         name="Profile"
         component={ProfileStackNavigator}

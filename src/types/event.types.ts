@@ -6,6 +6,7 @@ export type EventRow = Database['public']['Tables']['events']['Row'];
 export type EventInsert = Database['public']['Tables']['events']['Insert'];
 export type EventUpdate = Database['public']['Tables']['events']['Update'];
 export type EventCheckIn = Database['public']['Tables']['check_ins']['Row'];
+export type TokenTransactions = Database['public']['Tables']['token_transactions']['Row'];
 
 export type EventHostRow = Tables<'event_hosts'> & { user: UsersRow };
 export type RsvpRow = Tables<'rsvps'> & { user: UsersRow };
@@ -19,6 +20,9 @@ export type EventWithJoins = EventRow &
     rsvps: RsvpRow[];
     check_ins: CheckInsRow[];
   };
+
+export type VEventWithFullDetails =
+  Database['public']['Views']['v_event_with_host_rsvp_checkin']['Row'];
 
 // (optional, handy for UI mapping)
 export type PersonCard = {

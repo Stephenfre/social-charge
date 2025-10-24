@@ -100,13 +100,6 @@ export default function CreateEventScreen() {
     toggleInterest,
   } = useEventCreateStore();
 
-  const eventHosts: PersonCard[] =
-    event?.event_hosts?.map((host) => ({
-      id: host.user.id,
-      name: host.user.first_name + ' ' + host.user.last_name,
-      profile_pic: host.user.profile_picture,
-    })) ?? [];
-
   const toAgeLabel = (n?: number | null) => (n ? `${n} and over` : '');
 
   function toTime12(dtISO: string) {
@@ -126,7 +119,7 @@ export default function CreateEventScreen() {
       ? coverImg[0] // never null ✅
       : '';
 
-  const firstHost = eventHosts[0];
+  const firstHost = event?.event_hosts?.[0];
 
   useEffect(() => {
     if (!event) return;
@@ -134,7 +127,9 @@ export default function CreateEventScreen() {
       eventId: params.eventId,
       title: event?.title ?? '',
       hostId: firstHost?.id ?? '',
-      hostName: eventHosts?.length ? `${firstHost?.name}`.trim() : '',
+      hostName: event?.event_hosts?.length
+        ? `${firstHost?.first_name + ' ' + firstHost?.last_name}`.trim()
+        : '',
       ageLimit: toAgeLabel(event?.age_limit),
       description: event?.description ?? '',
       location: {

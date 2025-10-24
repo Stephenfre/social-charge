@@ -123,6 +123,8 @@ export function EventCheckInScreen() {
     );
   }
 
+  console.log('isUserCheckedIn', isUserCheckedIn);
+
   const checkedInText = !isUserCheckedIn ? 'Check In' : 'Checked In';
 
   const startsAt = dayjs(checkInEvent.starts_at);
@@ -166,10 +168,10 @@ export function EventCheckInScreen() {
                 withinTwoHours && 'w-full'
               )}
               onPress={handlePressCheckIn}
-              disabled={isNotStartTime || isUserCheckedIn}>
+              disabled={isUserCheckedIn}>
               <Flex align="center">
                 <Text bold size="lg">
-                  {!isAfterStartTime ? checkedInText : 'Event Started'}
+                  {checkedInText}
                 </Text>
                 {checkInEvent && <Countdown to={checkInEvent?.starts_at} />}
               </Flex>

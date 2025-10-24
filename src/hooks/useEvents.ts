@@ -8,7 +8,9 @@ import {
   EventRow,
   EventVibes,
   EventWithJoins,
+  TokenTransactions,
   UserEventCardRow,
+  VEventWithFullDetails,
 } from '~/types/event.types';
 
 export const EVENT_KEYS = {
@@ -21,6 +23,8 @@ export const EVENT_KEYS = {
   thisWeekend: ['events', 'thisWeekend'] as const,
   trending: ['events', 'trending'] as const,
   userTokenBalance: (uid: string | null | undefined) => ['user', 'tokenBalance', uid] as const,
+  userTokenTransaction: (uid: string | null | undefined) =>
+    ['user', 'tokenTransactions', uid] as const,
   checkIn: (userId?: string | null) => ['events', 'checkInEvent', userId] as const,
   userCheckedIn: (userId?: string | null, eventId?: string | null) =>
     ['events', 'checkIn', 'byUserEvent', userId, eventId] as const,
@@ -129,35 +133,72 @@ export function useMyTokenBalance() {
   });
 }
 
+export function useTokenTransactionsByUserId() {
+  const { userId } = useAuth();
+
+  return useQuery<TokenTransactions[]>({
+    queryKey: EVENT_KEYS.userTokenTransaction(userId),
+    enabled: !!userId, // don't run until we have a user
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('token_transactions')
+        .select('*') // <- required before filters
+        .eq('user_id', userId!)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as TokenTransactions[];
+    },
+  });
+}
+// export function useEventById(id: string) {
+//   return useQuery<EventWithJoins>({
+//     queryKey: ['events', 'eventById', id],
+//     enabled: !!id,
+//     queryFn: async () => {
+//       const { data, error } = await supabase
+//         .from('events')
+//         .select(
+//           `
+//           *,
+//           event_hosts:event_hosts!event_hosts_event_id_fkey (
+//             user:users!event_hosts_user_id_fkey ( id, first_name, last_name, profile_picture )
+//           ),
+//           rsvps:rsvps!rsvps_event_id_fkey (
+//             user:users!rsvps_user_id_fkey ( id, first_name, last_name, profile_picture )
+//           ),
+//           check_ins:check_ins!check_ins_event_id_fkey (
+//             user:users!check_ins_user_id_fkey ( id, first_name, last_name, profile_picture )
+//           )
+//         `
+//         )
+//         .eq('id', id)
+//         .maybeSingle();
+
+//       if (error) throw error;
+//       return data as EventWithJoins;
+//     },
+//   });
+// }
+
 export function useEventById(id: string) {
-  return useQuery<EventWithJoins>({
+  return useQuery<VEventWithFullDetails>({
     queryKey: ['events', 'eventById', id],
     enabled: !!id,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('events')
-        .select(
-          `
-          *,
-          event_hosts:event_hosts!event_hosts_event_id_fkey (
-            user:users!event_hosts_user_id_fkey ( id, first_name, last_name, profile_picture )
-          ),
-          rsvps:rsvps!rsvps_event_id_fkey (
-            user:users!rsvps_user_id_fkey ( id, first_name, last_name, profile_picture )
-          ),
-          check_ins:check_ins!check_ins_event_id_fkey (
-            user:users!check_ins_user_id_fkey ( id, first_name, last_name, profile_picture )
-          )
-        `
-        )
+        .from('v_event_with_host_rsvp_checkin')
+        .select('*')
         .eq('id', id)
-        .maybeSingle();
+        .maybeSingle<VEventWithFullDetails>();
 
       if (error) throw error;
-      return data as EventWithJoins;
+      console.log('data', data);
+      return data!;
     },
   });
 }
+
 const nowIso = new Date().toISOString();
 
 export function useForYouEvents(userId: string | null) {
@@ -544,6 +585,54 @@ export function useDeleteEvent() {
       qc.invalidateQueries({ queryKey: EVENT_KEYS.cheap });
       qc.invalidateQueries({ queryKey: EVENT_KEYS.thisWeekend });
       qc.invalidateQueries({ queryKey: EVENT_KEYS.trending });
+    },
+  });
+}
+
+export type VibeSlug = 'chill' | 'party-animal' | 'low-key' | 'adventurous';
+
+export type SubmitEventReviewArgs = {
+  eventId: string;
+  ratings: {
+    event: { rating: number; comment: string | null };
+    venue: { rating: number; comment: string | null };
+    host: { rating: number; comment: string | null };
+  };
+  // array of votes: { user_id, vibe_slug }
+  attendeeVibes: Array<{ user_id: string; vibe_slug: VibeSlug }>;
+};
+
+export function useSubmitEventReview() {
+  const qc = useQueryClient();
+  const { userId } = useAuth();
+
+  return useMutation({
+    mutationFn: async (payload: SubmitEventReviewArgs) => {
+      const { eventId, ratings, attendeeVibes } = payload;
+
+      console.log('eventId', eventId);
+      const { data, error } = await supabase.rpc('submit_full_review', {
+        p_event_id: eventId,
+        p_event_rating: ratings.event.rating,
+        p_event_comment: ratings.event.comment ?? '',
+        p_host_reviews: JSON.stringify([
+          {
+            host_user_id: userId, // or event.host.id if reviewing a host
+            rating: ratings.host.rating,
+            comment: ratings.host.comment,
+          },
+        ]),
+        p_attendee_vibes: JSON.stringify(attendeeVibes),
+      });
+
+      if (error) throw error;
+      return data;
+    },
+
+    onSuccess: (_res, vars) => {
+      qc.invalidateQueries({ queryKey: ['events', 'eventById', vars.eventId] });
+      qc.invalidateQueries({ queryKey: ['reviews', vars.eventId] });
+      qc.invalidateQueries({ queryKey: ['user', userId, 'vibes'] });
     },
   });
 }
