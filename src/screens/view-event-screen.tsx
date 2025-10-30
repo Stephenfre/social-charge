@@ -5,9 +5,9 @@ import dayjs from 'dayjs';
 import { Calendar, Clock, MapPin, TicketX } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EventCard } from '~/components/EventCard/EventCard';
-import { EventCheckInList } from '~/components/EventCheckInList/EventCheckInList';
+
 import { Badge, Box, Button, Flex, Image, Text } from '~/components/ui';
 import { Icon } from '~/components/ui/icon';
 import { Spinner } from '~/components/ui/spinner';
@@ -21,7 +21,7 @@ import {
 import { useEventVibes } from '~/hooks/useEvents';
 import { useCreateRsvp, useRemoveRsvp, useRsvps } from '~/hooks/useRsvps';
 import { useAuth } from '~/providers/AuthProvider';
-import { useTheme } from '~/providers/ThemeProvider';
+
 import { cn } from '~/utils/cn';
 import { RootStackParamList, useRouteStack } from '~/types/navigation.types';
 
@@ -31,7 +31,6 @@ export function ViewEventScreen() {
   const { params } = useRouteStack<'ViewEvent'>();
   const navigation = useNavigation<EventNav>();
   const insets = useSafeAreaInsets();
-  const { palette } = useTheme();
 
   const { userId, user } = useAuth();
   const { data: event, isLoading } = useEventById(params.eventId);
@@ -152,9 +151,9 @@ export function ViewEventScreen() {
 
   if (isLoading || rsvpLoading) {
     return (
-      <View className="h-full bg-background-dark">
+      <SafeAreaView className="h-full bg-background-dark">
         <Spinner />
-      </View>
+      </SafeAreaView>
     );
   }
 
