@@ -22,7 +22,7 @@ const imageStyle = tva({
       '2xl': 'h-64 w-64',
       full: 'h-full w-full',
       cover: 'h-64 w-full',
-      background: 'h-80 w-full',
+      background: 'h-96 w-full',
       none: '',
     },
     rounded: {

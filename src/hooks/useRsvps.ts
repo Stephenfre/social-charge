@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '~/lib/supabase';
 import { EventRow, UserEventCardRow } from '~/types/event.types';
 import { EVENT_KEYS } from './useEvents';
+import { TOKEN_QUERY_KEYS } from './useTokens';
 import { useAuth } from '~/providers/AuthProvider';
 
 const RSVP_KEYS = {
@@ -135,8 +136,8 @@ export function useCreateRsvp() {
       qc.invalidateQueries({ queryKey: RSVP_KEYS.userEvents });
       qc.invalidateQueries({ queryKey: RSVP_KEYS.checkIn });
       qc.invalidateQueries({ queryKey: RSVP_KEYS.eventVibes });
-      qc.invalidateQueries({ queryKey: EVENT_KEYS.userTokenBalance(userId) });
-      qc.invalidateQueries({ queryKey: EVENT_KEYS.userTokenTransaction(userId) });
+      qc.invalidateQueries({ queryKey: TOKEN_QUERY_KEYS.balance(userId ?? undefined) });
+      qc.invalidateQueries({ queryKey: TOKEN_QUERY_KEYS.transactions(userId ?? undefined) });
     },
   });
 }

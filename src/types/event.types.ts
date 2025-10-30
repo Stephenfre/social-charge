@@ -31,10 +31,7 @@ export type PersonCard = {
   profile_pic: UsersRow['profile_picture'];
 };
 
-export type UserEventCardRow = Pick<
-  UserEventRow,
-  'id' | 'title' | 'cover_img' | 'created_at' | 'starts_at' | 'ends_at'
-> & {
+export type UserEventCardRow = UserEventRow & {
   event_status: 'upcoming' | 'past';
 };
 

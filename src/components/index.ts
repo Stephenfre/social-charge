@@ -5,3 +5,5 @@ export { EventsList } from './EventsList/EventsList';
 export { Map } from './Map/Map';
 export { TimePickerModal } from './TimePickerModal/TimePickerModal';
 export { MultiModal } from './MultiModal/MultiModal';
+export { EventCheckInList } from './EventCheckInList/EventCheckInList';
+export { UserCheckInQr } from './UserCheckInQr/UserCheckInQr';

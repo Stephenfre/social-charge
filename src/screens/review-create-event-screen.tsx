@@ -79,7 +79,6 @@ export function ReviewCreateEventScreen() {
         reset();
       }
     } catch (error) {
-      console.log('error', error);
       Alert.alert('failed to create event');
     }
   };

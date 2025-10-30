@@ -4,9 +4,10 @@ import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 interface MapScreenProps {
   location: { latitude?: number; longitude?: number };
   height?: number;
+  rounded: boolean;
 }
 
-export function Map({ location, height }: MapScreenProps) {
+export function Map({ location, height, rounded }: MapScreenProps) {
   const mapRef = useRef<MapView>(null);
   const [region, setRegion] = useState<Region | null>(null);
 
@@ -36,7 +37,7 @@ export function Map({ location, height }: MapScreenProps) {
   return (
     <MapView
       ref={mapRef}
-      style={{ height: height ?? 500, width: '100%' }}
+      style={{ height: height ?? 500, width: '100%', borderRadius: rounded ? 15 : 0 }}
       provider={PROVIDER_GOOGLE}
       showsUserLocation
       showsMyLocationButton={false}

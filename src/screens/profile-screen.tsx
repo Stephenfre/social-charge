@@ -5,7 +5,7 @@ import { ScrollView, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EventsList } from '~/components';
 import { Badge, Box, Button, Flex, Image, Pressable, Text } from '~/components/ui';
-import { useMyTokenBalance, useStorageImages, useUserEvents, useUserInterests } from '~/hooks';
+import { useStorageImages, useTokenBalance, useUserEvents, useUserInterests } from '~/hooks';
 import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/providers/AuthProvider';
 import { RootStackParamList } from '~/types/navigation.types';
@@ -20,12 +20,11 @@ export function ProfileScreen() {
   const { user } = useAuth();
   const { data: events, isLoading: eventsLoading } = useUserEvents(6);
   const { data: interests, isLoading: interestsLoading } = useUserInterests(user?.id!);
-  const { data: tokens, isLoading: tokensLoading } = useMyTokenBalance();
+  const { data: tokens } = useTokenBalance();
   const { data: userAvater, isLoading: userAvatarLoading } = useStorageImages({
     bucket: 'avatars',
     paths: [user?.profile_picture],
   });
-  const { isDark, setMode, palette } = useTheme();
 
   const handleViewAllPress = () => {
     navigation.navigate('Event History');
@@ -33,7 +32,6 @@ export function ProfileScreen() {
 
   const logout = async () => {
     const { error } = await supabase.auth.signOut();
-    console.log(error);
   };
 
   const filterEventsByPast = events?.filter((event) => event.event_status !== 'upcoming');
@@ -104,7 +102,7 @@ export function ProfileScreen() {
                   <Badge
                     key={interest.interest}
                     variant="solid"
-                    className="bg-background-900 px-4 py-2">
+                    className="bg-background-light px-4 py-2">
                     <Text size="sm" weight="700">
                       {interestEmojis[interest.interest]} {interest.interest}
                     </Text>
@@ -113,7 +111,7 @@ export function ProfileScreen() {
               </Flex>
             </>
           )}
-          <Flex className="rounded-2xl bg-background-900 p-4">
+          {/* <Flex className="rounded-2xl bg-background-900 p-4">
             <Flex direction="row" justify="space-between" align="center">
               <Flex gap={1}>
                 <Text bold size="lg">
@@ -131,7 +129,7 @@ export function ProfileScreen() {
                 ios_backgroundColor="#a1a1aa"
               />
             </Flex>
-          </Flex>
+          </Flex> */}
           <Flex direction="row" justify="space-between" className="my-2">
             <Text size="2xl" bold>
               Events History

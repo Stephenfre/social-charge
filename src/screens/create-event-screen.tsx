@@ -225,7 +225,6 @@ export default function CreateEventScreen() {
     ]);
   };
   const onSubmit: SubmitHandler<CreateEventFormValues> = async (values) => {
-    console.log(values);
     try {
       // Defensive checks
       if (!values.date || !values.startTime || !values.endTime) {
@@ -502,7 +501,6 @@ export default function CreateEventScreen() {
                         const locationLon = p.details?.location.longitude;
                         const locationLat = p.details?.location.latitude;
 
-                        console.log(locationLat, locationLon);
                         const loc = {
                           locationText: p.structuredFormat.mainText.text,
                           formattedAddress: p.structuredFormat.secondaryText?.text ?? '',

@@ -99,6 +99,6 @@ const AuthStack = () => (
 
 const AppStack = () => (
   <RootStack.Navigator screenOptions={{ headerShown: false }}>
-    <RootStack.Screen name="Main" component={MainTabNavigator} />
+    <RootStack.Screen name="Root" component={MainTabNavigator} />
   </RootStack.Navigator>
 );

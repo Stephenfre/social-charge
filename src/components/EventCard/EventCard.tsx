@@ -54,10 +54,10 @@ export function EventCard({
   });
   const { isDark } = useTheme();
 
-  const src =
-    Array.isArray(data) && data[0]
-      ? { uri: data[0] as string } // never null ✅
-      : '';
+  const src = event.cover_img;
+  // Array.isArray(data) && data[0]
+  //   ? { uri: data[0] as string } // never null ✅
+  //   : '';
 
   return (
     <Flex className="relative">
@@ -74,7 +74,7 @@ export function EventCard({
 
       <Pressable onPress={onPress} className={className}>
         <Image source={src} size={imageSize} overlay={overlay} rounded={rounded} alt="image" />
-        <LinearGradient
+        {/* <LinearGradient
           colors={['transparent', isDark ? 'rgba(15,16,18,0.95)' : 'rgba(0,0,0,0.55)']} // transparent top → dark bottom
           style={{
             position: 'absolute',
@@ -90,7 +90,7 @@ export function EventCard({
                     ? 150
                     : 125, // how tall the fade should be
           }}
-        />
+        /> */}
       </Pressable>
 
       <Flex direction="column" gap={1} className="absolute left-0 top-36 z-50 px-4">
