@@ -7,11 +7,10 @@ import {
   EventCheckIn,
   EventRow,
   EventVibes,
-  EventWithJoins,
-  TokenTransactions,
   UserEventCardRow,
   VEventWithFullDetails,
 } from '~/types/event.types';
+import { TOKEN_QUERY_KEYS } from './useTokens';
 
 export const EVENT_KEYS = {
   events: ['events'] as const,
@@ -22,9 +21,6 @@ export const EVENT_KEYS = {
   cheap: ['events', 'cheap'] as const,
   thisWeekend: ['events', 'thisWeekend'] as const,
   trending: ['events', 'trending'] as const,
-  userTokenBalance: (uid: string | null | undefined) => ['user', 'tokenBalance', uid] as const,
-  userTokenTransaction: (uid: string | null | undefined) =>
-    ['user', 'tokenTransactions', uid] as const,
   checkIn: (userId?: string | null) => ['events', 'checkInEvent', userId] as const,
   userCheckedIn: (userId?: string | null, eventId?: string | null) =>
     ['events', 'checkIn', 'byUserEvent', userId, eventId] as const,
@@ -36,7 +32,7 @@ export function useUserEvents(limit?: number) {
     queryFn: async () => {
       let q = supabase
         .from('v_user_events')
-        .select('id, title, cover_img, event_status, starts_at, ends_at, created_at')
+        .select('*')
         .order('event_status', { ascending: false })
         .order('starts_at', { ascending: false });
       if (limit) q = q.limit(limit);
@@ -110,47 +106,14 @@ export function useCheckIn() {
     },
     onSuccess: (_res, eventId) => {
       // re-fetch the stuff that depends on check-ins and balance
-      qc.invalidateQueries({ queryKey: EVENT_KEYS.userTokenBalance(userId) });
+      qc.invalidateQueries({ queryKey: TOKEN_QUERY_KEYS.balance(userId ?? undefined) });
+      qc.invalidateQueries({ queryKey: TOKEN_QUERY_KEYS.transactions(userId ?? undefined) });
+      qc.invalidateQueries({ queryKey: EVENT_KEYS.checkIn(userId) });
       qc.invalidateQueries({ queryKey: EVENT_KEYS.checkIn(eventId) });
     },
   });
 }
 
-export function useMyTokenBalance() {
-  const { userId } = useAuth();
-  return useQuery({
-    queryKey: EVENT_KEYS.userTokenBalance(userId),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('v_user_token_balance')
-        .select('balance')
-        .eq('user_id', userId!)
-        .maybeSingle();
-      if (error) throw error;
-      return data?.balance ?? 0;
-    },
-    staleTime: 15_000,
-  });
-}
-
-export function useTokenTransactionsByUserId() {
-  const { userId } = useAuth();
-
-  return useQuery<TokenTransactions[]>({
-    queryKey: EVENT_KEYS.userTokenTransaction(userId),
-    enabled: !!userId, // don't run until we have a user
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('token_transactions')
-        .select('*') // <- required before filters
-        .eq('user_id', userId!)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as TokenTransactions[];
-    },
-  });
-}
 // export function useEventById(id: string) {
 //   return useQuery<EventWithJoins>({
 //     queryKey: ['events', 'eventById', id],
@@ -193,7 +156,6 @@ export function useEventById(id: string) {
         .maybeSingle<VEventWithFullDetails>();
 
       if (error) throw error;
-      console.log('data', data);
       return data!;
     },
   });
@@ -263,32 +225,9 @@ export function useThisWeekendEvents() {
     queryKey: ['events', 'thisWeekend'],
     refetchOnMount: 'always',
     queryFn: async () => {
-      const now = new Date();
-      const nowIso = now.toISOString();
-
-      // 0=Sun … 6=Sat
-      const day = now.getDay();
-
-      // Start of upcoming Friday
-      const daysUntilFriday = (5 - day + 7) % 7;
-      const friday = new Date(now);
-      friday.setDate(now.getDate() + daysUntilFriday);
-      friday.setHours(0, 0, 0, 0);
-
-      // End of Sunday
-      const sunday = new Date(friday);
-      sunday.setDate(friday.getDate() + 2);
-      sunday.setHours(23, 59, 59, 999);
-
       const { data, error } = await supabase
-        .from('events')
+        .from('view_weekend_events')
         .select('*')
-        .is('deleted_at', null)
-        // only events that start during the weekend window…
-        .gte('starts_at', friday.toISOString())
-        .lte('starts_at', sunday.toISOString())
-        // …and have not already ended (excludes 3am-today past events)
-        .gte('ends_at', nowIso)
         .order('starts_at', { ascending: true });
 
       if (error) throw error;
@@ -610,7 +549,6 @@ export function useSubmitEventReview() {
     mutationFn: async (payload: SubmitEventReviewArgs) => {
       const { eventId, ratings, attendeeVibes } = payload;
 
-      console.log('eventId', eventId);
       const { data, error } = await supabase.rpc('submit_full_review', {
         p_event_id: eventId,
         p_event_rating: ratings.event.rating,

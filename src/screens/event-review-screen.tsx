@@ -118,7 +118,6 @@ export function EventReviewScreen() {
 
       Alert.alert('Thanks!', 'Your review has been submitted.');
     } catch (err: any) {
-      console.log('submit review error', err);
       Alert.alert('Error', err?.message ?? 'Failed to submit review.');
     }
   };

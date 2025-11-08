@@ -20,6 +20,7 @@ import { combine } from '~/utils/datetime';
 import { useRouteStack } from '~/types/navigation.types';
 import { PersonCard } from '~/types/event.types';
 import dayjs from 'dayjs';
+import { useTheme } from '~/providers/ThemeProvider';
 
 export type location = {
   locationText: string;
@@ -36,6 +37,7 @@ export default function CreateEventScreen() {
   const { params } = useRouteStack<'CreateEvent'>();
   const navigation = useNavigation<NavigationProp<'Review Event'>>();
   const { data: hosts, isLoading: loadingHost } = useHosts();
+  const { palette, isDark } = useTheme();
 
   const { data: event, isLoading: loadingEvent } = useEventById(params?.eventId ?? '');
 
@@ -223,7 +225,6 @@ export default function CreateEventScreen() {
     ]);
   };
   const onSubmit: SubmitHandler<CreateEventFormValues> = async (values) => {
-    console.log(values);
     try {
       // Defensive checks
       if (!values.date || !values.startTime || !values.endTime) {
@@ -317,20 +318,20 @@ export default function CreateEventScreen() {
                   <Calendar
                     style={{
                       borderWidth: 1,
-                      borderColor: '#1f2026',
+                      borderColor: palette.border,
                       height: 350,
                       borderRadius: 10,
-                      backgroundColor: '#18191f',
+                      backgroundColor: palette.surface,
                     }}
                     theme={{
-                      backgroundColor: '#18191f',
-                      calendarBackground: '#18191f',
-                      textSectionTitleColor: '#b6c1cd',
-                      monthTextColor: '#e5e7eb',
-                      arrowColor: '#e6fff5',
-                      dayTextColor: '#e5e7eb',
-                      textDisabledColor: '#6b7280',
-                      todayTextColor: '#007BFF',
+                      backgroundColor: palette.surface,
+                      calendarBackground: palette.surface,
+                      textSectionTitleColor: isDark ? '#b6c1cd' : '#4b5563',
+                      monthTextColor: palette.text,
+                      arrowColor: palette.accent,
+                      dayTextColor: palette.text,
+                      textDisabledColor: isDark ? '#6b7280' : '#94a3b8',
+                      todayTextColor: palette.accent,
                     }}
                     onDayPress={(day) => onChange(day.dateString)}
                     markingType="custom"
@@ -339,8 +340,8 @@ export default function CreateEventScreen() {
                         ? {
                             [value]: {
                               customStyles: {
-                                container: { backgroundColor: '#0ea5e9', borderRadius: 8 },
-                                text: { color: '#FFFFFF', fontWeight: '600' },
+                                container: { backgroundColor: palette.accent, borderRadius: 8 },
+                                text: { color: palette.inverseText, fontWeight: '600' },
                               },
                             },
                           }
@@ -479,25 +480,27 @@ export default function CreateEventScreen() {
                       scrollEnabled
                       style={{
                         input: {
-                          backgroundColor: '#18191f',
-                          borderColor: '#18191f',
+                          backgroundColor: palette.surface,
+                          borderColor: palette.surfaceMuted,
                           borderRadius: 10,
                           fontSize: 14,
-                          color: '#fff',
+                          color: palette.text,
                         },
-                        suggestionsContainer: { backgroundColor: '#18191f' },
+                        suggestionsContainer: { backgroundColor: palette.surface },
                         suggestionText: {
-                          main: { fontSize: 16, color: '#fff' },
-                          secondary: { fontSize: 14, color: '#fff' },
+                          main: { fontSize: 16, color: palette.text },
+                          secondary: {
+                            fontSize: 14,
+                            color: isDark ? '#d4d4d8' : '#6b7280',
+                          },
                         },
-                        loadingIndicator: { color: '#999' },
-                        placeholder: { color: '#46474c' },
+                        loadingIndicator: { color: palette.text },
+                        placeholder: { color: isDark ? '#9ca3af' : '#a1a1aa' },
                       }}
                       onPlaceSelect={(p) => {
                         const locationLon = p.details?.location.longitude;
                         const locationLat = p.details?.location.latitude;
 
-                        console.log(locationLat, locationLon);
                         const loc = {
                           locationText: p.structuredFormat.mainText.text,
                           formattedAddress: p.structuredFormat.secondaryText?.text ?? '',

@@ -21,7 +21,8 @@ export type AppTabParamList = {
 
 /** ----- Root stack params ----- */
 export type RootStackParamList = {
-  Main: NavigatorScreenParams<AppTabParamList>;
+  Root: NavigatorScreenParams<AppTabParamList>;
+  Tabs: NavigatorScreenParams<AppTabParamList>;
   Welcome: undefined;
   Register: undefined;
   RegisterUserName: undefined;
@@ -34,6 +35,7 @@ export type RootStackParamList = {
   ViewEvent: { eventId: string };
   'Event History': undefined;
   EventCheckInIndex: undefined;
+  CheckInIndex: { eventId: string };
   CreateEvent: { eventId?: string };
   'Review Event': undefined;
   EventReview: { eventId?: string };

@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import { Calendar, Clock } from 'lucide-react-native';
 import { Alert } from 'react-native';
 import { Button, Flex, Image, Text } from '~/components/ui';
+import { Icon } from '~/components/ui/icon';
 import { useEventCreateStore } from '~/hooks';
 import { useUpsertEvent } from '~/hooks/useEvents';
 import { useAuth } from '~/providers/AuthProvider';
@@ -15,7 +16,6 @@ type HomeNav = NativeStackNavigationProp<RootStackParamList, 'HomeIndex'>;
 export function ReviewCreateEventScreen() {
   const { userId } = useAuth();
   const navigation = useNavigation<HomeNav>();
-
   const { mutateAsync: saveEvent, isPending } = useUpsertEvent(userId);
   const {
     eventId,
@@ -79,7 +79,6 @@ export function ReviewCreateEventScreen() {
         reset();
       }
     } catch (error) {
-      console.log('error', error);
       Alert.alert('failed to create event');
     }
   };
@@ -103,14 +102,12 @@ export function ReviewCreateEventScreen() {
             </Text>
             <Flex direction="row" gap={4}>
               <Flex direction="row" align="center" gap={2}>
-                <Calendar color={'white'} size={14} />
-                <Text size="lg" className="text-white">
-                  {dayjs(startTime).format('ddd, MMM DD')}
-                </Text>
+                <Icon as={Calendar} size={14} className="text-typography-light" />
+                <Text size="lg">{dayjs(startTime).format('ddd, MMM DD')}</Text>
               </Flex>
               <Flex direction="row" align="center" gap={2}>
-                <Clock color={'white'} size={14} />
-                <Text size="lg" className="text-white">
+                <Icon as={Clock} size={14} className="text-typography-light" />
+                <Text size="lg">
                   {dayjs(startTime).format('h:mm A')} - {dayjs(endTime).format('h:mm A')}
                 </Text>
               </Flex>

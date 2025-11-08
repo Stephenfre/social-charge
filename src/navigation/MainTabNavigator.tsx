@@ -1,6 +1,15 @@
-import { Home, TicketCheck, User, Wallet } from 'lucide-react-native';
-import { AddIcon, Icon } from '~/components/ui/icon';
+// app-navigation.tsx
+import React from 'react';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import type { RootStackParamList, AppTabParamList } from '~/types/navigation.types';
+
+import { Icon, AddIcon } from '~/components/ui/icon';
+import { Home as HomeIcon, TicketCheck, User, Wallet as WalletIcon } from 'lucide-react-native';
+
 import { useAuth } from '~/providers/AuthProvider';
+import { useTheme } from '~/providers/ThemeProvider';
+
 import {
   EventCheckInScreen,
   EventReviewScreen,
@@ -12,249 +21,235 @@ import {
   WalletScreen,
 } from '~/screens';
 import CreateEventScreen from '~/screens/create-event-screen';
-import { AppTabs, RootStack } from '~/types/navigation.types';
+import { EventCheckInList } from '~/components';
 
+/** ----------------------------------
+ * Root + Tabs (typed)
+ * ---------------------------------- */
+const RootStackNav = createNativeStackNavigator<RootStackParamList>();
+const AppTabsNav = createBottomTabNavigator<AppTabParamList>();
+
+/** ----------------------------------
+ * Inner stacks (local, minimal param lists)
+ * ---------------------------------- */
+type HomeStackParams = { HomeIndex: undefined };
+type ProfileStackParams = { ProfileIndex: undefined; 'Event History': undefined };
+type CheckInStackParams = { EventCheckInIndex: undefined; CheckInIndex: { eventId: string } };
+type WalletStackParams = { WalletIndex: undefined };
+
+const HomeStack = createNativeStackNavigator<HomeStackParams>();
+const ProfileStack = createNativeStackNavigator<ProfileStackParams>();
+const CheckInStack = createNativeStackNavigator<CheckInStackParams>();
+const WalletStack = createNativeStackNavigator<WalletStackParams>();
+
+/** ----------------------------------
+ * Home
+ * ---------------------------------- */
 function HomeStackNavigator() {
   return (
-    <RootStack.Navigator>
-      <RootStack.Screen name="HomeIndex" component={HomeScreen} options={{ headerShown: false }} />
-      <RootStack.Screen
-        name="ViewEvent"
-        component={ViewEventScreen}
-        options={{
-          headerShown: true,
-          headerBackButtonDisplayMode: 'minimal',
-          headerStyle: { backgroundColor: '#0F1012' },
-          headerTintColor: 'white',
-          headerTitleStyle: { color: 'white' },
-          title: 'Event Details',
-        }}
-      />
-      <RootStack.Screen
-        name="CreateEvent"
-        component={CreateEventScreen}
-        options={{
-          headerShown: true,
-          headerBackButtonDisplayMode: 'minimal',
-          headerStyle: { backgroundColor: '#0F1012' },
-          headerTintColor: 'white',
-          headerTitleStyle: { color: 'white' },
-        }}
-      />
-      <RootStack.Screen
-        name="Review Event"
-        component={ReviewCreateEventScreen}
-        options={{
-          headerShown: true,
-          headerBackButtonDisplayMode: 'minimal',
-          headerStyle: { backgroundColor: '#0F1012' },
-          headerTintColor: 'white',
-          headerTitleStyle: { color: 'white' },
-        }}
-      />
-    </RootStack.Navigator>
+    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
+      <HomeStack.Screen name="HomeIndex" component={HomeScreen} />
+    </HomeStack.Navigator>
   );
 }
 
+/** ----------------------------------
+ * Profile
+ * ---------------------------------- */
 function ProfileStackNavigator() {
+  const { palette } = useTheme();
   return (
-    <RootStack.Navigator>
-      <RootStack.Screen
+    <ProfileStack.Navigator>
+      <ProfileStack.Screen
         name="ProfileIndex"
         component={ProfileScreen}
-        options={{
-          headerShown: false,
-        }}
+        options={{ headerShown: false }}
       />
-      <RootStack.Screen
+      <ProfileStack.Screen
         name="Event History"
         component={ViewUserEventsScreen}
         options={{
           headerShown: true,
           headerBackButtonDisplayMode: 'minimal',
-          headerStyle: { backgroundColor: '#0F1012' },
-          headerTintColor: 'white',
-          headerTitleStyle: { color: 'white' },
+          headerStyle: { backgroundColor: palette.header },
+          headerTintColor: palette.text,
+          headerTitleStyle: { color: palette.text },
         }}
       />
-      <RootStack.Screen
-        name="ViewEvent"
-        component={ViewEventScreen}
-        options={{
-          headerShown: true,
-          headerBackButtonDisplayMode: 'minimal',
-          headerStyle: { backgroundColor: '#0F1012' },
-          headerTintColor: 'white',
-          headerTitleStyle: { color: 'white' },
-          title: 'Event Details',
-        }}
-      />
-      <RootStack.Screen
-        name="EventReview"
-        component={EventReviewScreen}
-        options={{
-          headerShown: true,
-          headerBackButtonDisplayMode: 'minimal',
-          headerStyle: { backgroundColor: '#0F1012' },
-          headerTintColor: 'white',
-          headerTitleStyle: { color: 'white' },
-          title: 'Review Event',
-        }}
-      />
-    </RootStack.Navigator>
+    </ProfileStack.Navigator>
   );
 }
 
+/** ----------------------------------
+ * Check-In
+ * ---------------------------------- */
 function CheckInEventStackNavigator() {
+  const { palette } = useTheme();
   return (
-    <RootStack.Navigator>
-      <RootStack.Screen
+    <CheckInStack.Navigator>
+      <CheckInStack.Screen
         name="EventCheckInIndex"
+        component={EventCheckInList}
+        options={{
+          headerShown: false,
+          headerStyle: { backgroundColor: palette.header },
+        }}
+      />
+      <CheckInStack.Screen
+        name="CheckInIndex"
         component={EventCheckInScreen}
         options={{
           headerShown: false,
+          headerStyle: { backgroundColor: palette.header },
         }}
       />
-    </RootStack.Navigator>
+    </CheckInStack.Navigator>
   );
 }
 
+/** ----------------------------------
+ * Wallet
+ * ---------------------------------- */
 function WalletStackNavigator() {
   return (
-    <RootStack.Navigator>
-      <RootStack.Screen
+    <WalletStack.Navigator>
+      <WalletStack.Screen
         name="WalletIndex"
         component={WalletScreen}
         options={{
           headerShown: true,
           headerBackButtonDisplayMode: 'minimal',
           headerStyle: { backgroundColor: '#0F1012' },
-          headerTintColor: 'white',
-          headerTitleStyle: { color: 'white' },
+          headerTintColor: '#fff',
+          headerTitleStyle: { color: '#fff' },
           title: 'Wallet',
         }}
       />
-    </RootStack.Navigator>
+    </WalletStack.Navigator>
   );
 }
 
-function CreateEventStackNavigator() {
-  return (
-    <RootStack.Navigator>
-      <RootStack.Screen
-        name="CreateEvent"
-        component={CreateEventScreen}
-        options={{
-          headerShown: true,
-          headerStyle: { backgroundColor: '#0F1012' },
-          headerTintColor: 'white',
-          headerTitleStyle: { color: 'white' },
-        }}
-      />
-      <RootStack.Screen
-        name="Review Event"
-        component={ReviewCreateEventScreen}
-        options={{
-          headerShown: true,
-          headerBackButtonDisplayMode: 'minimal',
-          headerStyle: { backgroundColor: '#0F1012' },
-          headerTintColor: 'white',
-          headerTitleStyle: { color: 'white' },
-        }}
-      />
-      {/* 👇 Add this */}
-      <RootStack.Screen
-        name="ViewEvent"
-        component={ViewEventScreen}
-        options={{
-          headerShown: true,
-          headerBackButtonDisplayMode: 'minimal',
-          headerStyle: { backgroundColor: '#0F1012' },
-          headerTintColor: 'white',
-          headerTitleStyle: { color: 'white' },
-          title: 'Event Details',
-        }}
-      />
-    </RootStack.Navigator>
-  );
+/** ----------------------------------
+ * Tabs
+ * ---------------------------------- */
+function EmptyScreen() {
+  return null;
 }
 
-export function MainTabNavigator() {
+function Tabs() {
   const { user } = useAuth();
 
+  const baseTabBar = {
+    backgroundColor: '#0F1012',
+    borderTopWidth: 0,
+  } as const;
+
   return (
-    <AppTabs.Navigator>
-      <AppTabs.Screen
+    <AppTabsNav.Navigator screenOptions={{ headerShown: false }}>
+      <AppTabsNav.Screen
         name="Home"
         component={HomeStackNavigator}
         options={{
-          headerShown: false,
           tabBarLabel: () => null,
-          tabBarIcon: () => <Icon as={Home} color="white" size="2xl" />,
-          tabBarStyle: {
-            backgroundColor: '#0F1012',
-            borderTopWidth: 0,
-          },
+          tabBarIcon: () => <Icon as={HomeIcon} size="2xl" className="text-typography-light" />,
+          tabBarStyle: baseTabBar,
         }}
       />
-      <AppTabs.Screen
+
+      <AppTabsNav.Screen
         name="Event Check In"
         component={CheckInEventStackNavigator}
         options={{
-          headerShown: true,
-          headerStyle: { backgroundColor: 'black' },
-          headerTintColor: 'white',
-          headerTitleStyle: { color: 'white' },
           tabBarLabel: () => null,
-          tabBarIcon: () => <Icon as={TicketCheck} color="white" size="2xl" />,
-          tabBarStyle: {
-            backgroundColor: '#0F1012',
-            borderTopWidth: 0,
-          },
+          tabBarIcon: () => <Icon as={TicketCheck} size="2xl" className="text-typography-light" />,
+          tabBarStyle: baseTabBar,
         }}
       />
-      {user?.role === 'super_admin' || user?.role === 'admin' ? (
-        <AppTabs.Screen
-          name="Create Event"
-          component={CreateEventStackNavigator}
-          options={{
-            headerShown: false,
 
-            tabBarLabel: () => null,
-            tabBarIcon: () => <Icon as={AddIcon} color="white" size="2xl" />,
-            tabBarStyle: {
-              backgroundColor: '#0F1012',
-              borderTopWidth: 0,
+      {(user?.role === 'admin' || user?.role === 'super_admin') && (
+        <AppTabsNav.Screen
+          name="Create Event"
+          component={EmptyScreen}
+          listeners={({ navigation }) => ({
+            tabPress: (e) => {
+              e.preventDefault();
+              // getParent() is ParamListBase; cast to never to satisfy TS safely
+              navigation.getParent()?.navigate('CreateEvent' as never);
             },
+          })}
+          options={{
+            tabBarLabel: () => null,
+            tabBarIcon: () => <Icon as={AddIcon} size="2xl" className="text-typography-light" />,
+            tabBarStyle: baseTabBar,
           }}
         />
-      ) : null}
-      <AppTabs.Screen
+      )}
+
+      <AppTabsNav.Screen
         name="Wallet"
         component={WalletStackNavigator}
         options={{
-          headerShown: false,
           tabBarLabel: () => null,
-          tabBarIcon: () => <Icon as={Wallet} color="white" size="2xl" />,
-          tabBarStyle: {
-            backgroundColor: '#0F1012',
-            borderTopWidth: 0,
-          },
+          tabBarIcon: () => <Icon as={WalletIcon} size="2xl" className="text-typography-light" />,
+          tabBarStyle: baseTabBar,
         }}
       />
-      <AppTabs.Screen
+
+      <AppTabsNav.Screen
         name="Profile"
         component={ProfileStackNavigator}
         options={{
-          headerShown: false,
           tabBarLabel: () => null,
-          tabBarIcon: () => <Icon as={User} color="white" size="2xl" />,
-          tabBarStyle: {
-            backgroundColor: '#0F1012',
-            borderTopWidth: 0,
-          },
+          tabBarIcon: () => <Icon as={User} size="2xl" className="text-typography-light" />,
+          tabBarStyle: baseTabBar,
         }}
       />
-    </AppTabs.Navigator>
+    </AppTabsNav.Navigator>
+  );
+}
+
+/** ----------------------------------
+ * Root Navigator
+ * (ONLY place "Main" exists to avoid nested name collisions)
+ * ---------------------------------- */
+export function MainTabNavigator() {
+  const { palette } = useTheme();
+
+  const headerCommon = {
+    headerShown: true,
+    headerBackButtonDisplayMode: 'minimal' as const,
+    headerStyle: { backgroundColor: palette.header },
+    headerTintColor: palette.text,
+    headerTitleStyle: { color: palette.text },
+  };
+
+  return (
+    <RootStackNav.Navigator screenOptions={{ headerShown: false }}>
+      <RootStackNav.Screen name="Tabs" component={Tabs} />
+
+      <RootStackNav.Screen
+        name="ViewEvent"
+        component={ViewEventScreen}
+        options={{ headerShown: false }}
+      />
+
+      <RootStackNav.Screen
+        name="CreateEvent"
+        component={CreateEventScreen}
+        options={{ ...headerCommon, title: 'Create / Edit Event' }}
+      />
+
+      <RootStackNav.Screen
+        name="Review Event"
+        component={ReviewCreateEventScreen}
+        options={headerCommon}
+      />
+
+      <RootStackNav.Screen
+        name="EventReview"
+        component={EventReviewScreen}
+        options={{ ...headerCommon, title: 'Review Event' }}
+      />
+    </RootStackNav.Navigator>
   );
 }

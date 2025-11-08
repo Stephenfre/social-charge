@@ -50,7 +50,7 @@ export function HomeScreen() {
   };
 
   return (
-    <SafeAreaView className=" h-full bg-background-dark">
+    <SafeAreaView className="flex flex-1 bg-background-dark" edges={['top']}>
       <ScrollView className="my-2">
         <Flex gap={4}>
           {upcomingEvents.length ? (
@@ -59,8 +59,8 @@ export function HomeScreen() {
                 <Flex>{/* <Skeleton className="h-64 w-full" /> */}</Flex>
               ) : (
                 <EventCard
-                  onPress={() => handlePressNavigateToViewEvent(upcomingEvents[0]?.id)}
-                  event={upcomingEvents[0]}
+                  onPress={() => handlePressNavigateToViewEvent(upcomingEvents[3]?.id)}
+                  event={upcomingEvents[3]}
                   featured
                   imageSize="cover"
                 />
@@ -246,6 +246,7 @@ export function HomeScreen() {
                         <Flex direction="row" gap={2} key={rowIndex}>
                           {row.map((event) => (
                             <Pressable
+                              className="w-80"
                               key={event.id}
                               onPress={() => handlePressNavigateToViewEvent(event.id)}>
                               <Flex gap={2} direction="row" className="pr-2" key={event.id}>
@@ -267,10 +268,10 @@ export function HomeScreen() {
                                     <Text size="sm" className="text-gray-500">
                                       {dayjs(event?.starts_at).format('ddd MM/DD')}
                                     </Text>
-                                    <Text size="sm" className="text-gray-500">
+                                    {/* <Text size="sm" className="text-gray-500">
                                       {' '}
                                       {event?.location_text}
-                                    </Text>
+                                    </Text> */}
                                   </Flex>
                                 </Flex>
                                 {/* 
@@ -280,9 +281,7 @@ export function HomeScreen() {
                                     <Text className="text-primary" weight="500">
                                       RSVP
                                     </Text>
-                                    <Text className="text-white" weight="500">
-                                      {event?.token_cost} $B
-                                    </Text>
+                                    <Text weight="500">{event?.token_cost}SB</Text>
                                   </Flex>
                                 </Pressable>
                               </Flex>
