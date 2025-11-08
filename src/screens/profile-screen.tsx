@@ -1,21 +1,24 @@
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import dayjs from 'dayjs';
-import { ScrollView, Switch } from 'react-native';
+import { ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EventsList } from '~/components';
 import { Badge, Box, Button, Flex, Image, Pressable, Text } from '~/components/ui';
+import { Icon, MenuIcon } from '~/components/ui/icon';
 import { useStorageImages, useTokenBalance, useUserEvents, useUserInterests } from '~/hooks';
 import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/providers/AuthProvider';
 import { RootStackParamList } from '~/types/navigation.types';
 import { interestEmojis } from '~/utils/const';
-import { useTheme } from '~/providers/ThemeProvider';
 
-type EventHistory = NativeStackNavigationProp<RootStackParamList, 'Event History'>;
+type ProfileNav = NativeStackNavigationProp<
+  RootStackParamList,
+  'Event History' | 'Profile Settings'
+>;
 
 export function ProfileScreen() {
-  const navigation = useNavigation<EventHistory>();
+  const navigation = useNavigation<ProfileNav>();
 
   const { user } = useAuth();
   const { data: events, isLoading: eventsLoading } = useUserEvents(6);
@@ -30,8 +33,12 @@ export function ProfileScreen() {
     navigation.navigate('Event History');
   };
 
+  const handleOpenSettings = () => {
+    navigation.navigate('Profile Settings');
+  };
+
   const logout = async () => {
-    const { error } = await supabase.auth.signOut();
+    await supabase.auth.signOut();
   };
 
   const filterEventsByPast = events?.filter((event) => event.event_status !== 'upcoming');
@@ -40,6 +47,14 @@ export function ProfileScreen() {
     <SafeAreaView className="h-full bg-background-dark">
       <ScrollView className="p-4">
         <Flex gap={4}>
+          <Flex direction="row" justify="flex-end">
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open profile settings"
+              onPress={handleOpenSettings}>
+              <Icon as={MenuIcon} className="text-typography-50" size="2xl" />
+            </Pressable>
+          </Flex>
           <Flex align="center" gap={1}>
             {userAvater && !userAvatarLoading ? (
               <Image

@@ -32,6 +32,7 @@ export type RootStackParamList = {
   SignIn: undefined;
   HomeIndex: undefined;
   ProfileIndex: undefined;
+  'Profile Settings': undefined;
   ViewEvent: { eventId: string };
   'Event History': undefined;
   EventCheckInIndex: undefined;
