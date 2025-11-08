@@ -15,6 +15,7 @@ import {
   EventReviewScreen,
   HomeScreen,
   ProfileScreen,
+  ProfileSettingsScreen,
   ReviewCreateEventScreen,
   ViewEventScreen,
   ViewUserEventsScreen,
@@ -33,7 +34,11 @@ const AppTabsNav = createBottomTabNavigator<AppTabParamList>();
  * Inner stacks (local, minimal param lists)
  * ---------------------------------- */
 type HomeStackParams = { HomeIndex: undefined };
-type ProfileStackParams = { ProfileIndex: undefined; 'Event History': undefined };
+type ProfileStackParams = {
+  ProfileIndex: undefined;
+  'Event History': undefined;
+  'Profile Settings': undefined;
+};
 type CheckInStackParams = { EventCheckInIndex: undefined; CheckInIndex: { eventId: string } };
 type WalletStackParams = { WalletIndex: undefined };
 
@@ -57,7 +62,6 @@ function HomeStackNavigator() {
  * Profile
  * ---------------------------------- */
 function ProfileStackNavigator() {
-  const { palette } = useTheme();
   return (
     <ProfileStack.Navigator>
       <ProfileStack.Screen
@@ -71,9 +75,21 @@ function ProfileStackNavigator() {
         options={{
           headerShown: true,
           headerBackButtonDisplayMode: 'minimal',
-          headerStyle: { backgroundColor: palette.header },
-          headerTintColor: palette.text,
-          headerTitleStyle: { color: palette.text },
+          headerStyle: { backgroundColor: '#0F1012' },
+          headerTintColor: '#fff',
+          headerTitleStyle: { color: '#fff' },
+        }}
+      />
+      <ProfileStack.Screen
+        name="Profile Settings"
+        component={ProfileSettingsScreen}
+        options={{
+          headerShown: true,
+          headerBackButtonDisplayMode: 'minimal',
+          headerStyle: { backgroundColor: '#0F1012' },
+          headerTintColor: '#fff',
+          headerTitleStyle: { color: '#fff' },
+          title: 'Settings',
         }}
       />
     </ProfileStack.Navigator>
@@ -84,7 +100,6 @@ function ProfileStackNavigator() {
  * Check-In
  * ---------------------------------- */
 function CheckInEventStackNavigator() {
-  const { palette } = useTheme();
   return (
     <CheckInStack.Navigator>
       <CheckInStack.Screen
@@ -92,7 +107,7 @@ function CheckInEventStackNavigator() {
         component={EventCheckInList}
         options={{
           headerShown: false,
-          headerStyle: { backgroundColor: palette.header },
+          headerStyle: { backgroundColor: '#0F1012' },
         }}
       />
       <CheckInStack.Screen
@@ -100,7 +115,7 @@ function CheckInEventStackNavigator() {
         component={EventCheckInScreen}
         options={{
           headerShown: false,
-          headerStyle: { backgroundColor: palette.header },
+          headerStyle: { backgroundColor: '#0F1012' },
         }}
       />
     </CheckInStack.Navigator>

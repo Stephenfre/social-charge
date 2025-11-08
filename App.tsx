@@ -20,8 +20,7 @@ import { RootStack } from '~/types/navigation.types';
 import { ActivityIndicator, StatusBar, View } from 'react-native';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import React, { useMemo } from 'react';
-import { ThemeProvider, useTheme } from '~/providers/ThemeProvider';
+import { ThemeProvider } from '~/providers/ThemeProvider';
 
 const queryClient = new QueryClient();
 
@@ -42,41 +41,20 @@ export default function App() {
 }
 
 function AppNavigation() {
-  const { mode, palette } = useTheme();
-
-  const navigationTheme = useMemo(() => {
-    const base = mode === 'dark' ? NavigationDarkTheme : NavigationDefaultTheme;
-    return {
-      ...base,
-      colors: {
-        ...base.colors,
-        background: palette.background,
-        card: palette.header,
-        border: palette.border,
-        text: palette.text,
-        primary: palette.accent,
-      },
-    };
-  }, [mode, palette]);
-
   return (
-    <NavigationContainer theme={navigationTheme}>
-      <StatusBar
-        barStyle={mode === 'dark' ? 'light-content' : 'dark-content'}
-        backgroundColor={palette.header}
-      />
+    <NavigationContainer>
+      <StatusBar barStyle="light-content" />
       <RootNavigator />
     </NavigationContainer>
   );
 }
 
 function RootNavigator() {
-  const { palette } = useTheme();
   const { session, initializing } = useAuth();
 
   if (initializing) {
     return (
-      <View className="flex-1 items-center justify-center bg-background-0">
+      <View className="bg-background-0 flex-1 items-center justify-center">
         <ActivityIndicator size="large" />
       </View>
     );
