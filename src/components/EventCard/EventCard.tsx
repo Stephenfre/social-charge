@@ -1,9 +1,8 @@
 import { Calendar, MapPin } from 'lucide-react-native';
 import { Button, ButtonText, Flex, Image, Pressable, Text } from '../ui';
 import { Icon } from '../ui/icon';
-import { EventRow, EventWithJoins, PersonCard, VEventWithFullDetails } from '~/types/event.types';
+import { EventRow, EventWithJoins, VEventWithFullDetails } from '~/types/event.types';
 import dayjs from 'dayjs';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useStorageImages } from '~/hooks';
 import { useTheme } from '~/providers/ThemeProvider';
 
@@ -11,7 +10,6 @@ interface EventCardProps {
   event: EventRow | EventWithJoins | VEventWithFullDetails;
   onPress?: () => void;
   featured?: boolean;
-  favorited?: boolean;
   overlay?: boolean;
   rounded?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
   showTitle?: boolean;
@@ -38,7 +36,6 @@ export function EventCard({
   event,
   onPress,
   featured = false,
-  favorited = false,
   overlay = true,
   rounded = 'lg',
   showTitle = true,
@@ -66,31 +63,14 @@ export function EventCard({
           <ButtonText className="text-sm text-white">FEATURED</ButtonText>
         </Button>
       )}
-      {/* {favorited && (
-        <Pressable className="absolute right-0 top-0 z-50 mr-2 mt-3 h-6 rounded-md px-4">
-          <Heart size={18} color="white" />
-        </Pressable>
-      )} */}
-
       <Pressable onPress={onPress} className={className}>
-        <Image source={src} size={imageSize} overlay={overlay} rounded={rounded} alt="image" />
-        {/* <LinearGradient
-          colors={['transparent', isDark ? 'rgba(15,16,18,0.95)' : 'rgba(0,0,0,0.55)']} // transparent top → dark bottom
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height:
-              imageSize === 'sm'
-                ? 20
-                : imageSize === 'xl-wide'
-                  ? 50
-                  : imageSize === 'background'
-                    ? 150
-                    : 125, // how tall the fade should be
-          }}
-        /> */}
+        <Image
+          source={src ?? ''}
+          size={imageSize}
+          overlay={overlay}
+          rounded={rounded}
+          alt="image"
+        />
       </Pressable>
 
       <Flex direction="column" gap={1} className="absolute left-0 top-36 z-50 px-4">
@@ -110,7 +90,7 @@ export function EventCard({
           <Flex direction="row" gap={4}>
             {showDate && event?.starts_at && (
               <Flex direction="row" align="center" gap={1}>
-                <Icon as={Calendar} size={14} className="text-white dark:text-black" />
+                <Icon as={Calendar} size={'sm'} className="text-white dark:text-black" />
                 <Text size="lg" className="text-white dark:text-black">
                   {dayjs(event?.starts_at).format('MMM DD')}
                 </Text>
@@ -118,7 +98,7 @@ export function EventCard({
             )}
             {showLocation && event?.location_text && (
               <Flex direction="row" align="center" gap={1}>
-                <Icon as={MapPin} size={14} className="text-white dark:text-black" />
+                <Icon as={MapPin} size={'sm'} className="text-white dark:text-black" />
                 <Text size="lg" className="text-white dark:text-black">
                   {event?.location_text}
                 </Text>

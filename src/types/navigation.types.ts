@@ -33,6 +33,7 @@ export type RootStackParamList = {
   HomeIndex: undefined;
   ProfileIndex: undefined;
   'Profile Settings': undefined;
+  Membership: undefined;
   ViewEvent: { eventId: string };
   'Event History': undefined;
   EventCheckInIndex: undefined;
@@ -41,6 +42,15 @@ export type RootStackParamList = {
   'Review Event': undefined;
   EventReview: { eventId?: string };
   WalletIndex: undefined;
+  ScanQrModal:
+    | {
+        runId?: string | null;
+        runTitle?: string | null;
+        runStartTime?: string | null;
+        runEndTime?: string | null;
+        locationName?: string | null;
+      }
+    | undefined;
 };
 
 /** ----- Navigator creators with types (optional re-exports) ----- */

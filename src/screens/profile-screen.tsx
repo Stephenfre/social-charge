@@ -117,7 +117,7 @@ export function ProfileScreen() {
                   <Badge
                     key={interest.interest}
                     variant="solid"
-                    className="bg-background-light px-4 py-2">
+                    className="bg-background-900 px-4 py-2">
                     <Text size="sm" weight="700">
                       {interestEmojis[interest.interest]} {interest.interest}
                     </Text>

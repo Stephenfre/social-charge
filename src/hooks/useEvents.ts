@@ -114,35 +114,21 @@ export function useCheckIn() {
   });
 }
 
-// export function useEventById(id: string) {
-//   return useQuery<EventWithJoins>({
-//     queryKey: ['events', 'eventById', id],
-//     enabled: !!id,
-//     queryFn: async () => {
-//       const { data, error } = await supabase
-//         .from('events')
-//         .select(
-//           `
-//           *,
-//           event_hosts:event_hosts!event_hosts_event_id_fkey (
-//             user:users!event_hosts_user_id_fkey ( id, first_name, last_name, profile_picture )
-//           ),
-//           rsvps:rsvps!rsvps_event_id_fkey (
-//             user:users!rsvps_user_id_fkey ( id, first_name, last_name, profile_picture )
-//           ),
-//           check_ins:check_ins!check_ins_event_id_fkey (
-//             user:users!check_ins_user_id_fkey ( id, first_name, last_name, profile_picture )
-//           )
-//         `
-//         )
-//         .eq('id', id)
-//         .maybeSingle();
-
-//       if (error) throw error;
-//       return data as EventWithJoins;
-//     },
-//   });
-// }
+export function useEvents() {
+  return useQuery<EventRow[]>({
+    queryKey: ['events'],
+    refetchOnMount: 'always',
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .is('deleted_at', null)
+        .order('starts_at', { ascending: true });
+      if (error) throw error;
+      return data as EventRow[];
+    },
+  });
+}
 
 export function useEventById(id: string) {
   return useQuery<VEventWithFullDetails>({

@@ -1,13 +1,13 @@
 import React from 'react';
 import { ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Box, Flex, Pressable, Text } from '~/components/ui';
 import { Icon } from '~/components/ui/icon';
 import {
   Bell,
-  ChevronRight,
   FileWarning,
-  Globe,
+  Gem,
   HelpCircle,
   Lock,
   Mail,
@@ -17,17 +17,19 @@ import {
   User,
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
+import { RootStackParamList } from '~/types/navigation.types';
 
-type SettingsItem = {
-  id: string;
-  label: string;
-  description: string;
-  icon: LucideIcon;
-  accentBg: string;
-  accentColor: string;
-};
-
-const settingsSections: { title: string; items: SettingsItem[] }[] = [
+const settingsSections: {
+  title: string;
+  items: {
+    id: string;
+    label: string;
+    description: string;
+    icon: LucideIcon;
+    accentBg: string;
+    accentColor: string;
+  }[];
+}[] = [
   {
     title: 'Account',
     items: [
@@ -54,6 +56,14 @@ const settingsSections: { title: string; items: SettingsItem[] }[] = [
         icon: Lock,
         accentBg: '#E0F2F1',
         accentColor: '#00796B',
+      },
+      {
+        id: 'membership',
+        label: 'Membership',
+        description: 'See perks and levels',
+        icon: Gem,
+        accentBg: '#FFF0EB',
+        accentColor: '#F97316',
       },
     ],
   },
@@ -118,6 +128,14 @@ const settingsSections: { title: string; items: SettingsItem[] }[] = [
 ];
 
 export function ProfileSettingsScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const handleItemPress = (id: string) => {
+    if (id === 'membership') {
+      navigation.navigate('Membership');
+    }
+  };
+
   return (
     <View className="flex-1 bg-background-dark">
       <ScrollView className="px-4 py-6" contentContainerStyle={{ gap: 24, paddingBottom: 32 }}>
@@ -129,7 +147,9 @@ export function ProfileSettingsScreen() {
             <Box className="rounded-3xl p-1">
               {section.items.map((item) => (
                 <React.Fragment key={item.id}>
-                  <Pressable className="flex-row items-center justify-between  py-4">
+                  <Pressable
+                    onPress={() => handleItemPress(item.id)}
+                    className="flex-row items-center justify-between  py-4">
                     <Flex direction="row" align="center" className="flex-1" gap={3}>
                       <Box
                         className="h-12 w-12 items-center justify-center rounded-full"

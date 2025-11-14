@@ -67,7 +67,7 @@ const Image = React.forwardRef<React.ComponentRef<typeof UIImage>, ImageProps>(f
           Platform.OS === 'web' ? { height: 'revert-layer', width: 'revert-layer' } : undefined
         }
       />
-      {overlay && <View className="pointer-events-none absolute inset-0 bg-black/40" />}
+      {overlay && <View className="pointer-events-none absolute inset-0 bg-black/50" />}
     </View>
   );
 });

@@ -27,7 +27,7 @@ export function WalletScreen() {
   const minAmount = 5;
   const step = 5;
 
-  const snapPoints = useMemo(() => ['35%'], []);
+  const snapPoints = useMemo(() => ['45%'], []);
 
   const renderBackdrop = useCallback(
     (backdropProps: BottomSheetBackdropProps) => (
@@ -180,7 +180,7 @@ export function WalletScreen() {
         }}
         handleIndicatorStyle={{ backgroundColor: '#6B7280' }}>
         <BottomSheetView style={{ paddingHorizontal: 16, paddingVertical: 24 }}>
-          <Flex gap={6}>
+          <Flex gap={6} className="h-96">
             <Text size="lg" bold>
               Choose credit amount
             </Text>

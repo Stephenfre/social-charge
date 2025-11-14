@@ -45,6 +45,20 @@ export type Database = {
             foreignKeyName: "check_ins_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "v_event_counts"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "check_ins_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "check_ins_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "v_event_with_host_rsvp_checkin"
             referencedColumns: ["id"]
           },
@@ -116,6 +130,20 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_attendance_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_counts"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_attendance_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_summary"
             referencedColumns: ["id"]
           },
           {
@@ -201,6 +229,20 @@ export type Database = {
             foreignKeyName: "event_hosts_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "v_event_counts"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_hosts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_hosts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "v_event_with_host_rsvp_checkin"
             referencedColumns: ["id"]
           },
@@ -272,6 +314,20 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_messages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_counts"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_messages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_summary"
             referencedColumns: ["id"]
           },
           {
@@ -361,6 +417,20 @@ export type Database = {
             foreignKeyName: "event_reviews_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "v_event_counts"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "v_event_with_host_rsvp_checkin"
             referencedColumns: ["id"]
           },
@@ -413,6 +483,7 @@ export type Database = {
           description: string | null
           ends_at: string
           formatted_address: string
+          geo: unknown
           id: string
           latitude: number
           location_text: string
@@ -434,6 +505,7 @@ export type Database = {
           description?: string | null
           ends_at: string
           formatted_address: string
+          geo?: unknown
           id?: string
           latitude: number
           location_text: string
@@ -455,6 +527,7 @@ export type Database = {
           description?: string | null
           ends_at?: string
           formatted_address?: string
+          geo?: unknown
           id?: string
           latitude?: number
           location_text?: string
@@ -507,6 +580,20 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorited_events_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_counts"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "favorited_events_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_summary"
             referencedColumns: ["id"]
           },
           {
@@ -596,6 +683,20 @@ export type Database = {
             foreignKeyName: "host_reviews_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "v_event_counts"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "host_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "host_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "v_event_with_host_rsvp_checkin"
             referencedColumns: ["id"]
           },
@@ -650,6 +751,120 @@ export type Database = {
           },
         ]
       }
+      qr_tokens: {
+        Row: {
+          created_by: string | null
+          event_id: string
+          expires_at: string
+          id: string
+          issued_at: string
+          jti: string
+          purpose: string
+          subject_user_id: string | null
+          used_at: string | null
+        }
+        Insert: {
+          created_by?: string | null
+          event_id: string
+          expires_at: string
+          id?: string
+          issued_at?: string
+          jti: string
+          purpose?: string
+          subject_user_id?: string | null
+          used_at?: string | null
+        }
+        Update: {
+          created_by?: string | null
+          event_id?: string
+          expires_at?: string
+          id?: string
+          issued_at?: string
+          jti?: string
+          purpose?: string
+          subject_user_id?: string | null
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qr_tokens_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qr_tokens_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "qr_tokens_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qr_tokens_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_counts"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "qr_tokens_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qr_tokens_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_with_host_rsvp_checkin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qr_tokens_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_for_current_user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qr_tokens_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qr_tokens_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "view_weekend_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qr_tokens_subject_user_id_fkey"
+            columns: ["subject_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qr_tokens_subject_user_id_fkey"
+            columns: ["subject_user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       review_vibes: {
         Row: {
           event_id: string | null
@@ -675,6 +890,20 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_vibes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_counts"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "review_vibes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_summary"
             referencedColumns: ["id"]
           },
           {
@@ -780,6 +1009,20 @@ export type Database = {
             foreignKeyName: "rsvps_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "v_event_counts"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "v_event_with_host_rsvp_checkin"
             referencedColumns: ["id"]
           },
@@ -878,6 +1121,20 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "token_ledger_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_counts"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "token_ledger_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_summary"
             referencedColumns: ["id"]
           },
           {
@@ -1042,6 +1299,20 @@ export type Database = {
             foreignKeyName: "user_vibe_history_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "v_event_counts"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "user_vibe_history_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_vibe_history_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "v_event_with_host_rsvp_checkin"
             referencedColumns: ["id"]
           },
@@ -1199,6 +1470,20 @@ export type Database = {
             foreignKeyName: "venue_reviews_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
+            referencedRelation: "v_event_counts"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "venue_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
             referencedRelation: "v_event_with_host_rsvp_checkin"
             referencedColumns: ["id"]
           },
@@ -1320,6 +1605,14 @@ export type Database = {
         }
         Relationships: []
       }
+      v_event_counts: {
+        Row: {
+          check_in_count: number | null
+          event_id: string | null
+          rsvp_count: number | null
+        }
+        Relationships: []
+      }
       v_event_ratings: {
         Row: {
           avg_rating: number | null
@@ -1332,6 +1625,20 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_counts"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_summary"
             referencedColumns: ["id"]
           },
           {
@@ -1364,6 +1671,47 @@ export type Database = {
           },
         ]
       }
+      v_event_summary: {
+        Row: {
+          age_limit: number | null
+          capacity: number | null
+          category: string[] | null
+          check_in_count: number | null
+          cover_img: string | null
+          created_at: string | null
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          ends_at: string | null
+          formatted_address: string | null
+          id: string | null
+          latitude: number | null
+          location_text: string | null
+          longitude: number | null
+          place_id: string | null
+          provider: string | null
+          rsvp_count: number | null
+          starts_at: string | null
+          title: string | null
+          token_cost: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       v_event_user_vibes: {
         Row: {
           event_id: string | null
@@ -1376,6 +1724,20 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_counts"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_summary"
             referencedColumns: ["id"]
           },
           {

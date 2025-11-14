@@ -3,13 +3,13 @@ import React from 'react';
 import dayjs from 'dayjs';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Calendar, Clock, MapPin, TicketX } from 'lucide-react-native';
+import { ArrowLeft, Calendar, Clock, MapPin, TicketX } from 'lucide-react-native';
 import { Alert, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Countdown } from '~/components/Countdown/Countdown';
 import { EventCard } from '~/components/EventCard/EventCard';
 import { Map } from '~/components/Map/Map';
-import { Badge, Box, Button, Flex, Image, Text } from '~/components/ui';
+import { Badge, Box, Button, Flex, Image, Pressable, Text } from '~/components/ui';
 import { Icon } from '~/components/ui/icon';
 import {
   useStorageImages,
@@ -137,20 +137,30 @@ export function EventCheckInScreen() {
 
   return (
     <Flex flex className="bg-background-dark">
-      <EventCard
-        event={event}
-        imageSize="background"
-        rounded="none"
-        showDate={false}
-        showLocation={false}
-        showTitle={false}
-        showToken={false}
-      />
+      <Flex className="relative">
+        <Pressable
+          className="absolute left-4 top-20 z-10"
+          hitSlop={16}
+          onPress={() => navigation.goBack()}>
+          <ArrowLeft size={28} color="#fff" />
+        </Pressable>
+        <EventCard
+          event={event}
+          overlay
+          imageSize="background"
+          rounded="none"
+          showDate={false}
+          showLocation={false}
+          showTitle={false}
+          showToken={false}
+        />
+      </Flex>
 
       <BottomSheet
         index={0}
-        snapPoints={['70%', '90%']}
+        snapPoints={['70%', '75%']}
         enablePanDownToClose={false}
+        enableOverDrag={false}
         handleIndicatorStyle={{ backgroundColor: 'transparent' }}
         backgroundStyle={{
           backgroundColor: '#0F1012',
@@ -201,24 +211,46 @@ export function EventCheckInScreen() {
             <Map location={mapLocation} height={220} rounded />
 
             <Flex direction="row" gap={2} align="center">
-              <Button
-                size="xl"
-                className={cn(
-                  'w-1/2',
-                  isBeforeStart || isUserAlreadyCheckedIn ? 'bg-gray-500' : 'bg-primary',
-                  withinTwoHours && 'w-full'
-                )}
-                onPress={handlePressCheckIn}
-                disabled={isUserAlreadyCheckedIn || isBeforeStart || isPending}>
-                <Flex align="center">
-                  <Text bold size="lg">
-                    {isUserAlreadyCheckedIn ? 'Checked In' : 'Check In'}
-                  </Text>
-                  {event.starts_at && <Countdown to={event.starts_at} />}
-                </Flex>
-              </Button>
-              {!withinTwoHours && event.id && (
-                <CancelRsvpButton className="w-1/2 bg-background-dark" eventId={event.id} />
+              {user?.role === 'user' ? (
+                <>
+                  {' '}
+                  <Button
+                    size="xl"
+                    className={cn(
+                      'w-1/2',
+                      isBeforeStart || isUserAlreadyCheckedIn ? 'bg-gray-500' : 'bg-primary',
+                      withinTwoHours && 'w-full'
+                    )}
+                    onPress={handlePressCheckIn}
+                    disabled={isUserAlreadyCheckedIn || isBeforeStart || isPending}>
+                    <Flex align="center">
+                      <Text bold size="lg">
+                        {isUserAlreadyCheckedIn ? 'Checked In' : 'Check In'}
+                      </Text>
+                      {event.starts_at && <Countdown to={event.starts_at} />}
+                    </Flex>
+                  </Button>
+                  {!withinTwoHours && event.id && (
+                    <CancelRsvpButton className="w-1/2 bg-background-dark" eventId={event.id} />
+                  )}
+                </>
+              ) : (
+                <Button
+                  size="xl"
+                  className={cn(
+                    'w-1/2',
+                    isBeforeStart || isUserAlreadyCheckedIn ? 'bg-gray-500' : 'bg-primary',
+                    withinTwoHours && 'w-full'
+                  )}
+                  onPress={handlePressCheckIn}
+                  disabled={isUserAlreadyCheckedIn || isBeforeStart || isPending}>
+                  <Flex align="center">
+                    <Text bold size="lg">
+                      Scan Qr code
+                    </Text>
+                    {event.starts_at && <Countdown to={event.starts_at} />}
+                  </Flex>
+                </Button>
               )}
             </Flex>
 
