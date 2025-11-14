@@ -2,7 +2,7 @@ import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import dayjs from 'dayjs';
-import { Calendar, Clock, MapPin, TicketX } from 'lucide-react-native';
+import { ArrowLeft, Calendar, Clock, MapPin, TicketX } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -196,16 +196,24 @@ export function ViewEventScreen() {
 
   return (
     <Flex flex className="bg-background-dark">
-      <EventCard
-        event={event}
-        favorited={event.event_hosts?.some((host) => host?.id !== userId)}
-        imageSize="background"
-        rounded="none"
-        showDate={false}
-        showLocation={false}
-        showTitle={false}
-        showToken={false}
-      />
+      <Flex className="relative">
+        <Pressable
+          className="absolute left-4 top-20 z-10"
+          hitSlop={16}
+          onPress={() => navigation.goBack()}>
+          <ArrowLeft size={28} color="#fff" />
+        </Pressable>
+        <EventCard
+          event={event}
+          overlay
+          imageSize="background"
+          rounded="none"
+          showDate={false}
+          showLocation={false}
+          showTitle={false}
+          showToken={false}
+        />
+      </Flex>
 
       {/* PERSISTENT BOTTOM SHEET ACTION BAR */}
       <BottomSheet
@@ -375,7 +383,12 @@ export function ViewEventScreen() {
           </Flex>
           <Flex className="w-1/2">
             {isRsvped && event.id ? (
-              <CancelRsvpButton eventId={event.id} />
+              <CancelRsvpButton
+                eventId={event.id}
+                tokenCost={event.token_cost ?? 0}
+                eventTitle={event.title ?? ''}
+                eventStartsAt={event.starts_at ?? null}
+              />
             ) : (
               <RsvpButton onPress={openRsvpModal} />
             )}
@@ -511,24 +524,63 @@ function RsvpConfirmationModal({
 
 export function CancelRsvpButton({
   eventId,
+  tokenCost = 0,
+  eventTitle,
+  eventStartsAt,
   className,
   canEdit,
 }: {
   eventId: string;
+  tokenCost?: number;
+  eventTitle?: string;
+  eventStartsAt?: string | null;
   className?: string;
   canEdit?: boolean;
 }) {
-  const { mutate: removeRsvp, isPending } = useRemoveRsvp();
+  const navigation = useNavigation();
+  const { mutateAsync: removeRsvpAsync, isPending } = useRemoveRsvp();
+  const { mutateAsync: refundTokensAsync } = useRefundTokens();
   const label = isPending ? <Spinner /> : 'Cancel Rsvp';
+  const startsAt = eventStartsAt ? dayjs(eventStartsAt) : null;
+  const hoursUntilStart = startsAt ? startsAt.diff(dayjs(), 'hour', true) : Infinity;
+  const isWithinGracePeriod = hoursUntilStart >= 2;
 
-  const onCancelSubmit = () => {
-    removeRsvp(
-      { eventId },
-      {
-        onError: () => Alert.alert('Failed to cancel RSVP'),
-        onSuccess: () => Alert.alert('Your RSVP was removed'),
+  const performCancellation = async (shouldRefund: boolean) => {
+    try {
+      await removeRsvpAsync({ eventId });
+      if (shouldRefund && tokenCost > 0) {
+        await refundTokensAsync({
+          amount: tokenCost,
+          eventId,
+          meta: {
+            type: 'event_rsvp_refund',
+            eventId,
+            eventTitle,
+            tokenCost,
+          },
+        });
       }
-    );
+      Alert.alert(
+        'Your RSVP was removed',
+        shouldRefund
+          ? `${tokenCost} credits have been refunded.`
+          : 'No credits were refunded because the grace period has passed.'
+      );
+      navigation.goBack();
+    } catch (err) {
+      const message = (err as { message?: string })?.message ?? 'Something went wrong.';
+      Alert.alert('Failed to cancel RSVP', message);
+    }
+  };
+
+  const confirmCancellation = () => {
+    const message = isWithinGracePeriod
+      ? 'Are you sure you want to cancel and refund your credits?'
+      : "The cancellation grace period has passed. You can still cancel, but you won't receive a refund.";
+    Alert.alert('Cancel RSVP', message, [
+      { text: 'No', style: 'cancel' },
+      { text: 'Yes', onPress: () => performCancellation(isWithinGracePeriod) },
+    ]);
   };
 
   return (
@@ -536,7 +588,7 @@ export function CancelRsvpButton({
       size="xl"
       variant="primary"
       className={cn(className ? className : 'w-full', canEdit && 'w-[48%]')}
-      onPress={onCancelSubmit}
+      onPress={confirmCancellation}
       disabled={isPending}>
       <Text bold size="lg">
         {label}

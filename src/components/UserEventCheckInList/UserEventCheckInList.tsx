@@ -10,7 +10,6 @@ import type { UserEventCardRow } from '~/types/event.types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '../ui/icon';
 import { Calendar, Clock, MapPin } from 'lucide-react-native';
-import { Map } from '../Map/Map';
 import { UserCheckInQr } from '../UserCheckInQr/UserCheckInQr';
 import { RootStackParamList } from '~/types/navigation.types';
 
@@ -45,17 +44,6 @@ export function UserEventCheckInList() {
           shadowRadius: 10,
           elevation: 6,
         }}>
-        {/* {showOverlay && (
-        <View
-          pointerEvents="none"
-          className="absolute inset-0 z-50 h-full w-full items-center justify-start rounded-2xl bg-black/50">
-          <View className="mt-3 rounded-full bg-black/60 px-5 py-1.5">
-            <Text bold size="xl" className={cn(isCanceled ? 'text-amber-500' : 'text-red-500')}>
-              {overlayLabel}
-            </Text>
-          </View>
-        </View>
-      )} */}
         <View style={{ borderRadius: 16, overflow: 'hidden' }}>
           <Image
             source={item?.cover_img ? { uri: item.cover_img } : undefined}
@@ -88,32 +76,10 @@ export function UserEventCheckInList() {
             <Icon as={MapPin} size={'lg'} className="text-typography-light" />
             <Text size="lg">{item.location_text}</Text>
           </Flex>
-          <Map
-            height={150}
-            rounded
-            location={{
-              latitude: item.latitude ?? undefined,
-              longitude: item.longitude ?? undefined,
-            }}
-          />
 
           <Flex align="center" className="mt-10">
             <UserCheckInQr eventId={item.id!} size={160} />
           </Flex>
-
-          {/* {isCheckedIn && !loadingAvatar && !isPast && (
-          <Flex align="center" gap={4} className="mt-16">
-            <Image
-              alt="image of the user"
-              className=" h-24 w-24 border-4 border-secondary"
-              rounded="full"
-              source={avatar?.[0] ?? ''}
-            />
-            <Text size="2xl" bold className="text-typography-light">
-              {user?.first_name} {user?.last_name}
-            </Text>
-          </Flex>
-        )} */}
         </Flex>
       </Pressable>
     ),

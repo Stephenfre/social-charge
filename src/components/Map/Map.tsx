@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 
 interface MapScreenProps {
@@ -9,7 +9,6 @@ interface MapScreenProps {
 
 export function Map({ location, height, rounded }: MapScreenProps) {
   const mapRef = useRef<MapView>(null);
-  const [region, setRegion] = useState<Region | null>(null);
 
   const fallback = { latitude: 33.4571, longitude: -112.0697 };
   const deltas = { latitudeDelta: 0.02, longitudeDelta: 0.02 };
@@ -17,22 +16,14 @@ export function Map({ location, height, rounded }: MapScreenProps) {
   // derive target coords
   const lat = location?.latitude ?? fallback.latitude;
   const lng = location?.longitude ?? fallback.longitude;
-
-  // initialize region once (on mount)
-  useEffect(() => {
-    setRegion({ latitude: lat, longitude: lng, ...deltas });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const targetRegion: Region = { latitude: lat, longitude: lng, ...deltas };
 
   // whenever the incoming location changes, re-center the map
   useEffect(() => {
-    const next = { latitude: lat, longitude: lng, ...deltas };
-    setRegion(next);
     if (mapRef.current) {
-      mapRef.current.animateToRegion(next, 400);
+      mapRef.current.animateToRegion(targetRegion, 400);
     }
-  }, [lat, lng]);
-
-  const markerCoord = region ? { latitude: region.latitude, longitude: region.longitude } : null;
+  }, [targetRegion.latitude, targetRegion.longitude]);
 
   return (
     <MapView
@@ -41,16 +32,8 @@ export function Map({ location, height, rounded }: MapScreenProps) {
       provider={PROVIDER_GOOGLE}
       showsUserLocation
       showsMyLocationButton={false}
-      // Use controlled region when ready; fall back to a sane initialRegion for first paint
-      region={region ?? undefined}
-      initialRegion={{
-        latitude: fallback.latitude,
-        longitude: fallback.longitude,
-        latitudeDelta: 0.08,
-        longitudeDelta: 0.08,
-      }}
-      onRegionChangeComplete={setRegion}>
-      {markerCoord && <Marker coordinate={markerCoord} title="Event location" />}
+      initialRegion={targetRegion}>
+      <Marker coordinate={{ latitude: lat, longitude: lng }} title="Event location" />
     </MapView>
   );
 }

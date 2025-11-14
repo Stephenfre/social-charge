@@ -10,6 +10,7 @@ export { ProfileScreen } from './profile-screen';
 export { ProfileSettingsScreen } from './profile-settings-screen';
 export { MembershipScreen } from './membership-screen';
 export { EventCheckInScreen } from './event-check-in-screen';
+export { AllEventsScreen } from './all-events-screen';
 export { ViewEventScreen } from './view-event-screen';
 export { ViewUserEventsScreen } from './view-user-events-screen';
 export { ReviewCreateEventScreen } from './review-create-event-screen';

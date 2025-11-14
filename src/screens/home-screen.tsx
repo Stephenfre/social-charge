@@ -17,10 +17,10 @@ import { RootStackParamList } from '~/types/navigation.types';
 import { EventCard } from '~/components/EventCard/EventCard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-type ViewEventNav = NativeStackNavigationProp<RootStackParamList, 'ViewEvent'>;
+type HomeNav = NativeStackNavigationProp<RootStackParamList, 'HomeIndex'>;
 
 export function HomeScreen() {
-  const navigation = useNavigation<ViewEventNav>();
+  const navigation = useNavigation<HomeNav>();
 
   const { userId } = useAuth();
 
@@ -47,6 +47,9 @@ export function HomeScreen() {
 
   const handlePressNavigateToViewEvent = (eventId: string) => {
     navigation.navigate('ViewEvent', { eventId });
+  };
+  const handleNavigateToAllEvents = () => {
+    navigation.navigate('All Events');
   };
 
   return (
@@ -76,7 +79,7 @@ export function HomeScreen() {
                 <Text size="xl" bold>
                   This Weekend
                 </Text>
-                <Button variant="link">
+                <Button variant="link" onPress={handleNavigateToAllEvents}>
                   <Flex direction="row" align="center" gap={2}>
                     <Text className="text-typography-light">View All</Text>
                     <FontAwesome name="chevron-right" size={12} color="white" />
@@ -125,7 +128,7 @@ export function HomeScreen() {
                 <Text size="xl" bold>
                   Just for you
                 </Text>
-                <Button variant="link">
+                <Button variant="link" onPress={handleNavigateToAllEvents}>
                   <Flex direction="row" align="center" gap={2}>
                     <Text className="text-typography-light">View All</Text>
                     <FontAwesome name="chevron-right" size={12} color="white" />
@@ -200,13 +203,11 @@ export function HomeScreen() {
                 <Text size="xl" bold>
                   Upcoming Events
                 </Text>
-                <Button variant="link">
-                  <Button variant="link">
-                    <Flex direction="row" align="center" gap={2}>
-                      <Text className="text-typography-light">View All</Text>
-                      <FontAwesome name="chevron-right" size={12} color="white" />
-                    </Flex>
-                  </Button>
+                <Button variant="link" onPress={handleNavigateToAllEvents}>
+                  <Flex direction="row" align="center" gap={2}>
+                    <Text className="text-typography-light">View All</Text>
+                    <FontAwesome name="chevron-right" size={12} color="white" />
+                  </Flex>
                 </Button>
               </Flex>
               <ScrollView
@@ -302,7 +303,7 @@ export function HomeScreen() {
                 <Text size="xl" bold>
                   Low Token Events
                 </Text>
-                <Button variant="link">
+                <Button variant="link" onPress={handleNavigateToAllEvents}>
                   <Flex direction="row" align="center" gap={2}>
                     <Text className="text-typography-light">View All</Text>
                     <FontAwesome name="chevron-right" size={12} color="white" />

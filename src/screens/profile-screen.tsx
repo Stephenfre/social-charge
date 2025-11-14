@@ -30,7 +30,11 @@ export function ProfileScreen() {
   });
 
   const handleViewAllPress = () => {
-    navigation.navigate('Event History');
+    navigation.navigate('Event History', { filter: 'history' });
+  };
+
+  const handleViewAllUpcoming = () => {
+    navigation.navigate('Event History', { filter: 'upcoming' });
   };
 
   const handleOpenSettings = () => {
@@ -41,7 +45,8 @@ export function ProfileScreen() {
     await supabase.auth.signOut();
   };
 
-  const filterEventsByPast = events?.filter((event) => event.event_status !== 'upcoming');
+  const upcomingEvents = (events ?? []).filter((event) => event.event_status === 'upcoming');
+  const pastEvents = (events ?? []).filter((event) => event.event_status !== 'upcoming');
 
   return (
     <SafeAreaView className="h-full bg-background-dark">
@@ -83,7 +88,7 @@ export function ProfileScreen() {
             <Pressable className="w-1/3 rounded-lg">
               <Flex align="center" className="p-6">
                 <Text size="2xl" bold>
-                  {filterEventsByPast?.length ? filterEventsByPast.length : '--'}
+                  {pastEvents.length ? pastEvents.length : '--'}
                 </Text>
                 <Text size="sm">Events</Text>
               </Flex>
@@ -126,25 +131,15 @@ export function ProfileScreen() {
               </Flex>
             </>
           )}
-          {/* <Flex className="rounded-2xl bg-background-900 p-4">
-            <Flex direction="row" justify="space-between" align="center">
-              <Flex gap={1}>
-                <Text bold size="lg">
-                  Dark Mode
-                </Text>
-                <Text size="sm" className="text-typography-500">
-                  Switch between light and dark appearance.
-                </Text>
-              </Flex>
-              <Switch
-                value={isDark}
-                onValueChange={(value) => setMode(value ? 'dark' : 'light')}
-                trackColor={{ false: '#a1a1aa', true: palette.accent }}
-                thumbColor={isDark ? palette.inverseText : '#f4f4f5'}
-                ios_backgroundColor="#a1a1aa"
-              />
-            </Flex>
-          </Flex> */}
+          <Flex direction="row" justify="space-between" className="my-2">
+            <Text size="2xl" bold>
+              Upcoming Events
+            </Text>
+            <Button variant="link" onPress={handleViewAllUpcoming}>
+              <Text>View All</Text>
+            </Button>
+          </Flex>
+          <EventsList events={upcomingEvents} loading={eventsLoading} />
           <Flex direction="row" justify="space-between" className="my-2">
             <Text size="2xl" bold>
               Events History
@@ -153,12 +148,12 @@ export function ProfileScreen() {
               <Text>View All</Text>
             </Button>
           </Flex>
-          <EventsList events={events ?? []} loading={eventsLoading} />
+          <EventsList events={pastEvents} loading={eventsLoading} />
         </Flex>
       </ScrollView>
-      <Button className="mx-4" onPress={logout}>
+      {/* <Button className="mx-4" onPress={logout}>
         <Text>Logout</Text>
-      </Button>
+      </Button> */}
     </SafeAreaView>
   );
 }

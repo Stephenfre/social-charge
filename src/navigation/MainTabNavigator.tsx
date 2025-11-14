@@ -11,6 +11,7 @@ import { useAuth } from '~/providers/AuthProvider';
 import { useTheme } from '~/providers/ThemeProvider';
 
 import {
+  AllEventsScreen,
   EventCheckInScreen,
   EventReviewScreen,
   HostScannerScreen,
@@ -35,10 +36,10 @@ const AppTabsNav = createBottomTabNavigator<AppTabParamList>();
 /** ----------------------------------
  * Inner stacks (local, minimal param lists)
  * ---------------------------------- */
-type HomeStackParams = { HomeIndex: undefined };
+type HomeStackParams = { HomeIndex: undefined; 'All Events': undefined };
 type ProfileStackParams = {
   ProfileIndex: undefined;
-  'Event History': undefined;
+  'Event History': { filter?: 'all' | 'upcoming' | 'history' } | undefined;
   'Profile Settings': undefined;
   Membership: undefined;
 };
@@ -57,6 +58,18 @@ function HomeStackNavigator() {
   return (
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
       <HomeStack.Screen name="HomeIndex" component={HomeScreen} />
+      <HomeStack.Screen
+        name="All Events"
+        component={AllEventsScreen}
+        options={{
+          headerShown: true,
+          headerBackButtonDisplayMode: 'minimal',
+          headerStyle: { backgroundColor: '#0F1012' },
+          headerTintColor: '#fff',
+          headerTitleStyle: { color: '#fff' },
+          title: 'All Events',
+        }}
+      />
     </HomeStack.Navigator>
   );
 }

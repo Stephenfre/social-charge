@@ -35,7 +35,8 @@ export type RootStackParamList = {
   'Profile Settings': undefined;
   Membership: undefined;
   ViewEvent: { eventId: string };
-  'Event History': undefined;
+  'All Events': undefined;
+  'Event History': { filter?: 'all' | 'upcoming' | 'history' } | undefined;
   EventCheckInIndex: undefined;
   CheckInIndex: { eventId: string };
   CreateEvent: { eventId?: string };
