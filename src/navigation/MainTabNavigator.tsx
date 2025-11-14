@@ -13,7 +13,9 @@ import { useTheme } from '~/providers/ThemeProvider';
 import {
   EventCheckInScreen,
   EventReviewScreen,
+  HostScannerScreen,
   HomeScreen,
+  MembershipScreen,
   ProfileScreen,
   ProfileSettingsScreen,
   ReviewCreateEventScreen,
@@ -38,6 +40,7 @@ type ProfileStackParams = {
   ProfileIndex: undefined;
   'Event History': undefined;
   'Profile Settings': undefined;
+  Membership: undefined;
 };
 type CheckInStackParams = { EventCheckInIndex: undefined; CheckInIndex: { eventId: string } };
 type WalletStackParams = { WalletIndex: undefined };
@@ -90,6 +93,18 @@ function ProfileStackNavigator() {
           headerTintColor: '#fff',
           headerTitleStyle: { color: '#fff' },
           title: 'Settings',
+        }}
+      />
+      <ProfileStack.Screen
+        name="Membership"
+        component={MembershipScreen}
+        options={{
+          headerShown: true,
+          headerBackButtonDisplayMode: 'minimal',
+          headerStyle: { backgroundColor: '#0F1012' },
+          headerTintColor: '#fff',
+          headerTitleStyle: { color: '#fff' },
+          title: 'My Membership',
         }}
       />
     </ProfileStack.Navigator>
@@ -180,7 +195,7 @@ function Tabs() {
           tabBarStyle: baseTabBar,
         }}
       />
-
+      {/* 
       {(user?.role === 'admin' || user?.role === 'super_admin') && (
         <AppTabsNav.Screen
           name="Create Event"
@@ -198,7 +213,7 @@ function Tabs() {
             tabBarStyle: baseTabBar,
           }}
         />
-      )}
+      )} */}
 
       <AppTabsNav.Screen
         name="Wallet"
@@ -264,6 +279,12 @@ export function MainTabNavigator() {
         name="EventReview"
         component={EventReviewScreen}
         options={{ ...headerCommon, title: 'Review Event' }}
+      />
+
+      <RootStackNav.Screen
+        name="ScanQrModal"
+        component={HostScannerScreen}
+        options={{ headerShown: false, presentation: 'modal' }}
       />
     </RootStackNav.Navigator>
   );
