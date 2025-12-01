@@ -23,6 +23,11 @@ export type AppTabParamList = {
 export type RootStackParamList = {
   Root: NavigatorScreenParams<AppTabParamList>;
   Tabs: NavigatorScreenParams<AppTabParamList>;
+  OnboardingStart: undefined;
+  OnboardingNight: { entryReason?: string } | undefined;
+  OnboardingBudget: undefined;
+  OnboardingVibe: undefined;
+  OnboardingComplete: undefined;
   Welcome: undefined;
   Register: undefined;
   RegisterUserName: undefined;

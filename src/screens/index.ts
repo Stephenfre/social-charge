@@ -17,3 +17,8 @@ export { ReviewCreateEventScreen } from './review-create-event-screen';
 export { EventReviewScreen } from './event-review-screen';
 export { WalletScreen } from './wallet-screen';
 export { HostScannerScreen } from './host-scanner-screen';
+export { OnboardingStartScreen } from './onboarding-start-screen';
+export { OnboardingNightScreen } from './onboarding-night-screen';
+export { OnboardingBudgetScreen } from './onboarding-budget-screen';
+export { OnboardingVibeScreen } from './onboarding-vibe-screen';
+export { OnboardingCompletionScreen } from './onboarding-completion-screen';

@@ -9,6 +9,12 @@ export type RootStackParamList = {
   Interest: undefined;
   SignIn: undefined;
   Main: undefined;
+  Root: undefined;
+  OnboardingStart: undefined;
+  OnboardingNight: { entryReason?: string } | undefined;
+  OnboardingBudget: undefined;
+  OnboardingVibe: undefined;
+  OnboardingComplete: undefined;
   'Review Event': undefined;
 };
 

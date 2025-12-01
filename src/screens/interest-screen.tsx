@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, ButtonText, Flex, Text } from '~/components/ui';
+import { Button, Flex, Text } from '~/components/ui';
 import { useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '~/types/navigation';
 import { supabase } from '~/lib/supabase';
@@ -13,11 +13,14 @@ import { cn } from '~/utils/cn';
 import { INTEREST_CATEGORIES } from '~/constants/interests';
 import { useSignUp } from '~/hooks';
 import { categoryEmojis, interestEmojis } from '~/utils/const';
+import { useAuth } from '~/providers/AuthProvider';
 
 export function InterestScreen() {
   const navigation = useNavigation<NavigationProp<'Interest'>>();
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const signUp = useSignUp();
+  const { user, refreshUser } = useAuth();
+  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
 
   const handleSelectInterest = (interest: string) => {
     if (selectedInterests.includes(interest)) {
@@ -46,6 +49,18 @@ export function InterestScreen() {
   const birthDateObj = dayjs(`${year}-${month}-${day}`);
   const getAge = dayjs().diff(birthDateObj, 'year');
 
+  useEffect(() => {
+    if (!pendingUserId || !user || user.id !== pendingUserId) return;
+
+    if (user.onboarded === false) {
+      navigation.reset({ index: 0, routes: [{ name: 'OnboardingStart' }] });
+    } else {
+      navigation.reset({ index: 0, routes: [{ name: 'Root' }] });
+    }
+
+    setPendingUserId(null);
+  }, [navigation, pendingUserId, user]);
+
   const onFinish = async (skip: boolean) => {
     signUp.mutate(
       {
@@ -63,14 +78,17 @@ export function InterestScreen() {
         skipInterests: skip,
       },
       {
-        onSuccess: ({ needsEmailConfirm }) => {
-          // success → reset UI and route
+        onSuccess: async ({ needsEmailConfirm, userId }) => {
           reset();
-          // if (needsEmailConfirm) {
-          //   navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
-          // } else {
-          navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
-          // }
+          if (needsEmailConfirm) {
+            navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
+            return;
+          }
+
+          if (userId) {
+            setPendingUserId(userId);
+            await refreshUser();
+          }
         },
         onError: async (err: any) => {
           // sign out on failure to keep state clean (mirrors your original)

@@ -7,7 +7,6 @@ import { EventsList } from '~/components';
 import { Badge, Box, Button, Flex, Image, Pressable, Text } from '~/components/ui';
 import { Icon, MenuIcon } from '~/components/ui/icon';
 import { useStorageImages, useTokenBalance, useUserEvents, useUserInterests } from '~/hooks';
-import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/providers/AuthProvider';
 import { RootStackParamList } from '~/types/navigation.types';
 import { interestEmojis } from '~/utils/const';
@@ -39,10 +38,6 @@ export function ProfileScreen() {
 
   const handleOpenSettings = () => {
     navigation.navigate('Profile Settings');
-  };
-
-  const logout = async () => {
-    await supabase.auth.signOut();
   };
 
   const upcomingEvents = (events ?? []).filter((event) => event.event_status === 'upcoming');

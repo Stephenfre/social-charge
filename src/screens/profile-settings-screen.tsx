@@ -2,7 +2,7 @@ import React from 'react';
 import { ScrollView, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Box, Flex, Pressable, Text } from '~/components/ui';
+import { Box, Button, Flex, Pressable, Text } from '~/components/ui';
 import { Icon } from '~/components/ui/icon';
 import {
   Bell,
@@ -18,6 +18,7 @@ import {
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { RootStackParamList } from '~/types/navigation.types';
+import { supabase } from '~/lib/supabase';
 
 const settingsSections: {
   title: string;
@@ -136,6 +137,10 @@ export function ProfileSettingsScreen() {
     }
   };
 
+  const logout = async () => {
+    await supabase.auth.signOut();
+  };
+
   return (
     <View className="flex-1 bg-background-dark">
       <ScrollView className="px-4 py-6" contentContainerStyle={{ gap: 24, paddingBottom: 32 }}>
@@ -169,6 +174,9 @@ export function ProfileSettingsScreen() {
             </Box>
           </Box>
         ))}
+        <Button onPress={logout}>
+          <Text>Logout</Text>
+        </Button>
       </ScrollView>
     </View>
   );

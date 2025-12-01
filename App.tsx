@@ -7,6 +7,11 @@ import {
 import { MainTabNavigator } from '~/navigation/MainTabNavigator';
 import {
   InterestScreen,
+  OnboardingBudgetScreen,
+  OnboardingCompletionScreen,
+  OnboardingNightScreen,
+  OnboardingStartScreen,
+  OnboardingVibeScreen,
   RegisterScreen,
   RegisterUserNameScreen,
   RegisterLocationScreen,
@@ -75,8 +80,25 @@ const AuthStack = () => (
   </RootStack.Navigator>
 );
 
-const AppStack = () => (
-  <RootStack.Navigator screenOptions={{ headerShown: false }}>
-    <RootStack.Screen name="Root" component={MainTabNavigator} />
-  </RootStack.Navigator>
-);
+function AppStack() {
+  const { user } = useAuth();
+  const showOnboarding = user ? user.onboarded === false : false;
+
+  if (showOnboarding) {
+    return (
+      <RootStack.Navigator screenOptions={{ headerShown: false }}>
+        <RootStack.Screen name="OnboardingStart" component={OnboardingStartScreen} />
+        <RootStack.Screen name="OnboardingNight" component={OnboardingNightScreen} />
+        <RootStack.Screen name="OnboardingBudget" component={OnboardingBudgetScreen} />
+        <RootStack.Screen name="OnboardingVibe" component={OnboardingVibeScreen} />
+        <RootStack.Screen name="OnboardingComplete" component={OnboardingCompletionScreen} />
+      </RootStack.Navigator>
+    );
+  }
+
+  return (
+    <RootStack.Navigator screenOptions={{ headerShown: false }}>
+      <RootStack.Screen name="Root" component={MainTabNavigator} />
+    </RootStack.Navigator>
+  );
+}

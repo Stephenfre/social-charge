@@ -8,6 +8,7 @@ interface SignupData {
   firstName: string;
   lastName: string;
   nickName?: string;
+  gender: string;
   city: string;
   state: string;
   country: string;
@@ -31,6 +32,7 @@ export const useSignupWizard = create<SignupWizardState>()(
       firstName: '',
       lastName: '',
       nickName: '',
+      gender: '',
       city: '',
       state: '',
       country: '',
@@ -47,6 +49,7 @@ export const useSignupWizard = create<SignupWizardState>()(
           firstName: '',
           lastName: '',
           nickName: '',
+          gender: '',
           city: '',
           state: '',
           country: '',

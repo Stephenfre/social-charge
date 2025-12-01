@@ -3,8 +3,9 @@ import { Button, Flex, Input, InputField, InputIcon, InputSlot, Pressable, Text 
 import { useSignupWizard } from '~/hooks/useSignupWizard';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { EyeIcon, EyeOffIcon } from 'lucide-react-native';
+import { cn } from '~/utils/cn';
 
 interface FormData {
   email: string;
@@ -14,9 +15,24 @@ interface FormData {
 interface AuthFormProps {
   onNavigate?: () => void;
   from?: string;
+  showFieldLabels?: boolean;
+  submitButtonLabel?: string;
+  buttonClassName?: string;
+  inputSize?: React.ComponentProps<typeof Input>['size'];
+  inputClassName?: string;
+  afterFields?: ReactNode;
 }
 
-export function AuthForm({ onNavigate, from }: AuthFormProps) {
+export function AuthForm({
+  onNavigate,
+  from,
+  showFieldLabels = false,
+  submitButtonLabel,
+  buttonClassName,
+  inputSize,
+  inputClassName,
+  afterFields,
+}: AuthFormProps) {
   const [showPassword, setShowPassword] = useState<Boolean>(false);
   const { email: storedEmail, password: storedPassword, setField } = useSignupWizard();
 
@@ -45,7 +61,7 @@ export function AuthForm({ onNavigate, from }: AuthFormProps) {
     },
   });
 
-  const buttonText = from === 'register' ? 'Create Account' : 'Login';
+  const buttonText = submitButtonLabel ?? (from === 'register' ? 'Create Account' : 'Login');
 
   const onSubmit = handleSubmit(({ email, password }) => {
     setField('email', email);
@@ -58,56 +74,79 @@ export function AuthForm({ onNavigate, from }: AuthFormProps) {
   };
 
   return (
-    <>
+    <Flex className="w-full" gap={4}>
       <Controller
         control={control}
         name="email"
         render={({ field }) => (
-          <Input>
-            <InputField
-              placeholder="Email"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              textContentType="emailAddress"
-            />
-          </Input>
+          <Flex className="w-full" gap={2}>
+            {showFieldLabels && (
+              <Text size="sm" bold className="text-typography-light">
+                Email
+              </Text>
+            )}
+            <Input size={inputSize} className={inputClassName}>
+              <InputField
+                placeholder="Email"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                textContentType="emailAddress"
+              />
+            </Input>
+          </Flex>
         )}
       />
-      {errors.email && <Text className="text-error-500">{errors.email.message}</Text>}
+      {errors.email && (
+        <Text className="text-error-500" size="sm">
+          {errors.email.message}
+        </Text>
+      )}
 
       <Controller
         control={control}
         name="password"
         render={({ field }) => (
-          <Input>
-            <InputField
-              placeholder="Password"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              secureTextEntry={showPassword ? false : true}
-              textContentType="password"
-            />
-            <Pressable className="bg-white p-2" onPress={handleShowPassword}>
-              {showPassword ? (
-                <EyeOffIcon size={24} color={'grey'} />
-              ) : (
-                <EyeIcon size={24} color={'grey'} />
-              )}
-            </Pressable>
-          </Input>
+          <Flex className="w-full" gap={2}>
+            {showFieldLabels && (
+              <Text size="sm" bold className="text-typography-light">
+                Password
+              </Text>
+            )}
+            <Input size={inputSize} className={inputClassName}>
+              <InputField
+                placeholder="Password"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                secureTextEntry={showPassword ? false : true}
+                textContentType="password"
+              />
+              <Pressable className="bg-white p-2" onPress={handleShowPassword}>
+                {showPassword ? (
+                  <EyeOffIcon size={24} color={'grey'} />
+                ) : (
+                  <EyeIcon size={24} color={'grey'} />
+                )}
+              </Pressable>
+            </Input>
+          </Flex>
         )}
       />
-      {errors.password && <Text className="text-error-500">{errors.password.message}</Text>}
+      {errors.password && (
+        <Text className="text-error-500" size="sm">
+          {errors.password.message}
+        </Text>
+      )}
+      {afterFields}
 
-      <Button className="h-14 w-full " onPress={onSubmit}>
+      <Button className={cn('h-14 w-full', buttonClassName)} onPress={onSubmit}>
         <Text size="lg" weight="600" className="text-typography-light">
           {buttonText}
         </Text>
       </Button>
-    </>
+    </Flex>
   );
 }
