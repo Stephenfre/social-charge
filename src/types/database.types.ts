@@ -1223,6 +1223,72 @@ export type Database = {
           },
         ]
       }
+      user_day_prefs: {
+        Row: {
+          created_at: string
+          day_pref: Database["public"]["Enums"]["day_bucket"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_pref: Database["public"]["Enums"]["day_bucket"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day_pref?: Database["public"]["Enums"]["day_bucket"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_day_prefs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_day_prefs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      user_event_goals: {
+        Row: {
+          created_at: string
+          goal: Database["public"]["Enums"]["event_goal"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          goal: Database["public"]["Enums"]["event_goal"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          goal?: Database["public"]["Enums"]["event_goal"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_event_goals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_event_goals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       user_interests: {
         Row: {
           created_at: string | null
@@ -1249,6 +1315,96 @@ export type Database = {
           },
           {
             foreignKeyName: "user_interests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      user_onboarding_profile: {
+        Row: {
+          budget_pref: Database["public"]["Enums"]["budget_band"] | null
+          completed: boolean
+          created_at: string
+          preferred_group_size_max: number | null
+          preferred_group_size_min: number | null
+          primary_archetype:
+            | Database["public"]["Enums"]["social_archetype"]
+            | null
+          style_pref: Database["public"]["Enums"]["style_band"] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget_pref?: Database["public"]["Enums"]["budget_band"] | null
+          completed?: boolean
+          created_at?: string
+          preferred_group_size_max?: number | null
+          preferred_group_size_min?: number | null
+          primary_archetype?:
+            | Database["public"]["Enums"]["social_archetype"]
+            | null
+          style_pref?: Database["public"]["Enums"]["style_band"] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget_pref?: Database["public"]["Enums"]["budget_band"] | null
+          completed?: boolean
+          created_at?: string
+          preferred_group_size_max?: number | null
+          preferred_group_size_min?: number | null
+          primary_archetype?:
+            | Database["public"]["Enums"]["social_archetype"]
+            | null
+          style_pref?: Database["public"]["Enums"]["style_band"] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_onboarding_profile_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_onboarding_profile_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "vw_user_current_vibe"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      user_time_prefs: {
+        Row: {
+          created_at: string
+          time_pref: Database["public"]["Enums"]["time_bucket"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          time_pref: Database["public"]["Enums"]["time_bucket"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          time_pref?: Database["public"]["Enums"]["time_bucket"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_time_prefs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_time_prefs_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "vw_user_current_vibe"
@@ -1376,9 +1532,11 @@ export type Database = {
           created_at: string | null
           email: string | null
           first_name: string | null
+          gender: Database["public"]["Enums"]["gender"]
           id: string
           last_name: string | null
           membership: Database["public"]["Enums"]["membership_role"]
+          onboarded: boolean
           phone_number: string | null
           preferred_vibe_slug: Database["public"]["Enums"]["vibe_slug"] | null
           profile_picture: string | null
@@ -1394,9 +1552,11 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           first_name?: string | null
+          gender?: Database["public"]["Enums"]["gender"]
           id: string
           last_name?: string | null
           membership?: Database["public"]["Enums"]["membership_role"]
+          onboarded?: boolean
           phone_number?: string | null
           preferred_vibe_slug?: Database["public"]["Enums"]["vibe_slug"] | null
           profile_picture?: string | null
@@ -1412,9 +1572,11 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           first_name?: string | null
+          gender?: Database["public"]["Enums"]["gender"]
           id?: string
           last_name?: string | null
           membership?: Database["public"]["Enums"]["membership_role"]
+          onboarded?: boolean
           phone_number?: string | null
           preferred_vibe_slug?: Database["public"]["Enums"]["vibe_slug"] | null
           profile_picture?: string | null
@@ -2994,6 +3156,16 @@ export type Database = {
     }
     Enums: {
       attend_status: "yes" | "no" | "can"
+      budget_band: "budget" | "moderate" | "premium" | "luxury"
+      day_bucket: "weekdays" | "weekends"
+      event_goal:
+        | "meet_new_friends"
+        | "dating_connections"
+        | "networking"
+        | "try_new_things"
+        | "travel_buddy"
+        | "wellness_balance"
+      gender: "Male" | "Female" | "Non-binary" | "Other"
       interest:
         | "Sports"
         | "Outdoors"
@@ -3016,6 +3188,13 @@ export type Database = {
         | "Tech"
         | "Pets"
       membership_role: "superadmin" | "admin" | "basic" | "plus" | "premium"
+      social_archetype: "chill" | "social" | "adventurer"
+      style_band:
+        | "cheap_casual"
+        | "value_for_money"
+        | "premium_exclusive"
+        | "splurge_big_events"
+      time_bucket: "morning" | "afternoon" | "evening" | "late_night"
       user_role: "user" | "host" | "admin" | "super_admin"
       vibe_slug: "chill" | "party-animal" | "low-key" | "adventurous"
       vibe_source: "self" | "peer"
@@ -3175,6 +3354,17 @@ export const Constants = {
   public: {
     Enums: {
       attend_status: ["yes", "no", "can"],
+      budget_band: ["budget", "moderate", "premium", "luxury"],
+      day_bucket: ["weekdays", "weekends"],
+      event_goal: [
+        "meet_new_friends",
+        "dating_connections",
+        "networking",
+        "try_new_things",
+        "travel_buddy",
+        "wellness_balance",
+      ],
+      gender: ["Male", "Female", "Non-binary", "Other"],
       interest: [
         "Sports",
         "Outdoors",
@@ -3198,6 +3388,14 @@ export const Constants = {
         "Pets",
       ],
       membership_role: ["superadmin", "admin", "basic", "plus", "premium"],
+      social_archetype: ["chill", "social", "adventurer"],
+      style_band: [
+        "cheap_casual",
+        "value_for_money",
+        "premium_exclusive",
+        "splurge_big_events",
+      ],
+      time_bucket: ["morning", "afternoon", "evening", "late_night"],
       user_role: ["user", "host", "admin", "super_admin"],
       vibe_slug: ["chill", "party-animal", "low-key", "adventurous"],
       vibe_source: ["self", "peer"],

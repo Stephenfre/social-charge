@@ -65,6 +65,7 @@ export function useSignUp() {
           country: country ?? null,
           birth_date: birthDate,
           age,
+          onboarded: false,
         };
 
         const { error: upsertError } = await supabase.from('users').upsert(userInfo);

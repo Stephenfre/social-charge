@@ -17,10 +17,10 @@ import { RootStackParamList } from '~/types/navigation.types';
 import { EventCard } from '~/components/EventCard/EventCard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-type ViewEventNav = NativeStackNavigationProp<RootStackParamList, 'ViewEvent'>;
+type HomeNav = NativeStackNavigationProp<RootStackParamList, 'HomeIndex'>;
 
 export function HomeScreen() {
-  const navigation = useNavigation<ViewEventNav>();
+  const navigation = useNavigation<HomeNav>();
 
   const { userId } = useAuth();
 
@@ -47,6 +47,9 @@ export function HomeScreen() {
 
   const handlePressNavigateToViewEvent = (eventId: string) => {
     navigation.navigate('ViewEvent', { eventId });
+  };
+  const handleNavigateToAllEvents = () => {
+    navigation.navigate('All Events');
   };
 
   return (
@@ -76,7 +79,7 @@ export function HomeScreen() {
                 <Text size="xl" bold>
                   This Weekend
                 </Text>
-                <Button variant="link">
+                <Button variant="link" onPress={handleNavigateToAllEvents}>
                   <Flex direction="row" align="center" gap={2}>
                     <Text className="text-typography-light">View All</Text>
                     <FontAwesome name="chevron-right" size={12} color="white" />
@@ -106,7 +109,6 @@ export function HomeScreen() {
                             event={event}
                             onPress={() => handlePressNavigateToViewEvent(event.id)}
                             rounded="md"
-                            favorited
                             imageSize="cover"
                             className="pr-2"
                           />
@@ -125,7 +127,7 @@ export function HomeScreen() {
                 <Text size="xl" bold>
                   Just for you
                 </Text>
-                <Button variant="link">
+                <Button variant="link" onPress={handleNavigateToAllEvents}>
                   <Flex direction="row" align="center" gap={2}>
                     <Text className="text-typography-light">View All</Text>
                     <FontAwesome name="chevron-right" size={12} color="white" />
@@ -162,7 +164,6 @@ export function HomeScreen() {
                               event={event}
                               onPress={() => handlePressNavigateToViewEvent(event.id)}
                               rounded="md"
-                              favorited
                               imageSize="xl-wide"
                               className="pr-2"
                               showTitle={false}
@@ -200,13 +201,11 @@ export function HomeScreen() {
                 <Text size="xl" bold>
                   Upcoming Events
                 </Text>
-                <Button variant="link">
-                  <Button variant="link">
-                    <Flex direction="row" align="center" gap={2}>
-                      <Text className="text-typography-light">View All</Text>
-                      <FontAwesome name="chevron-right" size={12} color="white" />
-                    </Flex>
-                  </Button>
+                <Button variant="link" onPress={handleNavigateToAllEvents}>
+                  <Flex direction="row" align="center" gap={2}>
+                    <Text className="text-typography-light">View All</Text>
+                    <FontAwesome name="chevron-right" size={12} color="white" />
+                  </Flex>
                 </Button>
               </Flex>
               <ScrollView
@@ -261,29 +260,18 @@ export function HomeScreen() {
                                   showToken={false}
                                 />
                                 <Flex>
-                                  <Text size="md" weight="600" className="w-40">
+                                  <Text size="md" weight="600">
                                     {event?.title}
                                   </Text>
-                                  <Flex direction="row">
+                                  <Flex>
+                                    <Text size="sm" className="text-gray-500">
+                                      {event?.location_text}
+                                    </Text>
                                     <Text size="sm" className="text-gray-500">
                                       {dayjs(event?.starts_at).format('ddd MM/DD')}
                                     </Text>
-                                    {/* <Text size="sm" className="text-gray-500">
-                                      {' '}
-                                      {event?.location_text}
-                                    </Text> */}
                                   </Flex>
                                 </Flex>
-                                {/* 
-                                TODO: IF A USER IS RSVP'D TO A EVENT SHOW A CHECK MARK? */}
-                                <Pressable className="w-16 rounded-xl bg-background-900 p-2">
-                                  <Flex justify="center" align="center">
-                                    <Text className="text-primary" weight="500">
-                                      RSVP
-                                    </Text>
-                                    <Text weight="500">{event?.token_cost}SB</Text>
-                                  </Flex>
-                                </Pressable>
                               </Flex>
                             </Pressable>
                           ))}
@@ -302,7 +290,7 @@ export function HomeScreen() {
                 <Text size="xl" bold>
                   Low Token Events
                 </Text>
-                <Button variant="link">
+                <Button variant="link" onPress={handleNavigateToAllEvents}>
                   <Flex direction="row" align="center" gap={2}>
                     <Text className="text-typography-light">View All</Text>
                     <FontAwesome name="chevron-right" size={12} color="white" />
@@ -332,7 +320,6 @@ export function HomeScreen() {
                             event={event}
                             onPress={() => handlePressNavigateToViewEvent(event.id)}
                             rounded="md"
-                            favorited
                             imageSize="cover"
                             className="pr-2"
                           />

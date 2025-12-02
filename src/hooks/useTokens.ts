@@ -29,12 +29,12 @@ type RpcResult<Name extends RpcName> = Database['public']['Functions'][Name]['Re
 
 async function rpc<Name extends RpcName>(
   fn: Name,
-  params?: RpcArgs<Name>,
+  params?: RpcArgs<Name>
 ): Promise<RpcResult<Name>> {
   const { data, error } = await supabase.rpc<RpcResult<Name>, RpcArgs<Name>>(
     fn,
     // For RPCs with Args: never Supabase still accepts undefined here.
-    params as RpcArgs<Name>,
+    params as RpcArgs<Name>
   );
   if (error) throw new Error(error.message);
   return data as RpcResult<Name>;
@@ -110,7 +110,7 @@ export function useSpendTokens() {
       if (amount <= 0) throw new Error('Amount must be > 0');
 
       return rpc('spend_tokens', {
-        p_event_id: eventId ?? null,
+        p_event_id: eventId!,
         p_amount: amount,
         p_meta: meta ?? {},
       });
@@ -133,7 +133,7 @@ export function useRefundTokens() {
       if (amount <= 0) throw new Error('Amount must be > 0');
 
       return rpc('refund_tokens', {
-        p_event_id: eventId ?? null,
+        p_event_id: eventId!,
         p_amount: amount,
         p_meta: meta ?? {},
       });

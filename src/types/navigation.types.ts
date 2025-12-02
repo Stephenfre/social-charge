@@ -23,19 +23,25 @@ export type AppTabParamList = {
 export type RootStackParamList = {
   Root: NavigatorScreenParams<AppTabParamList>;
   Tabs: NavigatorScreenParams<AppTabParamList>;
+  OnboardingStart: undefined;
+  OnboardingNight: { entryReason?: string } | undefined;
+  OnboardingBudget: undefined;
+  OnboardingVibe: undefined;
+  OnboardingComplete: undefined;
   Welcome: undefined;
   Register: undefined;
   RegisterUserName: undefined;
-  RegisterUserBirthDate: undefined;
-  RegisterUserLocation: undefined;
   Interest: undefined;
   SignIn: undefined;
+  Terms: undefined;
+  Privacy: undefined;
   HomeIndex: undefined;
   ProfileIndex: undefined;
   'Profile Settings': undefined;
   Membership: undefined;
   ViewEvent: { eventId: string };
-  'Event History': undefined;
+  'All Events': undefined;
+  'Event History': { filter?: 'all' | 'upcoming' | 'history' } | undefined;
   EventCheckInIndex: undefined;
   CheckInIndex: { eventId: string };
   CreateEvent: { eventId?: string };

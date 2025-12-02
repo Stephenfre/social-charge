@@ -4,11 +4,17 @@ export type RootStackParamList = {
   Welcome: undefined;
   Register: undefined;
   RegisterUserName: undefined;
-  RegisterUserBirthDate: undefined;
-  RegisterUserLocation: undefined;
   Interest: undefined;
   SignIn: undefined;
   Main: undefined;
+  Root: undefined;
+  Terms: undefined;
+  Privacy: undefined;
+  OnboardingStart: undefined;
+  OnboardingNight: { entryReason?: string } | undefined;
+  OnboardingBudget: undefined;
+  OnboardingVibe: undefined;
+  OnboardingComplete: undefined;
   'Review Event': undefined;
 };
 

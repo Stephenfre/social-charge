@@ -73,7 +73,11 @@ export function EventCard({
         />
       </Pressable>
 
-      <Flex direction="column" gap={1} className="absolute left-0 top-36 z-50 px-4">
+      <Flex
+        direction="column"
+        gap={1}
+        pointerEvents="none"
+        className="absolute left-0 top-36 z-50 px-4">
         {showToken && (
           <Button className="h-6 w-10 rounded-md bg-green-500 p-0">
             <ButtonText className="text-sm text-white">${event?.token_cost}</ButtonText>

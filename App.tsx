@@ -7,14 +7,19 @@ import {
 import { MainTabNavigator } from '~/navigation/MainTabNavigator';
 import {
   InterestScreen,
+  OnboardingBudgetScreen,
+  OnboardingCompletionScreen,
+  OnboardingNightScreen,
+  OnboardingStartScreen,
+  OnboardingVibeScreen,
   RegisterScreen,
   RegisterUserNameScreen,
-  RegisterLocationScreen,
+  PrivacyPolicyScreen,
+  TermsAndConditionsScreen,
   SignInScreen,
   WelcomeScreen,
 } from '~/screens';
 import './global.css';
-import { RegisterUserBirthDateScreen } from '~/screens/register-user-birthdate-screen';
 import { AuthProvider, useAuth } from '~/providers/AuthProvider';
 import { RootStack } from '~/types/navigation.types';
 import { ActivityIndicator, StatusBar, View } from 'react-native';
@@ -68,15 +73,36 @@ const AuthStack = () => (
     <RootStack.Screen name="Welcome" component={WelcomeScreen} />
     <RootStack.Screen name="Register" component={RegisterScreen} />
     <RootStack.Screen name="RegisterUserName" component={RegisterUserNameScreen} />
-    <RootStack.Screen name="RegisterUserBirthDate" component={RegisterUserBirthDateScreen} />
-    <RootStack.Screen name="RegisterUserLocation" component={RegisterLocationScreen} />
-    <RootStack.Screen name="Interest" component={InterestScreen} />
     <RootStack.Screen name="SignIn" component={SignInScreen} />
+    <RootStack.Screen name="Terms" component={TermsAndConditionsScreen} />
+    <RootStack.Screen name="Privacy" component={PrivacyPolicyScreen} />
   </RootStack.Navigator>
 );
 
-const AppStack = () => (
-  <RootStack.Navigator screenOptions={{ headerShown: false }}>
-    <RootStack.Screen name="Root" component={MainTabNavigator} />
-  </RootStack.Navigator>
-);
+function AppStack() {
+  const { user } = useAuth();
+  const showOnboarding = user ? user.onboarded === false : false;
+
+  if (showOnboarding) {
+    return (
+      <RootStack.Navigator screenOptions={{ headerShown: false }}>
+        <RootStack.Screen name="OnboardingStart" component={OnboardingStartScreen} />
+        <RootStack.Screen name="OnboardingNight" component={OnboardingNightScreen} />
+        <RootStack.Screen name="Interest" component={InterestScreen} />
+        <RootStack.Screen name="OnboardingBudget" component={OnboardingBudgetScreen} />
+        <RootStack.Screen name="OnboardingVibe" component={OnboardingVibeScreen} />
+        <RootStack.Screen name="OnboardingComplete" component={OnboardingCompletionScreen} />
+        <RootStack.Screen name="Terms" component={TermsAndConditionsScreen} />
+        <RootStack.Screen name="Privacy" component={PrivacyPolicyScreen} />
+      </RootStack.Navigator>
+    );
+  }
+
+  return (
+    <RootStack.Navigator screenOptions={{ headerShown: false }}>
+      <RootStack.Screen name="Root" component={MainTabNavigator} />
+      <RootStack.Screen name="Terms" component={TermsAndConditionsScreen} />
+      <RootStack.Screen name="Privacy" component={PrivacyPolicyScreen} />
+    </RootStack.Navigator>
+  );
+}

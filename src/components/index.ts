@@ -9,3 +9,4 @@ export { EventCheckInList } from './EventCheckInList/EventCheckInList';
 export { UserEventCheckInList } from './UserEventCheckInList/UserEventCheckInList';
 export { HostEventCheckInList } from './HostEventCheckInList/HostEventCheckInList';
 export { UserCheckInQr } from './UserCheckInQr/UserCheckInQr';
+export { DatePickerInput } from './DatePickerInput/DatePickerInput';

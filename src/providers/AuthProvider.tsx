@@ -1,5 +1,5 @@
 // src/providers/AuthProvider.tsx
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase } from '~/lib/supabase';
 import type { Session } from '@supabase/supabase-js';
 import { UsersRow } from '~/types/user.type';
@@ -9,6 +9,7 @@ type AuthCtx = {
   userId: string | null;
   user: UsersRow | null;
   initializing: boolean;
+  refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthCtx>({
@@ -16,27 +17,30 @@ const AuthContext = createContext<AuthCtx>({
   userId: null,
   user: null,
   initializing: true,
+  refreshUser: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<UsersRow>();
+  const [user, setUser] = useState<UsersRow | null>(null);
   const [initializing, setInitializing] = useState(true);
 
-  useEffect(() => {
-    let mounted = true;
+  const fetchUser = useCallback(async (userId: string) => {
+    const { data, error } = await supabase.from('users').select('*').eq('id', userId).single();
+    if (!error && data) {
+      setUser(data);
+    } else {
+      setUser(null);
+    }
+  }, []);
 
+  useEffect(() => {
     const load = async (sess: Session | null) => {
       setSession(sess);
       if (sess?.user?.id) {
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', sess.user.id)
-          .single();
-        if (!error && data && mounted) {
-          setUser(data);
-        }
+        await fetchUser(sess.user.id);
+      } else {
+        setUser(null);
       }
       setInitializing(false);
     };
@@ -48,10 +52,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } = supabase.auth.onAuthStateChange((_event, s) => load(s));
 
     return () => {
-      mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [fetchUser]);
+
+  const refreshUser = useCallback(async () => {
+    if (!session?.user?.id) return;
+    await fetchUser(session.user.id);
+  }, [session?.user?.id, fetchUser]);
 
   const value = useMemo(
     () => ({
@@ -59,8 +67,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       userId: session?.user?.id ?? null,
       user: user ?? null,
       initializing,
+      refreshUser,
     }),
-    [session, user, initializing]
+    [session, user, initializing, refreshUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

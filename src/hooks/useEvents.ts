@@ -10,7 +10,6 @@ import {
   UserEventCardRow,
   VEventWithFullDetails,
 } from '~/types/event.types';
-import { TOKEN_QUERY_KEYS } from './useTokens';
 
 export const EVENT_KEYS = {
   events: ['events'] as const,
@@ -34,7 +33,7 @@ export function useUserEvents(limit?: number) {
         .from('v_user_events')
         .select('*')
         .order('event_status', { ascending: false })
-        .order('starts_at', { ascending: false });
+        .order('starts_at', { ascending: true });
       if (limit) q = q.limit(limit);
       const { data, error } = await q;
       if (error) throw error;
@@ -105,9 +104,7 @@ export function useCheckIn() {
       return true;
     },
     onSuccess: (_res, eventId) => {
-      // re-fetch the stuff that depends on check-ins and balance
-      qc.invalidateQueries({ queryKey: TOKEN_QUERY_KEYS.balance(userId ?? undefined) });
-      qc.invalidateQueries({ queryKey: TOKEN_QUERY_KEYS.transactions(userId ?? undefined) });
+      qc.invalidateQueries({ queryKey: EVENT_KEYS.eventById(eventId) });
       qc.invalidateQueries({ queryKey: EVENT_KEYS.checkIn(userId) });
       qc.invalidateQueries({ queryKey: EVENT_KEYS.checkIn(eventId) });
     },
@@ -123,6 +120,7 @@ export function useEvents() {
         .from('events')
         .select('*')
         .is('deleted_at', null)
+        .gte('starts_at', nowIso)
         .order('starts_at', { ascending: true });
       if (error) throw error;
       return data as EventRow[];
@@ -132,7 +130,7 @@ export function useEvents() {
 
 export function useEventById(id: string) {
   return useQuery<VEventWithFullDetails>({
-    queryKey: ['events', 'eventById', id],
+    queryKey: EVENT_KEYS.eventById(id),
     enabled: !!id,
     queryFn: async () => {
       const { data, error } = await supabase

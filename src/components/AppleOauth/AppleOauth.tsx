@@ -7,7 +7,7 @@ export function AppleOauth() {
       <AppleAuthentication.AppleAuthenticationButton
         buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
         buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-        cornerRadius={5}
+        cornerRadius={24}
         style={styles.button}
         onPress={async () => {
           try {
@@ -33,12 +33,10 @@ export function AppleOauth() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: '100%',
   },
   button: {
-    width: 380,
-    height: 44,
+    width: '100%',
+    height: 52,
   },
 });

@@ -3,16 +3,16 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import dayjs from 'dayjs';
 import { Dimensions, FlatList, StyleSheet, View } from 'react-native';
-import { Flex, Image, Pressable, Text } from '~/components/ui';
+import { Button, Flex, Image, Pressable, Text } from '~/components/ui';
 import { Spinner } from '~/components/ui/spinner';
 import { useUserEvents } from '~/hooks';
 import type { UserEventCardRow } from '~/types/event.types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '../ui/icon';
-import { Calendar, Clock, MapPin } from 'lucide-react-native';
-import { Map } from '../Map/Map';
+import { Calendar, Clock, MapPin, TicketX } from 'lucide-react-native';
 import { UserCheckInQr } from '../UserCheckInQr/UserCheckInQr';
 import { RootStackParamList } from '~/types/navigation.types';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SCREEN_W = Dimensions.get('window').width;
 const CARD_W = Math.min(400, Math.round(SCREEN_W * 0.9));
@@ -27,6 +27,13 @@ export function UserEventCheckInList() {
     (item: UserEventCardRow, index: number) => item.id ?? `event-${index}`,
     []
   );
+
+  const handlePressNavigateToViewEvent = () => {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Home' as never }],
+    });
+  };
 
   const renderItem = useCallback(
     ({ item }: { item: UserEventCardRow }) => (
@@ -45,17 +52,6 @@ export function UserEventCheckInList() {
           shadowRadius: 10,
           elevation: 6,
         }}>
-        {/* {showOverlay && (
-        <View
-          pointerEvents="none"
-          className="absolute inset-0 z-50 h-full w-full items-center justify-start rounded-2xl bg-black/50">
-          <View className="mt-3 rounded-full bg-black/60 px-5 py-1.5">
-            <Text bold size="xl" className={cn(isCanceled ? 'text-amber-500' : 'text-red-500')}>
-              {overlayLabel}
-            </Text>
-          </View>
-        </View>
-      )} */}
         <View style={{ borderRadius: 16, overflow: 'hidden' }}>
           <Image
             source={item?.cover_img ? { uri: item.cover_img } : undefined}
@@ -79,41 +75,17 @@ export function UserEventCheckInList() {
             </Flex>
             <Flex direction="row" align="center" gap={2}>
               <Icon as={Clock} size={'lg'} className="text-typography-light" />
-              <Text size="lg">
-                {dayjs(item.starts_at).format('h:mm A')} - {dayjs(item.ends_at).format('h:mm A')}
-              </Text>
+              <Text size="lg">{dayjs(item.starts_at).format('h:mm A')}</Text>
             </Flex>
           </Flex>
           <Flex direction="row" align="center" gap={2}>
             <Icon as={MapPin} size={'lg'} className="text-typography-light" />
             <Text size="lg">{item.location_text}</Text>
           </Flex>
-          <Map
-            height={150}
-            rounded
-            location={{
-              latitude: item.latitude ?? undefined,
-              longitude: item.longitude ?? undefined,
-            }}
-          />
 
           <Flex align="center" className="mt-10">
             <UserCheckInQr eventId={item.id!} size={160} />
           </Flex>
-
-          {/* {isCheckedIn && !loadingAvatar && !isPast && (
-          <Flex align="center" gap={4} className="mt-16">
-            <Image
-              alt="image of the user"
-              className=" h-24 w-24 border-4 border-secondary"
-              rounded="full"
-              source={avatar?.[0] ?? ''}
-            />
-            <Text size="2xl" bold className="text-typography-light">
-              {user?.first_name} {user?.last_name}
-            </Text>
-          </Flex>
-        )} */}
         </Flex>
       </Pressable>
     ),
@@ -122,14 +94,31 @@ export function UserEventCheckInList() {
 
   if (eventsLoading) {
     return (
-      <View className="h-56 items-center justify-center">
-        <Spinner />
-      </View>
+      <SafeAreaView className="h-full bg-background-dark">
+        <Flex flex justify="center" align="center">
+          <Spinner color={'white'} />
+        </Flex>
+      </SafeAreaView>
     );
   }
 
   if (!events?.length) {
-    return <View className="h-40 items-center justify-center"></View>;
+    return (
+      <SafeAreaView className="h-full bg-background-dark">
+        <Flex align="center" className="m-auto" gap={4}>
+          <Flex align="center">
+            <TicketX size={48} color={'white'} />
+            <Text bold size="xl">
+              Looks like your calendar’s clear
+            </Text>
+            <Text size="sm">Time to find something worth showing up for.</Text>
+          </Flex>
+          <Button className="rounded-lg" onPress={handlePressNavigateToViewEvent}>
+            <Text bold>Find Events</Text>
+          </Button>
+        </Flex>
+      </SafeAreaView>
+    );
   }
 
   return (
