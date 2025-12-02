@@ -6,7 +6,7 @@ import {
   BottomSheetView,
 } from '@gorhom/bottom-sheet';
 import dayjs from 'dayjs';
-import { Minus, Plus } from 'lucide-react-native';
+import { Minus, Plus, ArrowRight } from 'lucide-react-native';
 import { ScrollView } from 'react-native';
 import { Box, Button, Flex, Pressable, Text } from '~/components/ui';
 import { usePurchaseTokens, useTokenBalance, useTokenTransactions } from '~/hooks';
@@ -125,6 +125,7 @@ export function WalletScreen() {
                   <>
                     {tokenTransactions?.map((transaction) => {
                       const isSpend = transaction.kind === 'spend' || transaction.amount < 0;
+                      const isRefund = transaction.kind === 'refund';
                       const amount = transaction.amount ?? 0;
                       const formattedAmount =
                         amount > 0 ? `+${amount}` : amount < 0 ? `${amount}` : '0';
@@ -138,6 +139,10 @@ export function WalletScreen() {
                             <Box className="mr-4 rounded-full bg-red-300 p-3">
                               <Minus color={'#ef4444'} size={24} />
                             </Box>
+                          ) : isRefund ? (
+                            <Box className="mr-4 rounded-full bg-yellow-200 p-3">
+                              <ArrowRight color={'#ca8a04'} size={24} />
+                            </Box>
                           ) : (
                             <Box className="mr-4 rounded-full bg-green-300 p-3">
                               <Plus color={'#16a34a'} size={24} />
@@ -149,7 +154,9 @@ export function WalletScreen() {
                           </Flex>
                           <Text
                             size="xl"
-                            className={isSpend ? 'text-red-500' : 'text-green-500'}
+                            className={
+                              isRefund ? 'text-yellow-600' : isSpend ? 'text-red-500' : 'text-green-500'
+                            }
                             weight="600">
                             {formattedAmount}
                           </Text>
