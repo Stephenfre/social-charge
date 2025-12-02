@@ -8,7 +8,7 @@ import { Alert, Modal, Pressable, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EventCard } from '~/components/EventCard/EventCard';
 
-import { Badge, Box, Button, Flex, Image, Text } from '~/components/ui';
+import { Badge, Box, Button, Divider, Flex, Image, Text } from '~/components/ui';
 import { Icon } from '~/components/ui/icon';
 import { Spinner } from '~/components/ui/spinner';
 import {
@@ -112,12 +112,7 @@ export function ViewEventScreen() {
       }
 
       setShowRsvpModal(false);
-      Alert.alert(
-        'RSVP Confirmed',
-        tokenCost > 0
-          ? `Your RSVP is confirmed. ${tokenCost} credits have been deducted from your balance.`
-          : 'Your RSVP is confirmed.'
-      );
+      Alert.alert('RSVP Confirmed', 'Your RSVP is confirmed.');
     } catch (error) {
       if (tokensSpent) {
         try {
@@ -194,6 +189,18 @@ export function ViewEventScreen() {
     );
   }
 
+  const eventDateDisplay = event.starts_at
+    ? dayjs(event.starts_at).format('MMM D, YYYY')
+    : 'Date TBD';
+  const eventTimeDisplay =
+    event.starts_at && event.ends_at ? `${dayjs(event.starts_at).format('h:mm A')}` : 'Time TBD';
+  const eventLocationDisplay = event.location_text ?? null;
+  const primaryHost = event.event_hosts?.[0];
+  const hostNameDisplay =
+    primaryHost && (primaryHost.first_name || primaryHost.last_name)
+      ? `${primaryHost.first_name ?? ''} ${primaryHost.last_name ?? ''}`.trim()
+      : null;
+
   return (
     <Flex flex className="bg-background-dark">
       <Flex className="relative">
@@ -244,10 +251,7 @@ export function ViewEventScreen() {
                 </Flex>
                 <Flex direction="row" align="center" gap={2}>
                   <Icon as={Clock} size={'lg'} className="text-typography-light" />
-                  <Text size="lg">
-                    {dayjs(event.starts_at).format('h:mm A')} -{' '}
-                    {dayjs(event.ends_at).format('h:mm A')}
-                  </Text>
+                  <Text size="lg">{dayjs(event.starts_at).format('h:mm A')}</Text>
                 </Flex>
                 <Flex direction="row" align="center" gap={2}>
                   <Icon as={MapPin} size={'lg'} className="text-typography-light" />
@@ -403,6 +407,10 @@ export function ViewEventScreen() {
         onConfirm={handleConfirmRsvp}
         isProcessing={creatingRsvp || isConfirmingRsvp}
         eventTitle={event.title ?? ''}
+        eventDate={eventDateDisplay}
+        eventTimeRange={eventTimeDisplay}
+        eventLocation={eventLocationDisplay}
+        hostName={hostNameDisplay ?? undefined}
         tokenCost={tokenCost}
         tokenBalance={currentBalance}
         projectedBalance={projectedBalance}
@@ -427,7 +435,7 @@ function RsvpButton({
   return (
     <Button
       variant="primary"
-      className={cn('h-14 w-full bg-primary-700', canEdit && 'w-[48%]')}
+      className={cn('h-14 w-full rounded-lg bg-primary-700', canEdit && 'w-[48%]')}
       onPress={onPress}
       disabled={isLoading}>
       <Text bold size="lg" className="text-white dark:text-black">
@@ -443,6 +451,10 @@ type ConfirmationProps = {
   onConfirm: () => void | Promise<void>;
   isProcessing: boolean;
   eventTitle: string;
+  eventDate: string;
+  eventTimeRange: string;
+  eventLocation?: string | null;
+  hostName?: string | null;
   tokenCost: number;
   tokenBalance: number;
   projectedBalance: number;
@@ -456,12 +468,18 @@ function RsvpConfirmationModal({
   onConfirm,
   isProcessing,
   eventTitle,
+  eventDate,
+  eventTimeRange,
+  eventLocation,
+  hostName,
   tokenCost,
   tokenBalance,
   projectedBalance,
   balanceLoading,
   errorMessage,
 }: ConfirmationProps) {
+  const costLine = [{ label: 'Event', value: eventTitle }];
+
   return (
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onCancel}>
       <Flex className="relative flex-1 items-center justify-center bg-black/70 px-6">
@@ -471,47 +489,68 @@ function RsvpConfirmationModal({
           disabled={isProcessing}
           accessibilityRole="button"
         />
-        <Flex className="w-full max-w-md rounded-2xl bg-background-dark p-6" gap={4}>
-          <Text bold size="2xl">
-            Confirm RSVP
-          </Text>
-          <Text>
-            You are about to RSVP for <Text bold>{eventTitle}</Text>.
-          </Text>
-          <Flex gap={2} className="rounded-xl bg-background-dark p-4">
-            <Flex direction="row" justify="space-between">
-              <Text bold>Credits Required</Text>
-              <Text bold>{tokenCost}</Text>
-            </Flex>
-            <Flex direction="row" justify="space-between">
-              <Text bold>Current Balance</Text>
-              <Text bold>{balanceLoading ? 'Loading...' : tokenBalance}</Text>
-            </Flex>
-            <Flex direction="row" justify="space-between">
-              <Text bold>Balance After RSVP</Text>
-              <Text bold className={projectedBalance < 0 ? 'text-alert-500' : ''}>
-                {balanceLoading ? 'Loading...' : projectedBalance}
-              </Text>
+        <Flex className="w-full max-w-md rounded-xl bg-background py-6" gap={4}>
+          <Flex direction="row" justify="space-between" align="center" className=" px-4">
+            <Text bold size="xl" className="text-white">
+              RSVP Detail
+            </Text>
+            <Text className="text-primary-600" onPress={onCancel}>
+              Cancel
+            </Text>
+          </Flex>
+          <Divider className="bg-background-800/20" />
+
+          <Flex gap={3} className="rounded-2xl p-4">
+            <Flex gap={4}>
+              {costLine.map((item) => (
+                <DetailRow key={item.label} label={item.label} value={item.value} />
+              ))}
+              <DetailRow label="Date" value={eventDate} />
+              <DetailRow label="Time" value={eventTimeRange} />
+              {eventLocation ? <DetailRow label="Location" value={eventLocation} /> : null}
+              {hostName ? <DetailRow label="Host" value={hostName} /> : null}
             </Flex>
           </Flex>
-          {errorMessage ? (
-            <Text alert>{errorMessage}</Text>
-          ) : projectedBalance < 0 && !balanceLoading ? (
-            <Text alert>You do not have enough credits to complete this RSVP.</Text>
-          ) : null}
-          <Flex direction="row" gap={4}>
-            <Button variant="outline" className="flex-1" onPress={onCancel} disabled={isProcessing}>
-              <Text bold>Cancel</Text>
-            </Button>
+          <View className="px-4">
+            <Divider className="bg-background-800/20" />
+          </View>
+          <Flex gap={4} className="rounded-2xl p-4">
+            <Flex gap={2}>
+              <Flex direction="row" justify="space-between">
+                <Text className="text-white">Tokens Required</Text>
+                <Text bold className="text-white">
+                  {tokenCost}
+                </Text>
+              </Flex>
+              <Flex direction="row" justify="space-between">
+                <Text className="text-white">Current Balance</Text>
+                <Text className="text-white">{balanceLoading ? 'Loading…' : tokenBalance}</Text>
+              </Flex>
+              <Flex direction="row" justify="space-between" align="center">
+                <Text className="text-white">Balance After RSVP</Text>
+
+                <Text className={cn(projectedBalance < 0 ? 'text-red-600' : 'text-green-600')}>
+                  {balanceLoading ? 'Loading…' : `${projectedBalance}`}
+                </Text>
+              </Flex>
+            </Flex>
+          </Flex>
+
+          <Flex className="px-4">
+            {errorMessage ? (
+              <Text alert>{errorMessage}</Text>
+            ) : projectedBalance < 0 && !balanceLoading ? (
+              <Text alert>You do not have enough credits to complete this RSVP.</Text>
+            ) : null}
             <Button
-              className="flex-1 bg-background-500"
+              className="h-14 rounded-lg bg-primary-600"
               onPress={onConfirm}
               disabled={isProcessing || balanceLoading || projectedBalance < 0}>
               {isProcessing ? (
                 <Spinner />
               ) : (
-                <Text bold size="lg">
-                  Confirm
+                <Text bold size="lg" className="text-white">
+                  Confirm RSVP
                 </Text>
               )}
             </Button>
@@ -519,6 +558,15 @@ function RsvpConfirmationModal({
         </Flex>
       </Flex>
     </Modal>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <Flex direction="row" justify="space-between" align="center">
+      <Text className="text-white">{label}</Text>
+      <Text className="max-w-[60%] text-right text-white">{value}</Text>
+    </Flex>
   );
 }
 

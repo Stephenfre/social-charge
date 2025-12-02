@@ -119,11 +119,7 @@ export function EventCheckInScreen() {
   }
 
   const formattedDate = startsAt ? startsAt.format('ddd, MMM DD') : null;
-  const formattedTimeRange = startsAt
-    ? `${startsAt.format('h:mm A')}${
-        event.ends_at ? ` - ${dayjs(event.ends_at).format('h:mm A')}` : ''
-      }`
-    : null;
+  const formattedTimeRange = startsAt ? `${startsAt.format('h:mm A')}` : null;
   const mapLocation = {
     latitude: event.latitude ?? undefined,
     longitude: event.longitude ?? undefined,

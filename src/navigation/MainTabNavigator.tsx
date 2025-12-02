@@ -194,7 +194,7 @@ function Tabs() {
         component={HomeStackNavigator}
         options={{
           tabBarLabel: () => null,
-          tabBarIcon: () => <Icon as={HomeIcon} size="2xl" className="text-typography-light" />,
+          tabBarIcon: () => <Icon as={HomeIcon} size="xl" className="text-typography-light" />,
           tabBarStyle: baseTabBar,
         }}
       />
@@ -204,7 +204,7 @@ function Tabs() {
         component={CheckInEventStackNavigator}
         options={{
           tabBarLabel: () => null,
-          tabBarIcon: () => <Icon as={TicketCheck} size="2xl" className="text-typography-light" />,
+          tabBarIcon: () => <Icon as={TicketCheck} size="xl" className="text-typography-light" />,
           tabBarStyle: baseTabBar,
         }}
       />
@@ -222,7 +222,7 @@ function Tabs() {
           })}
           options={{
             tabBarLabel: () => null,
-            tabBarIcon: () => <Icon as={AddIcon} size="2xl" className="text-typography-light" />,
+            tabBarIcon: () => <Icon as={AddIcon} size="xl" className="text-typography-light" />,
             tabBarStyle: baseTabBar,
           }}
         />
@@ -233,7 +233,7 @@ function Tabs() {
         component={WalletStackNavigator}
         options={{
           tabBarLabel: () => null,
-          tabBarIcon: () => <Icon as={WalletIcon} size="2xl" className="text-typography-light" />,
+          tabBarIcon: () => <Icon as={WalletIcon} size="xl" className="text-typography-light" />,
           tabBarStyle: baseTabBar,
         }}
       />
@@ -243,7 +243,7 @@ function Tabs() {
         component={ProfileStackNavigator}
         options={{
           tabBarLabel: () => null,
-          tabBarIcon: () => <Icon as={User} size="2xl" className="text-typography-light" />,
+          tabBarIcon: () => <Icon as={User} size="xl" className="text-typography-light" />,
           tabBarStyle: baseTabBar,
         }}
       />

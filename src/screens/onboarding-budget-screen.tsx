@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, ButtonText, Flex, Pressable, Text } from '~/components/ui';
 import { cn } from '~/utils/cn';
@@ -78,85 +78,97 @@ export function OnboardingBudgetScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background-dark px-4">
-      <Flex flex={1} gap={8}>
-        <Flex gap={3} className="pt-6">
-          <OnboardingProgress currentStep={3} />
-          <Text size="4xl" bold>
-            When it comes to events...
-          </Text>
-          <Text className="text-gray-300">On average, I like to spend...</Text>
-        </Flex>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <Flex flex={1} gap={8}>
+          <Flex gap={3} className="pt-6">
+            <OnboardingProgress currentStep={4} totalSteps={5} />
+            <Text size="4xl" bold>
+              When it comes to events...
+            </Text>
+          </Flex>
 
-        <Flex gap={3}>
-          {SPEND_OPTIONS.map(({ id, label, range, badge, colors }) => {
-            const selected = selectedSpend === id;
-            return (
-              <Pressable
-                key={id}
-                onPress={() => setSelectedSpend(id)}
-                className={cn(
-                  'rounded-2xl px-4 py-3',
-                  selected ? `${colors}` : 'border border-white/10 bg-white/5'
-                )}>
-                <Flex direction="row" align="center" justify="space-between">
-                  <Flex direction="row" align="center" gap={3}>
-                    <Flex
-                      align="center"
-                      justify="center"
-                      className={cn(
-                        'h-8 w-8 rounded-full bg-white/20',
-                        selected ? 'opacity-100' : 'opacity-60'
-                      )}>
-                      <Text bold>{badge}</Text>
-                    </Flex>
-                    <Flex>
-                      <Text size="lg" bold className={selected ? 'text-white' : undefined}>
-                        {label}
-                      </Text>
-                      <Text className="text-gray-200">{range}</Text>
-                    </Flex>
-                  </Flex>
-                </Flex>
-              </Pressable>
-            );
-          })}
-        </Flex>
-
-        <Flex gap={2}>
-          <Text className="text-gray-300">My style is usually...</Text>
           <Flex gap={3}>
-            {STYLE_OPTIONS.map(({ id, label, Icon }) => {
-              const selected = selectedStyle === id;
+            <Text bold size="lg" className="text-gray-300">
+              On average, I like to spend...
+            </Text>
+
+            {SPEND_OPTIONS.map(({ id, label, range, badge, colors }) => {
+              const selected = selectedSpend === id;
               return (
                 <Pressable
                   key={id}
-                  onPress={() => setSelectedStyle(id)}
+                  onPress={() => setSelectedSpend(id)}
                   className={cn(
-                    'rounded-2xl border px-4 py-3',
-                    selected ? 'border-white bg-white' : 'border-white/10 bg-white/5'
+                    'rounded-2xl px-4 py-3',
+                    selected ? `${colors}` : 'border border-white/10 '
                   )}>
-                  <Flex direction="row" align="center" gap={3}>
-                    <Icon size={18} color={selected ? '#0F1012' : '#E4E4E7'} />
-                    <Text className={cn(selected && 'text-black')} bold>
-                      {label}
-                    </Text>
+                  <Flex direction="row" align="center" justify="space-between">
+                    <Flex direction="row" align="center" gap={3}>
+                      <Flex
+                        align="center"
+                        justify="center"
+                        className={cn(
+                          'h-8 w-8 rounded-full bg-white/20',
+                          selected ? 'opacity-100' : 'opacity-60'
+                        )}>
+                        <Text bold>{badge}</Text>
+                      </Flex>
+                      <Flex>
+                        <Text size="lg" bold className={selected ? 'text-white' : undefined}>
+                          {label}
+                        </Text>
+                        <Text className="text-gray-200">{range}</Text>
+                      </Flex>
+                    </Flex>
                   </Flex>
                 </Pressable>
               );
             })}
           </Flex>
+
+          <Flex gap={2}>
+            <Text bold size="lg" className="text-gray-300">
+              My style is usually...
+            </Text>
+            <Flex gap={3}>
+              {STYLE_OPTIONS.map(({ id, label, Icon }) => {
+                const selected = selectedStyle === id;
+                return (
+                  <Pressable
+                    key={id}
+                    onPress={() => setSelectedStyle(id)}
+                    className={cn(
+                      'rounded-2xl border px-4 py-3',
+                      selected ? 'border-secondary' : 'border-white/10'
+                    )}>
+                    <Flex direction="row" align="center" gap={3}>
+                      <Icon size={18} color={'#FFFF'} />
+                      <Text className="text-white" bold>
+                        {label}
+                      </Text>
+                    </Flex>
+                  </Pressable>
+                );
+              })}
+            </Flex>
+          </Flex>
+
+          <Flex className="flex-1" />
+
+          <Button
+            size="xl"
+            className={cn(
+              'h-14 w-full rounded-xl bg-secondary-500',
+              !userId || (saving && 'bg-gray-500')
+            )}
+            disabled={!userId || saving}
+            onPress={handleFinish}>
+            <Text size="lg" weight="600" className="text-white">
+              Continue
+            </Text>
+          </Button>
         </Flex>
-
-        <Flex className="flex-1" />
-
-        <Button
-          size="xl"
-          className="mb-6 h-16 rounded-2xl"
-          disabled={!userId || saving}
-          onPress={handleFinish}>
-          <ButtonText className="text-xl">Next</ButtonText>
-        </Button>
-      </Flex>
+      </ScrollView>
     </SafeAreaView>
   );
 }

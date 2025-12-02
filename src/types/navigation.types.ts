@@ -31,10 +31,10 @@ export type RootStackParamList = {
   Welcome: undefined;
   Register: undefined;
   RegisterUserName: undefined;
-  RegisterUserBirthDate: undefined;
-  RegisterUserLocation: undefined;
   Interest: undefined;
   SignIn: undefined;
+  Terms: undefined;
+  Privacy: undefined;
   HomeIndex: undefined;
   ProfileIndex: undefined;
   'Profile Settings': undefined;

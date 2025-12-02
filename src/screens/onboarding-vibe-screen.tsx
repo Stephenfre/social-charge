@@ -50,7 +50,7 @@ export function OnboardingVibeScreen() {
     <SafeAreaView className="flex-1 bg-background-dark px-4">
       <Flex flex={1} gap={8}>
         <Flex gap={3} className="pt-6">
-          <OnboardingProgress currentStep={4} />
+          <OnboardingProgress currentStep={5} totalSteps={5} />
           <Text size="4xl" bold>
             What's your vibe?
           </Text>
@@ -66,11 +66,11 @@ export function OnboardingVibeScreen() {
                 onPress={() => handleSelect(slug)}
                 className={cn(
                   'rounded-2xl border px-4 py-4',
-                  active ? 'border-white bg-white/10' : 'border-white/10 bg-white/5'
+                  active ? 'border-secondary' : 'border-white/10 '
                 )}>
                 <Flex direction="row" align="center" gap={3}>
-                  <Text className="text-2xl">{emoji}</Text>
-                  <Text size="lg" bold className={active ? 'text-white' : undefined}>
+                  <Text size="lg">{emoji}</Text>
+                  <Text size="lg" bold={active} className={active ? 'text-white' : undefined}>
                     {label}
                   </Text>
                 </Flex>
@@ -81,10 +81,12 @@ export function OnboardingVibeScreen() {
 
         <Button
           size="xl"
-          className="mb-4 h-16 rounded-2xl"
+          className={cn('h-14 w-full rounded-xl bg-secondary-500', !canContinue && 'bg-gray-500')}
           disabled={!canContinue}
           onPress={handleFinish}>
-          <ButtonText className="text-xl">Finish</ButtonText>
+          <Text size="lg" weight="600" className="text-white">
+            Finish
+          </Text>
         </Button>
       </Flex>
     </SafeAreaView>

@@ -3,8 +3,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, ButtonText, Flex, Text } from '~/components/ui';
 import { useAuth } from '~/providers/AuthProvider';
 import { supabase } from '~/lib/supabase';
-import { useNavigation } from '@react-navigation/native';
-import type { NavigationProp } from '~/types/navigation';
 import { Alert } from 'react-native';
 
 const PLACEHOLDER_CARDS = [
@@ -15,7 +13,6 @@ const PLACEHOLDER_CARDS = [
 
 export function OnboardingCompletionScreen() {
   const { userId, refreshUser } = useAuth();
-  const navigation = useNavigation<NavigationProp<'OnboardingComplete'>>();
   const [loading, setLoading] = useState(false);
 
   const handleFinish = useCallback(async () => {
@@ -26,21 +23,23 @@ export function OnboardingCompletionScreen() {
       if (error) throw error;
       await supabase
         .from('user_onboarding_profile')
-        .upsert({ user_id: userId, completed: true, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+        .upsert(
+          { user_id: userId, completed: true, updated_at: new Date().toISOString() },
+          { onConflict: 'user_id' }
+        );
       await refreshUser();
-      navigation.reset({ index: 0, routes: [{ name: 'Root' }] });
     } catch (error) {
       Alert.alert('Something went wrong', 'Please try again.');
       console.error('Onboarding completion failed', error);
     } finally {
       setLoading(false);
     }
-  }, [loading, navigation, refreshUser, userId]);
+  }, [loading, refreshUser, userId]);
 
   return (
     <SafeAreaView className="flex-1 bg-background-dark px-4">
       <Flex flex={1} justify="center" gap={6}>
-        <Flex gap={3} className="rounded-3xl bg-white/5 p-6">
+        <Flex gap={3} className="rounded-3xl p-6">
           <Text size="4xl" bold>
             Awesome 🎉
           </Text>
@@ -48,12 +47,17 @@ export function OnboardingCompletionScreen() {
             We've personalized your events feed to match your vibe. Get ready to meet amazing people
             and try new things!
           </Text>
-          <Button className="mt-2 h-14 rounded-2xl" onPress={handleFinish} disabled={!userId || loading}>
-            <ButtonText className="text-lg">Show Me My Events 🚀</ButtonText>
+          <Button
+            className="mt-2 h-14 rounded-2xl"
+            onPress={handleFinish}
+            disabled={!userId || loading}>
+            <Text bold size="lg">
+              Show Me My Events
+            </Text>
           </Button>
         </Flex>
 
-        <Flex direction="row" justify="space-between" gap={4}>
+        {/* <Flex direction="row" justify="space-between" gap={4}>
           {PLACEHOLDER_CARDS.map(({ emoji, title }) => (
             <Flex
               key={title}
@@ -66,7 +70,7 @@ export function OnboardingCompletionScreen() {
               </Text>
             </Flex>
           ))}
-        </Flex>
+        </Flex> */}
       </Flex>
     </SafeAreaView>
   );

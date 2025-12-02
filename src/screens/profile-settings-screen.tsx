@@ -6,6 +6,7 @@ import { Box, Button, Flex, Pressable, Text } from '~/components/ui';
 import { Icon } from '~/components/ui/icon';
 import {
   Bell,
+  FileText,
   FileWarning,
   Gem,
   HelpCircle,
@@ -42,72 +43,72 @@ const settingsSections: {
         accentBg: '#EFE7FF',
         accentColor: '#6C3FB6',
       },
-      {
-        id: 'contact',
-        label: 'Contact Information',
-        description: 'Manage your email and phone number',
-        icon: Mail,
-        accentBg: '#E3F2FD',
-        accentColor: '#1D4ED8',
-      },
-      {
-        id: 'password',
-        label: 'Password',
-        description: 'Change your password',
-        icon: Lock,
-        accentBg: '#E0F2F1',
-        accentColor: '#00796B',
-      },
-      {
-        id: 'membership',
-        label: 'Membership',
-        description: 'See perks and levels',
-        icon: Gem,
-        accentBg: '#FFF0EB',
-        accentColor: '#F97316',
-      },
+      // {
+      //   id: 'contact',
+      //   label: 'Contact Information',
+      //   description: 'Manage your email and phone number',
+      //   icon: Mail,
+      //   accentBg: '#E3F2FD',
+      //   accentColor: '#1D4ED8',
+      // },
+      // {
+      //   id: 'password',
+      //   label: 'Password',
+      //   description: 'Change your password',
+      //   icon: Lock,
+      //   accentBg: '#E0F2F1',
+      //   accentColor: '#00796B',
+      // },
+      // {
+      //   id: 'membership',
+      //   label: 'Membership',
+      //   description: 'See perks and levels',
+      //   icon: Gem,
+      //   accentBg: '#FFF0EB',
+      //   accentColor: '#F97316',
+      // },
     ],
   },
-  {
-    title: 'Preferences',
-    items: [
-      {
-        id: 'notifications',
-        label: 'Notifications',
-        description: 'Customize your notification settings',
-        icon: Bell,
-        accentBg: '#E8F5E9',
-        accentColor: '#388E3C',
-      },
-      {
-        id: 'privacy',
-        label: 'Privacy',
-        description: 'Adjust your privacy settings',
-        icon: Shield,
-        accentBg: '#F1F8E9',
-        accentColor: '#689F38',
-      },
-    ],
-  },
+  // {
+  //   title: 'Preferences',
+  //   items: [
+  //     {
+  //       id: 'notifications',
+  //       label: 'Notifications',
+  //       description: 'Customize your notification settings',
+  //       icon: Bell,
+  //       accentBg: '#E8F5E9',
+  //       accentColor: '#388E3C',
+  //     },
+  //     {
+  //       id: 'privacy',
+  //       label: 'Privacy',
+  //       description: 'Adjust your privacy settings',
+  //       icon: Shield,
+  //       accentBg: '#F1F8E9',
+  //       accentColor: '#689F38',
+  //     },
+  //   ],
+  // },
   {
     title: 'Support',
     items: [
-      {
-        id: 'help',
-        label: 'Help Center',
-        description: 'Get help with the app',
-        icon: HelpCircle,
-        accentBg: '#FFF3E0',
-        accentColor: '#FB8C00',
-      },
-      {
-        id: 'contact',
-        label: 'Contact Us',
-        description: 'Contact us for support',
-        icon: Phone,
-        accentBg: '#FFF8E1',
-        accentColor: '#F59E0B',
-      },
+      // {
+      //   id: 'help',
+      //   label: 'Help Center',
+      //   description: 'Get help with the app',
+      //   icon: HelpCircle,
+      //   accentBg: '#FFF3E0',
+      //   accentColor: '#FB8C00',
+      // },
+      // {
+      //   id: 'contact',
+      //   label: 'Contact Us',
+      //   description: 'Contact us for support',
+      //   icon: Phone,
+      //   accentBg: '#FFF8E1',
+      //   accentColor: '#F59E0B',
+      // },
       {
         id: 'terms',
         label: 'Terms & Conditions',
@@ -117,10 +118,10 @@ const settingsSections: {
         accentColor: '#C2185B',
       },
       {
-        id: 'privacy-policy',
+        id: 'privacy',
         label: 'Privacy Policy',
         description: 'Read our privacy policy',
-        icon: FileWarning,
+        icon: FileText,
         accentBg: '#F3E5F5',
         accentColor: '#8E24AA',
       },
@@ -132,8 +133,18 @@ export function ProfileSettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const handleItemPress = (id: string) => {
-    if (id === 'membership') {
-      navigation.navigate('Membership');
+    switch (id) {
+      case 'membership':
+        navigation.navigate('Membership');
+        break;
+      case 'terms':
+        navigation.navigate('Terms');
+        break;
+      case 'privacy':
+        navigation.navigate('Privacy');
+        break;
+      default:
+        break;
     }
   };
 
@@ -142,42 +153,50 @@ export function ProfileSettingsScreen() {
   };
 
   return (
-    <View className="flex-1 bg-background-dark">
-      <ScrollView className="px-4 py-6" contentContainerStyle={{ gap: 24, paddingBottom: 32 }}>
-        {settingsSections.map((section) => (
-          <Box key={section.title}>
-            <Text bold size="xl" className="mb-3">
-              {section.title}
+    <Flex flex className="bg-background-dark">
+      <ScrollView className="px-4 py-6" contentContainerStyle={{ flex: 1, paddingBottom: 32 }}>
+        <Flex flex justify="space-between">
+          <Flex>
+            {settingsSections.map((section) => (
+              <Box key={section.title}>
+                <Text bold size="xl" className="">
+                  {section.title}
+                </Text>
+                <Box className="rounded-3xl p-1">
+                  {section.items.map((item) => (
+                    <React.Fragment key={item.id}>
+                      <Pressable
+                        onPress={() => handleItemPress(item.id)}
+                        className="flex-row items-center justify-between  py-4">
+                        <Flex direction="row" align="center" className="flex-1" gap={3}>
+                          <Box
+                            className="h-12 w-12 items-center justify-center rounded-full"
+                            style={{ backgroundColor: item.accentBg }}>
+                            <Icon as={item.icon} size="lg" style={{ color: item.accentColor }} />
+                          </Box>
+                          <Flex gap={1} className="flex-1">
+                            <Text bold size="md">
+                              {item.label}
+                            </Text>
+                            <Text size="md">{item.description}</Text>
+                          </Flex>
+                        </Flex>
+                      </Pressable>
+                    </React.Fragment>
+                  ))}
+                </Box>
+              </Box>
+            ))}
+          </Flex>
+          <Button
+            className="rounded-lg border-2 border-error-500 bg-background-dark"
+            onPress={logout}>
+            <Text className="text-error-500" bold>
+              Logout
             </Text>
-            <Box className="rounded-3xl p-1">
-              {section.items.map((item) => (
-                <React.Fragment key={item.id}>
-                  <Pressable
-                    onPress={() => handleItemPress(item.id)}
-                    className="flex-row items-center justify-between  py-4">
-                    <Flex direction="row" align="center" className="flex-1" gap={3}>
-                      <Box
-                        className="h-12 w-12 items-center justify-center rounded-full"
-                        style={{ backgroundColor: item.accentBg }}>
-                        <Icon as={item.icon} size="lg" style={{ color: item.accentColor }} />
-                      </Box>
-                      <Flex gap={1} className="flex-1">
-                        <Text bold size="md">
-                          {item.label}
-                        </Text>
-                        <Text size="md">{item.description}</Text>
-                      </Flex>
-                    </Flex>
-                  </Pressable>
-                </React.Fragment>
-              ))}
-            </Box>
-          </Box>
-        ))}
-        <Button onPress={logout}>
-          <Text>Logout</Text>
-        </Button>
+          </Button>
+        </Flex>
       </ScrollView>
-    </View>
+    </Flex>
   );
 }

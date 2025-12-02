@@ -109,7 +109,6 @@ export function HomeScreen() {
                             event={event}
                             onPress={() => handlePressNavigateToViewEvent(event.id)}
                             rounded="md"
-                            favorited
                             imageSize="cover"
                             className="pr-2"
                           />
@@ -165,7 +164,6 @@ export function HomeScreen() {
                               event={event}
                               onPress={() => handlePressNavigateToViewEvent(event.id)}
                               rounded="md"
-                              favorited
                               imageSize="xl-wide"
                               className="pr-2"
                               showTitle={false}
@@ -262,29 +260,18 @@ export function HomeScreen() {
                                   showToken={false}
                                 />
                                 <Flex>
-                                  <Text size="md" weight="600" className="w-40">
+                                  <Text size="md" weight="600">
                                     {event?.title}
                                   </Text>
-                                  <Flex direction="row">
+                                  <Flex>
+                                    <Text size="sm" className="text-gray-500">
+                                      {event?.location_text}
+                                    </Text>
                                     <Text size="sm" className="text-gray-500">
                                       {dayjs(event?.starts_at).format('ddd MM/DD')}
                                     </Text>
-                                    {/* <Text size="sm" className="text-gray-500">
-                                      {' '}
-                                      {event?.location_text}
-                                    </Text> */}
                                   </Flex>
                                 </Flex>
-                                {/* 
-                                TODO: IF A USER IS RSVP'D TO A EVENT SHOW A CHECK MARK? */}
-                                <Pressable className="w-16 rounded-xl bg-background-900 p-2">
-                                  <Flex justify="center" align="center">
-                                    <Text className="text-primary" weight="500">
-                                      RSVP
-                                    </Text>
-                                    <Text weight="500">{event?.token_cost}SB</Text>
-                                  </Flex>
-                                </Pressable>
                               </Flex>
                             </Pressable>
                           ))}
@@ -333,7 +320,6 @@ export function HomeScreen() {
                             event={event}
                             onPress={() => handlePressNavigateToViewEvent(event.id)}
                             rounded="md"
-                            favorited
                             imageSize="cover"
                             className="pr-2"
                           />

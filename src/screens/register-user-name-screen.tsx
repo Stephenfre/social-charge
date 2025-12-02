@@ -1,5 +1,5 @@
 import { useForm, Controller } from 'react-hook-form';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Flex, InputField, Text, Input, Image, Pressable } from '~/components/ui';
 import * as z from 'zod';
@@ -11,9 +11,13 @@ import { KeyboardAvoidingView, Platform, Alert, ScrollView } from 'react-native'
 import { ArrowLeft, User } from 'lucide-react-native';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import 'react-native-get-random-values';
 import { cn } from '~/utils/cn';
 import { DatePickerInput } from '~/components';
+import { useSignUp } from '~/hooks';
+import { useAuth } from '~/providers/AuthProvider';
+import dayjs from 'dayjs';
 
 interface FormData {
   firstName: string;
@@ -25,8 +29,23 @@ interface FormData {
 
 export function RegisterUserNameScreen() {
   const navigation = useNavigation<NavigationProp<'RegisterUserName'>>();
-  const { firstName, lastName, nickName, profileImageUri, gender, birthDate, setField } =
-    useSignupWizard();
+  const {
+    email,
+    password,
+    firstName,
+    lastName,
+    nickName,
+    profileImageUri,
+    gender,
+    birthDate,
+    city,
+    state,
+    country,
+    setField,
+    reset,
+  } = useSignupWizard();
+  const { user, refreshUser } = useAuth();
+  const signUp = useSignUp();
 
   // helpers
   const nonEmpty = (label: string) =>
@@ -159,16 +178,117 @@ export function RegisterUserNameScreen() {
     return `${month}/${day}/${year}`;
   };
 
-  const onSubmit = handleSubmit(({ firstName, lastName, nickName, gender, birthDate }) => {
-    setField('firstName', firstName);
-    setField('lastName', lastName);
-    setField('nickName', nickName);
-    setField('gender', gender);
-    setField('birthDate', birthDate);
-    navigation.navigate('RegisterUserLocation');
-  });
-
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
+
+  const captureLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Location Permission',
+          'We could not access your location. Enable permissions later in Settings to get nearby events.'
+        );
+        setField('city', '');
+        setField('state', '');
+        setField('country', '');
+        return { city: '', state: '', country: '' };
+      }
+
+      const current = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      const [geo] = await Location.reverseGeocodeAsync({
+        latitude: current.coords.latitude,
+        longitude: current.coords.longitude,
+      });
+
+      const locationData = {
+        city: geo?.city ?? '',
+        state: geo?.region ?? '',
+        country: geo?.country ?? '',
+      };
+
+      setField('city', locationData.city);
+      setField('state', locationData.state);
+      setField('country', locationData.country);
+      return locationData;
+    } catch (error) {
+      console.warn('Location capture failed', error);
+      Alert.alert('Location Error', 'Unable to fetch your location right now.');
+      setField('city', '');
+      setField('state', '');
+      setField('country', '');
+      return { city: '', state: '', country: '' };
+    }
+  };
+
+  useEffect(() => {
+    if (!pendingUserId || !user || user.id !== pendingUserId) return;
+
+    if (user.onboarded === false) {
+      navigation.reset({ index: 0, routes: [{ name: 'OnboardingStart' }] });
+    } else {
+      navigation.reset({ index: 0, routes: [{ name: 'Root' }] });
+    }
+
+    setPendingUserId(null);
+  }, [navigation, pendingUserId, user]);
+
+  const onSubmit = handleSubmit(async (values) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      setField('firstName', values.firstName);
+      setField('lastName', values.lastName);
+      setField('nickName', values.nickName);
+      setField('gender', values.gender);
+      setField('birthDate', values.birthDate);
+      const locationData = await captureLocation();
+      const [month, day, year] = values.birthDate.split('/').map(Number);
+      const birthDateObj = dayjs(`${year}-${month}-${day}`);
+      const age = birthDateObj.isValid() ? dayjs().diff(birthDateObj, 'year') : null;
+
+      signUp.mutate(
+        {
+          email,
+          password,
+          firstName: values.firstName,
+          lastName: values.lastName,
+          city: locationData?.city ?? city ?? '',
+          state: locationData?.state ?? state ?? '',
+          country: locationData?.country ?? country ?? '',
+          birthDate: values.birthDate,
+          age,
+          profileImageUri,
+          selectedInterests: [],
+          skipInterests: true,
+        },
+        {
+          onSuccess: async ({ needsEmailConfirm, userId }) => {
+            reset();
+            if (needsEmailConfirm) {
+              navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
+              return;
+            }
+            if (userId) {
+              setPendingUserId(userId);
+              await refreshUser();
+            }
+          },
+          onError: async (err: any) => {
+            Alert.alert(err?.message ?? 'An unexpected error occurred. Please try again.');
+            console.error('Signup error:', err);
+          },
+          onSettled: () => setIsSubmitting(false),
+        }
+      );
+    } catch (error) {
+      setIsSubmitting(false);
+    }
+  });
 
   const inputClassName =
     'relative rounded-xl border border-background-500 bg-transparent px-2 pt-1 pb-1 data-[focus=true]:border-secondary/50 overflow-visible';
@@ -419,9 +539,12 @@ export function RegisterUserNameScreen() {
               </Flex>
             </Flex>
           </ScrollView>
-          <Button className="h-14 w-full rounded-xl bg-secondary-500" onPress={onSubmit}>
+          <Button
+            className="h-14 w-full rounded-xl bg-secondary-500"
+            onPress={onSubmit}
+            disabled={isSubmitting}>
             <Text size="lg" weight="600" className="text-white">
-              Continue
+              {isSubmitting ? 'Saving...' : 'Continue'}
             </Text>
           </Button>
         </Flex>

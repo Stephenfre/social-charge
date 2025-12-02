@@ -16,11 +16,12 @@ export function OnboardingProgress({
   return (
     <Flex gap={2} className="w-full">
       <Flex direction="row" justify="space-between" align="center">
-        <Text className="text-gray-300">{label ?? `Step ${currentStep} of ${totalSteps}`}</Text>
-        <Text className="text-gray-400">{Math.round(percent)}%</Text>
+        <Text className="text-gray-300"></Text>
+        <Text className="text-gray-300">{label ?? `${currentStep} of ${totalSteps}`}</Text>
+        <Text className="text-gray-400"></Text>
       </Flex>
       <Flex className="h-2 w-full rounded-full bg-white/10">
-        <Flex className="h-full rounded-full bg-white" style={{ width: `${percent}%` }} />
+        <Flex className="h-full rounded-full bg-secondary" style={{ width: `${percent}%` }} />
       </Flex>
     </Flex>
   );

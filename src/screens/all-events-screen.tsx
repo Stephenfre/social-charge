@@ -35,27 +35,26 @@ export function AllEventsScreen() {
     const now = dayjs();
     const startOfMonth = now.startOf('month');
     const endOfMonth = now.endOf('month');
-    const daysInMonth = now.daysInMonth();
-    const firstSundayOffset = (7 - startOfMonth.day()) % 7;
-    const firstSunday = startOfMonth.add(firstSundayOffset, 'day');
 
     const options: RangeOption[] = [];
-    let weekStart = firstSunday;
-    let index = 0;
+    let weekStart = startOfMonth.startOf('week');
+    if (startOfMonth.day() === 0) {
+      weekStart = weekStart.subtract(1, 'day');
+    }
 
+    let index = 0;
     while (weekStart.isBefore(endOfMonth) || weekStart.isSame(endOfMonth, 'day')) {
       const rawWeekEnd = weekStart.add(6, 'day');
-      const filterStartDate = index === 0 ? startOfMonth : weekStart;
+      const filterStartDate = weekStart.isBefore(startOfMonth) ? startOfMonth : weekStart;
       const filterEndDate = rawWeekEnd.isAfter(endOfMonth) ? endOfMonth : rawWeekEnd;
 
-      const labelStartText =
-        weekStart.month() === startOfMonth.month()
+      const spansMonths = rawWeekEnd.month() !== weekStart.month();
+      const labelStartText = spansMonths
+        ? weekStart.format('MMM D')
+        : weekStart.month() === startOfMonth.month()
           ? `${weekStart.date()}`
           : `${weekStart.format('MMM')} ${weekStart.date()}`;
-      const labelEndText =
-        rawWeekEnd.month() === weekStart.month()
-          ? `${rawWeekEnd.date()}`
-          : `${rawWeekEnd.format('MMM')} ${rawWeekEnd.date()}`;
+      const labelEndText = `${rawWeekEnd.date()}`;
 
       options.push({
         id: index,
@@ -63,28 +62,12 @@ export function AllEventsScreen() {
         endDate: filterEndDate.endOf('day'),
         labelStartText,
         labelEndText,
-        startDayName: 'Sun',
-        endDayName: 'Sat',
+        startDayName: weekStart.format('ddd'),
+        endDayName: rawWeekEnd.format('ddd'),
       });
 
       weekStart = weekStart.add(7, 'day');
       index += 1;
-    }
-
-    const currentDayOfMonth = now.date();
-    const daysRemaining = daysInMonth - currentDayOfMonth + 1;
-    if (daysRemaining <= 7) {
-      const nextMonthStart = startOfMonth.add(1, 'month');
-      const nextMonthEnd = nextMonthStart.add(6, 'day');
-      options.push({
-        id: index,
-        startDate: nextMonthStart.startOf('day'),
-        endDate: nextMonthEnd.endOf('day'),
-        labelStartText: `${nextMonthStart.format('MMM')} ${nextMonthStart.date()}`,
-        labelEndText: `${nextMonthEnd.format('MMM')} ${nextMonthEnd.date()}`,
-        startDayName: 'Sun',
-        endDayName: 'Sat',
-      });
     }
 
     return options;
@@ -143,7 +126,7 @@ export function AllEventsScreen() {
     <View className="flex-1 bg-background-dark">
       <ScrollView className="p-4" showsVerticalScrollIndicator={false}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
-          <Flex direction="row" gap={2} align="center">
+          <Flex direction="row" align="center">
             {rangeOptions.map((option) => {
               const isSelected = selectedRanges.includes(option.id);
               return (

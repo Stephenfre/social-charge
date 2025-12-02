@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, ScrollView } from 'react-native';
+import { Alert, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, ButtonText, Flex, Pressable, Text } from '~/components/ui';
 import { Handshake, PartyPopper, Sparkles, Users } from 'lucide-react-native';
@@ -73,71 +73,57 @@ export function OnboardingStartScreen() {
     }
   }, [navigation, saving, selectedReason, userId]);
 
-  const selectedCopy = useMemo(() => {
-    const reason = REASONS.find((r) => r.id === selectedReason);
-    return reason ? `You are here to ${reason.title.toLowerCase()}.` : 'Pick one to continue.';
-  }, [selectedReason]);
-
   return (
     <SafeAreaView className="flex-1 bg-background-dark px-4">
       <Flex flex={1} direction="column" justify="space-between" gap={10}>
-        <Flex direction="column" gap={2} className="pt-4">
-          <OnboardingProgress currentStep={1} />
-          <Text size="4xl" bold>
-            Why are you here?
-          </Text>
-          <Text className="text-gray-300">
-            We will tailor the rest of onboarding so every screen feels relevant.
-          </Text>
-        </Flex>
-
-        <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
-          <Flex direction="column" gap={4}>
-            {REASONS.map(({ id, title, description, Icon }) => {
-              const isSelected = selectedReason === id;
-              return (
-                <Pressable
-                  key={id}
-                  onPress={() => setSelectedReason(id)}
-                  className={cn(
-                    'rounded-3xl border border-white/10 bg-white/5 p-4',
-                    isSelected && 'border-white bg-white'
-                  )}>
-                  <Flex direction="row" align="center" gap={4}>
-                    <Flex
-                      align="center"
-                      justify="center"
-                      className={cn(
-                        'h-12 w-12 rounded-2xl bg-white/10',
-                        isSelected && 'bg-black/5'
-                      )}>
-                      <Icon size={24} color={isSelected ? '#0F1012' : '#f4f4f5'} />
-                    </Flex>
-                    <Flex gap={1}>
-                      <Text size="xl" bold className={cn(isSelected && 'text-black')}>
-                        {title}
-                      </Text>
-                      <Text className={cn('text-gray-300', isSelected && 'text-gray-600')}>
-                        {description}
-                      </Text>
-                    </Flex>
-                  </Flex>
-                </Pressable>
-              );
-            })}
+        <Flex direction="column" className="pt-4">
+          <OnboardingProgress currentStep={1} totalSteps={5} />
+          <Flex>
+            <Text size="2xl" bold className="mt-4">
+              Why are you here?
+            </Text>
+            <Text size="sm" className="text-gray-300">
+              We will tailor the rest of onboarding so every screen feels relevant.
+            </Text>
           </Flex>
-        </ScrollView>
-
-        <Flex direction="column" gap={2} className="pb-6">
-          <Text className="text-gray-400">{selectedCopy}</Text>
-          <Button
-            size="xl"
-            className={cn('h-16 rounded-2xl', !selectedReason && 'bg-gray-500')}
-            disabled={!selectedReason || saving || !userId}
-            onPress={handleContinue}>
-            <ButtonText className="text-xl">Continue</ButtonText>
-          </Button>
         </Flex>
+
+        <Flex direction="column" gap={10}>
+          {REASONS.map(({ id, title, description }) => {
+            const isSelected = selectedReason === id;
+            return (
+              <Pressable
+                key={id}
+                onPress={() => setSelectedReason(id)}
+                className={cn(
+                  'rounded-xl border border-white/10  p-4',
+                  isSelected && 'border-secondary'
+                )}>
+                <Flex direction="row" align="center" gap={4}>
+                  <Flex gap={1}>
+                    <Text size="lg" bold>
+                      {title}
+                    </Text>
+                    <Text className={cn('text-gray-300')}>{description}</Text>
+                  </Flex>
+                </Flex>
+              </Pressable>
+            );
+          })}
+        </Flex>
+
+        <Button
+          size="xl"
+          className={cn(
+            'h-14 w-full rounded-xl bg-secondary-500',
+            !selectedReason && 'bg-gray-500'
+          )}
+          disabled={!selectedReason || saving || !userId}
+          onPress={handleContinue}>
+          <Text size="lg" weight="600" className="text-white">
+            Continue
+          </Text>
+        </Button>
       </Flex>
     </SafeAreaView>
   );

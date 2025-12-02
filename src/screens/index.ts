@@ -1,8 +1,6 @@
 export { WelcomeScreen } from './welcome-screen';
 export { RegisterScreen } from './register-screen';
 export { RegisterUserNameScreen } from './register-user-name-screen';
-export { RegisterUserBirthDateScreen } from './register-user-birthdate-screen';
-export { RegisterLocationScreen } from './register-user-location-screen';
 export { SignInScreen } from './sign-in-screen';
 export { InterestScreen } from './interest-screen';
 export { HomeScreen } from './home-screen';
@@ -22,3 +20,5 @@ export { OnboardingNightScreen } from './onboarding-night-screen';
 export { OnboardingBudgetScreen } from './onboarding-budget-screen';
 export { OnboardingVibeScreen } from './onboarding-vibe-screen';
 export { OnboardingCompletionScreen } from './onboarding-completion-screen';
+export { TermsAndConditionsScreen } from './terms-and-conditions-screen';
+export { PrivacyPolicyScreen } from './privacy-policy-screen';

@@ -3,15 +3,16 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import dayjs from 'dayjs';
 import { Dimensions, FlatList, StyleSheet, View } from 'react-native';
-import { Flex, Image, Pressable, Text } from '~/components/ui';
+import { Button, Flex, Image, Pressable, Text } from '~/components/ui';
 import { Spinner } from '~/components/ui/spinner';
 import { useUserEvents } from '~/hooks';
 import type { UserEventCardRow } from '~/types/event.types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '../ui/icon';
-import { Calendar, Clock, MapPin } from 'lucide-react-native';
+import { Calendar, Clock, MapPin, TicketX } from 'lucide-react-native';
 import { UserCheckInQr } from '../UserCheckInQr/UserCheckInQr';
 import { RootStackParamList } from '~/types/navigation.types';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SCREEN_W = Dimensions.get('window').width;
 const CARD_W = Math.min(400, Math.round(SCREEN_W * 0.9));
@@ -26,6 +27,13 @@ export function UserEventCheckInList() {
     (item: UserEventCardRow, index: number) => item.id ?? `event-${index}`,
     []
   );
+
+  const handlePressNavigateToViewEvent = () => {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Home' as never }],
+    });
+  };
 
   const renderItem = useCallback(
     ({ item }: { item: UserEventCardRow }) => (
@@ -67,9 +75,7 @@ export function UserEventCheckInList() {
             </Flex>
             <Flex direction="row" align="center" gap={2}>
               <Icon as={Clock} size={'lg'} className="text-typography-light" />
-              <Text size="lg">
-                {dayjs(item.starts_at).format('h:mm A')} - {dayjs(item.ends_at).format('h:mm A')}
-              </Text>
+              <Text size="lg">{dayjs(item.starts_at).format('h:mm A')}</Text>
             </Flex>
           </Flex>
           <Flex direction="row" align="center" gap={2}>
@@ -88,14 +94,31 @@ export function UserEventCheckInList() {
 
   if (eventsLoading) {
     return (
-      <View className="h-56 items-center justify-center">
-        <Spinner />
-      </View>
+      <SafeAreaView className="h-full bg-background-dark">
+        <Flex flex justify="center" align="center">
+          <Spinner color={'white'} />
+        </Flex>
+      </SafeAreaView>
     );
   }
 
   if (!events?.length) {
-    return <View className="h-40 items-center justify-center"></View>;
+    return (
+      <SafeAreaView className="h-full bg-background-dark">
+        <Flex align="center" className="m-auto" gap={4}>
+          <Flex align="center">
+            <TicketX size={48} color={'white'} />
+            <Text bold size="xl">
+              Looks like your calendar’s clear
+            </Text>
+            <Text size="sm">Time to find something worth showing up for.</Text>
+          </Flex>
+          <Button className="rounded-lg" onPress={handlePressNavigateToViewEvent}>
+            <Text bold>Find Events</Text>
+          </Button>
+        </Flex>
+      </SafeAreaView>
+    );
   }
 
   return (

@@ -1,26 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Flex, Text } from '~/components/ui';
 import { useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '~/types/navigation';
 import { supabase } from '~/lib/supabase';
-import { useSignupWizard } from '~/hooks/useSignupWizard';
-import { Alert } from 'react-native';
-import dayjs from 'dayjs';
 
-import { ChevronRight } from 'lucide-react-native';
 import { cn } from '~/utils/cn';
 import { INTEREST_CATEGORIES } from '~/constants/interests';
-import { useSignUp } from '~/hooks';
 import { categoryEmojis, interestEmojis } from '~/utils/const';
 import { useAuth } from '~/providers/AuthProvider';
+import { Constants, Enums } from '~/types/database.types';
+import { OnboardingProgress } from '~/components/OnboardingProgress';
 
 export function InterestScreen() {
   const navigation = useNavigation<NavigationProp<'Interest'>>();
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
-  const signUp = useSignUp();
-  const { user, refreshUser } = useAuth();
-  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
+  const { userId } = useAuth();
+  const [saving, setSaving] = useState(false);
 
   const handleSelectInterest = (interest: string) => {
     if (selectedInterests.includes(interest)) {
@@ -32,86 +29,49 @@ export function InterestScreen() {
     setSelectedInterests((prev) => [...prev, interest]);
   };
 
-  const {
-    email,
-    password,
-    firstName,
-    lastName,
-    city,
-    state,
-    country,
-    birthDate,
-    profileImageUri,
-    reset,
-  } = useSignupWizard();
+  const validInterests = useMemo(
+    () => Constants.public.Enums.interest as readonly Enums<'interest'>[],
+    []
+  );
+  const isInterest = useCallback(
+    (interest: string): interest is Enums<'interest'> =>
+      validInterests.includes(interest as Enums<'interest'>),
+    [validInterests]
+  );
 
-  const [month, day, year] = birthDate?.split('/').map(Number) || [];
-  const birthDateObj = dayjs(`${year}-${month}-${day}`);
-  const getAge = dayjs().diff(birthDateObj, 'year');
-
-  useEffect(() => {
-    if (!pendingUserId || !user || user.id !== pendingUserId) return;
-
-    if (user.onboarded === false) {
-      navigation.reset({ index: 0, routes: [{ name: 'OnboardingStart' }] });
-    } else {
-      navigation.reset({ index: 0, routes: [{ name: 'Root' }] });
-    }
-
-    setPendingUserId(null);
-  }, [navigation, pendingUserId, user]);
-
-  const onFinish = async (skip: boolean) => {
-    signUp.mutate(
-      {
-        email,
-        password,
-        firstName,
-        lastName,
-        city,
-        state,
-        country,
-        birthDate,
-        age: getAge,
-        profileImageUri,
-        selectedInterests,
-        skipInterests: skip,
-      },
-      {
-        onSuccess: async ({ needsEmailConfirm, userId }) => {
-          reset();
-          if (needsEmailConfirm) {
-            navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
-            return;
-          }
-
-          if (userId) {
-            setPendingUserId(userId);
-            await refreshUser();
-          }
-        },
-        onError: async (err: any) => {
-          // sign out on failure to keep state clean (mirrors your original)
-          try {
-            await supabase.auth.signOut();
-          } catch {}
-          Alert.alert(err?.message ?? 'An unexpected error occurred. Please try again.');
-          console.error('Signup error:', err);
-        },
+  const onFinish = async () => {
+    if (!userId || saving) return;
+    setSaving(true);
+    try {
+      await supabase.from('user_interests').delete().eq('user_id', userId);
+      if (selectedInterests.length) {
+        const payload = selectedInterests
+          .filter(isInterest)
+          .map((interest) => ({ user_id: userId, interest }));
+        if (payload.length) {
+          await supabase.from('user_interests').insert(payload);
+        }
       }
-    );
+      navigation.navigate('OnboardingBudget');
+    } catch (error) {
+      Alert.alert('Something went wrong', 'Unable to save your interests right now.');
+      console.error('Failed to save interests', error);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <SafeAreaView className="h-full bg-background-dark px-4">
       <Flex flex={1} direction="column" justify="space-between">
+        <Flex gap={3} className="pt-4">
+          <OnboardingProgress currentStep={3} totalSteps={5} />
+          <Text size="4xl" bold>
+            Choose 5 things worth showing up for
+          </Text>
+          <Text>Choose what excites you and meet people who feel the same.</Text>
+        </Flex>
         <Flex flex={1} justify="center" gap={10}>
-          <Flex direction="column" align="center" gap={2}>
-            <Text size="4xl" bold>
-              Choose 5 things worth showing up for
-            </Text>
-            <Text>Choose what excites you and meet people who feel the same.</Text>
-          </Flex>
           {Object.entries(INTEREST_CATEGORIES).map(([category, interests]) => (
             <Flex key={category} direction="column" gap={2}>
               <Text size="lg" bold className="capitalize">
@@ -137,20 +97,18 @@ export function InterestScreen() {
           ))}
         </Flex>
         <Flex direction="row" justify="space-between" align="center">
-          <Button variant="link" onPress={() => onFinish(true)}>
-            <Text>Skip</Text>
-          </Button>
           <Flex direction="row" align="center" gap={4}>
-            <Text weight="500">Selected {selectedInterests.length}/5</Text>
             <Button
-              size="lg"
-              disabled={selectedInterests.length < 5}
+              size="xl"
               className={cn(
-                'h-16 w-16 rounded-full',
-                selectedInterests.length < 5 && 'bg-gray-400'
+                'h-14 w-full rounded-xl bg-secondary-500',
+                selectedInterests.length < 5 && 'bg-background-500'
               )}
-              onPress={() => onFinish(false)}>
-              <ChevronRight size={35} color="white" />
+              disabled={selectedInterests.length < 5}
+              onPress={onFinish}>
+              <Text size="lg" weight="600" className="text-white">
+                Next
+              </Text>
             </Button>
           </Flex>
         </Flex>
