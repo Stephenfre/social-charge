@@ -13,6 +13,13 @@ export function RegisterScreen() {
     navigation.navigate('RegisterUserName');
   };
 
+  const inputClassName =
+    'relative rounded-xl border border-background-500 bg-transparent px-2 py-1 data-[focus=true]:border-primary/50 overflow-visible';
+  const floatingLabelWrapperClass = '-top-0.5';
+  const floatingLabelTextClass = 'pointer-events-none bg-background-dark px-1 text-xs';
+  const inputFieldClassName =
+    'text-typography-light placeholder:text-typography-light/60 bg-background-dark text-base placeholder:text-base pb-1';
+
   const socialButtons = [
     { id: 'google', label: 'Google', accent: '#EA4335' },
     { id: 'facebook', label: 'Facebook', accent: '#1877F2' },
@@ -44,13 +51,18 @@ export function RegisterScreen() {
               onNavigate={onNext}
               from="register"
               showFieldLabels
+              floatingLabel
               submitButtonLabel="Create Account"
-              buttonClassName="rounded-xl bg-secondary-500"
-              inputSize="xl"
-              inputClassName="rounded-xl border-background-100 bg-white"
+              buttonClassName="rounded-xl bg-primary-500"
+              inputSize="3xl"
+              inputClassName={inputClassName}
+              inputFieldClassName={inputFieldClassName}
+              floatingLabelWrapperClassName={floatingLabelWrapperClass}
+              floatingLabelTextClassName={floatingLabelTextClass}
+              floatingLabelActiveTextClassName="text-primary-500"
             />
 
-            <Flex direction="row" align="center" className="my-6 w-full">
+            {/* <Flex direction="row" align="center" className="my-6 w-full">
               <Divider className="flex-1" />
               <Text className="px-4 text-typography-light">Or, Sign up with</Text>
               <Divider className="flex-1" />
@@ -72,16 +84,13 @@ export function RegisterScreen() {
                   </Text>
                 </Pressable>
               ))}
-            </Flex>
+            </Flex> */}
           </Flex>
 
           <Flex align="center" className="pb-4">
             <Text className="text-typography-light">
               Already have an account?{' '}
-              <Text
-                bold
-                className="text-secondary-500"
-                onPress={() => navigation.navigate('SignIn')}>
+              <Text bold className="text-primary-500" onPress={() => navigation.navigate('SignIn')}>
                 Login.
               </Text>
             </Text>

@@ -1,19 +1,19 @@
 import { useCallback, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, ButtonText, Flex, Text } from '~/components/ui';
+import { Button, Flex, Text } from '~/components/ui';
 import { useAuth } from '~/providers/AuthProvider';
 import { supabase } from '~/lib/supabase';
 import { Alert } from 'react-native';
-
-const PLACEHOLDER_CARDS = [
-  { emoji: '🎤', title: 'Live Music' },
-  { emoji: '🍷', title: 'Dinner Party' },
-  { emoji: '🌿', title: 'Outdoor Escape' },
-];
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { NavigationProp } from '~/types/navigation';
+import { RootRoute } from '~/types/navigation.types';
 
 export function OnboardingCompletionScreen() {
   const { userId, refreshUser } = useAuth();
   const [loading, setLoading] = useState(false);
+  const navigation = useNavigation<NavigationProp<'OnboardingComplete'>>();
+  const route = useRoute<RootRoute<'OnboardingComplete'>>();
+  const returnToSettings = route.params?.returnToSettings ?? false;
 
   const handleFinish = useCallback(async () => {
     if (!userId || loading) return;
@@ -28,13 +28,40 @@ export function OnboardingCompletionScreen() {
           { onConflict: 'user_id' }
         );
       await refreshUser();
+      if (returnToSettings) {
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'Root' as never,
+              params: {
+                screen: 'Tabs',
+                params: {
+                  screen: 'Profile',
+                  params: {
+                    screen: 'Profile Settings',
+                  },
+                },
+              },
+            } as never,
+          ],
+        });
+        return;
+      }
+      const canResetToRoot = navigation.getState()?.routeNames?.includes('Root');
+      if (canResetToRoot) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Root' as never } as never],
+        });
+      }
     } catch (error) {
       Alert.alert('Something went wrong', 'Please try again.');
       console.error('Onboarding completion failed', error);
     } finally {
       setLoading(false);
     }
-  }, [loading, refreshUser, userId]);
+  }, [loading, navigation, refreshUser, returnToSettings, userId]);
 
   return (
     <SafeAreaView className="flex-1 bg-background-dark px-4">
@@ -48,7 +75,7 @@ export function OnboardingCompletionScreen() {
             and try new things!
           </Text>
           <Button
-            className="mt-2 h-14 rounded-2xl"
+            className="mt-2 h-14 rounded-xl bg-primary"
             onPress={handleFinish}
             disabled={!userId || loading}>
             <Text bold size="lg">
@@ -56,21 +83,6 @@ export function OnboardingCompletionScreen() {
             </Text>
           </Button>
         </Flex>
-
-        {/* <Flex direction="row" justify="space-between" gap={4}>
-          {PLACEHOLDER_CARDS.map(({ emoji, title }) => (
-            <Flex
-              key={title}
-              align="center"
-              justify="center"
-              className="h-40 flex-1 rounded-3xl bg-white/5">
-              <Text className="text-4xl">{emoji}</Text>
-              <Text bold className="mt-2 text-center">
-                {title}
-              </Text>
-            </Flex>
-          ))}
-        </Flex> */}
       </Flex>
     </SafeAreaView>
   );

@@ -225,8 +225,9 @@ export function ViewEventScreen() {
       {/* PERSISTENT BOTTOM SHEET ACTION BAR */}
       <BottomSheet
         index={0}
-        snapPoints={['70%', '90%']}
+        snapPoints={['70%', '75%']}
         enablePanDownToClose={false}
+        enableOverDrag={false}
         handleIndicatorStyle={{ backgroundColor: 'transparent' }}
         backgroundStyle={{
           backgroundColor: '#0F1012',
@@ -235,6 +236,7 @@ export function ViewEventScreen() {
         }}>
         <BottomSheetView
           style={{
+            flex: 1,
             paddingHorizontal: 16,
             paddingBottom: insets.bottom + 120,
           }}>

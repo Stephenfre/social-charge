@@ -1,15 +1,16 @@
-import { useCallback, useState } from 'react';
-import { Alert, ScrollView } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, ButtonText, Flex, Pressable, Text } from '~/components/ui';
+import { Button, Flex, Pressable, Text } from '~/components/ui';
 import { cn } from '~/utils/cn';
 import { useAuth } from '~/providers/AuthProvider';
 import { DollarSign, Star, WalletMinimal, PartyPopper } from 'lucide-react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NavigationProp } from '~/types/navigation';
 import { supabase } from '~/lib/supabase';
 import { Enums } from '~/types/database.types';
 import { OnboardingProgress } from '~/components/OnboardingProgress';
+import { RootRoute } from '~/types/navigation.types';
 
 type SpendOption = {
   id: string;
@@ -39,6 +40,12 @@ const STYLE_MAP: Record<string, Enums<'style_band'>> = {
   exclusive: 'premium_exclusive',
   splurge: 'splurge_big_events',
 };
+const STYLE_REVERSE_MAP = Object.entries(STYLE_MAP).reduce<
+  Record<string, (typeof STYLE_OPTIONS)[number]['id']>
+>((acc, [optionId, enumValue]) => {
+  acc[enumValue] = optionId as (typeof STYLE_OPTIONS)[number]['id'];
+  return acc;
+}, {});
 
 const BUDGET_MAP: Record<string, Enums<'budget_band'>> = {
   budget: 'budget',
@@ -46,6 +53,13 @@ const BUDGET_MAP: Record<string, Enums<'budget_band'>> = {
   premium: 'premium',
   luxury: 'luxury',
 };
+const BUDGET_REVERSE_MAP = Object.entries(BUDGET_MAP).reduce<Record<string, SpendOption['id']>>(
+  (acc, [optionId, enumValue]) => {
+    acc[enumValue] = optionId as SpendOption['id'];
+    return acc;
+  },
+  {}
+);
 
 export function OnboardingBudgetScreen() {
   const navigation = useNavigation<NavigationProp<'OnboardingBudget'>>();
@@ -53,6 +67,54 @@ export function OnboardingBudgetScreen() {
   const [selectedSpend, setSelectedSpend] = useState<string>('budget');
   const [selectedStyle, setSelectedStyle] = useState<string>('value');
   const [saving, setSaving] = useState(false);
+  const route = useRoute<RootRoute<'OnboardingBudget'>>();
+  const editMode = route.params?.editMode ?? false;
+  const returnToSettings = route.params?.returnToSettings ?? false;
+  const [prefillLoading, setPrefillLoading] = useState(editMode);
+
+  useEffect(() => {
+    if (!editMode) return;
+    if (!userId) {
+      setPrefillLoading(false);
+      return;
+    }
+    let isMounted = true;
+    const loadPreferences = async () => {
+      setPrefillLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('user_onboarding_profile')
+          .select('budget_pref, style_pref')
+          .eq('user_id', userId)
+          .maybeSingle();
+        if (!isMounted) return;
+        if (!error && data) {
+          if (data.budget_pref) {
+            const spendId = BUDGET_REVERSE_MAP[data.budget_pref];
+            if (spendId) {
+              setSelectedSpend(spendId);
+            }
+          }
+          if (data.style_pref) {
+            const styleId = STYLE_REVERSE_MAP[data.style_pref];
+            if (styleId) {
+              setSelectedStyle(styleId);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load budget preferences', error);
+      } finally {
+        if (isMounted) {
+          setPrefillLoading(false);
+        }
+      }
+    };
+    loadPreferences();
+    return () => {
+      isMounted = false;
+    };
+  }, [editMode, userId]);
 
   const handleFinish = useCallback(async () => {
     if (!userId || saving) return;
@@ -67,14 +129,25 @@ export function OnboardingBudgetScreen() {
         },
         { onConflict: 'user_id' }
       );
-      navigation.navigate('OnboardingVibe');
+      const nextParams = editMode || returnToSettings ? { editMode, returnToSettings } : undefined;
+      navigation.navigate('OnboardingVibe', nextParams);
     } catch (error) {
       Alert.alert('Something went wrong', 'Please try again.');
       console.error('Failed to save budget preferences', error);
     } finally {
       setSaving(false);
     }
-  }, [navigation, saving, selectedSpend, selectedStyle, userId]);
+  }, [editMode, navigation, returnToSettings, saving, selectedSpend, selectedStyle, userId]);
+
+  if (editMode && prefillLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-background-dark px-4">
+        <Flex flex={1} align="center" justify="center">
+          <ActivityIndicator size="large" />
+        </Flex>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-background-dark px-4">
@@ -139,7 +212,7 @@ export function OnboardingBudgetScreen() {
                     onPress={() => setSelectedStyle(id)}
                     className={cn(
                       'rounded-2xl border px-4 py-3',
-                      selected ? 'border-secondary' : 'border-white/10'
+                      selected ? 'border-primary' : 'border-white/10'
                     )}>
                     <Flex direction="row" align="center" gap={3}>
                       <Icon size={18} color={'#FFFF'} />
@@ -158,10 +231,10 @@ export function OnboardingBudgetScreen() {
           <Button
             size="xl"
             className={cn(
-              'h-14 w-full rounded-xl bg-secondary-500',
-              !userId || (saving && 'bg-gray-500')
+              'h-14 w-full rounded-xl bg-primary-500',
+              (!userId || saving || (editMode && prefillLoading)) && 'bg-gray-500'
             )}
-            disabled={!userId || saving}
+            disabled={!userId || saving || (editMode && prefillLoading)}
             onPress={handleFinish}>
             <Text size="lg" weight="600" className="text-white">
               Continue

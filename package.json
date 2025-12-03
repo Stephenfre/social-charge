@@ -1,5 +1,5 @@
 {
-  "name": "my-expo-app",
+  "name": "social charge",
   "version": "1.0.0",
   "scripts": {
     "android": "DARK_MODE=class expo start --android",

@@ -9,7 +9,7 @@ type AuthCtx = {
   userId: string | null;
   user: UsersRow | null;
   initializing: boolean;
-  refreshUser: () => Promise<void>;
+  refreshUser: () => Promise<UsersRow | null>;
 };
 
 const AuthContext = createContext<AuthCtx>({
@@ -17,7 +17,7 @@ const AuthContext = createContext<AuthCtx>({
   userId: null,
   user: null,
   initializing: true,
-  refreshUser: async () => {},
+  refreshUser: async () => null,
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -29,8 +29,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data, error } = await supabase.from('users').select('*').eq('id', userId).single();
     if (!error && data) {
       setUser(data);
+      return data;
     } else {
       setUser(null);
+      return null;
     }
   }, []);
 
@@ -57,8 +59,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [fetchUser]);
 
   const refreshUser = useCallback(async () => {
-    if (!session?.user?.id) return;
-    await fetchUser(session.user.id);
+    if (!session?.user?.id) return null;
+    return fetchUser(session.user.id);
   }, [session?.user?.id, fetchUser]);
 
   const value = useMemo(

@@ -4,17 +4,19 @@ export type RootStackParamList = {
   Welcome: undefined;
   Register: undefined;
   RegisterUserName: undefined;
-  Interest: undefined;
+  Interest: { editMode?: boolean; returnToSettings?: boolean } | undefined;
   SignIn: undefined;
   Main: undefined;
   Root: undefined;
   Terms: undefined;
   Privacy: undefined;
-  OnboardingStart: undefined;
-  OnboardingNight: { entryReason?: string } | undefined;
-  OnboardingBudget: undefined;
-  OnboardingVibe: undefined;
-  OnboardingComplete: undefined;
+  OnboardingStart: { editMode?: boolean; returnToSettings?: boolean } | undefined;
+  OnboardingNight:
+    | { entryReason?: string; editMode?: boolean; returnToSettings?: boolean }
+    | undefined;
+  OnboardingBudget: { editMode?: boolean; returnToSettings?: boolean } | undefined;
+  OnboardingVibe: { editMode?: boolean; returnToSettings?: boolean } | undefined;
+  OnboardingComplete: { editMode?: boolean; returnToSettings?: boolean } | undefined;
   'Review Event': undefined;
 };
 

@@ -12,7 +12,7 @@ interface FormData {
   password: string;
 }
 
-interface AuthFormProps {
+export interface AuthFormProps {
   onNavigate?: () => void;
   from?: string;
   showFieldLabels?: boolean;
@@ -20,7 +20,12 @@ interface AuthFormProps {
   buttonClassName?: string;
   inputSize?: React.ComponentProps<typeof Input>['size'];
   inputClassName?: string;
+  inputFieldClassName?: string;
   afterFields?: ReactNode;
+  floatingLabel?: boolean;
+  floatingLabelWrapperClassName?: string;
+  floatingLabelTextClassName?: string;
+  floatingLabelActiveTextClassName?: string;
 }
 
 export function AuthForm({
@@ -31,9 +36,15 @@ export function AuthForm({
   buttonClassName,
   inputSize,
   inputClassName,
+  inputFieldClassName,
   afterFields,
+  floatingLabel = false,
+  floatingLabelWrapperClassName,
+  floatingLabelTextClassName,
+  floatingLabelActiveTextClassName,
 }: AuthFormProps) {
   const [showPassword, setShowPassword] = useState<Boolean>(false);
+  const [focusedField, setFocusedField] = useState<'email' | 'password' | null>(null);
   const { email: storedEmail, password: storedPassword, setField } = useSignupWizard();
 
   const formSchema = z
@@ -74,26 +85,44 @@ export function AuthForm({
   };
 
   return (
-    <Flex className="w-full" gap={4}>
+    <Flex className="w-full" gap={8}>
       <Controller
         control={control}
         name="email"
         render={({ field }) => (
-          <Flex className="w-full" gap={2}>
-            {showFieldLabels && (
+          <Flex className="w-full" gap={floatingLabel && showFieldLabels ? 0 : 2}>
+            {showFieldLabels && !floatingLabel && (
               <Text size="sm" bold className="text-typography-light">
                 Email
               </Text>
             )}
             <Input size={inputSize} className={inputClassName}>
+              {showFieldLabels && floatingLabel && (
+                <Text
+                  size="xs"
+                  bold
+                  className={cn(
+                    'absolute left-3 top-0 -translate-y-1/2 bg-background-dark px-1 text-xs text-background-500',
+                    floatingLabelWrapperClassName,
+                    floatingLabelTextClassName,
+                    focusedField === 'email' && floatingLabelActiveTextClassName
+                  )}>
+                  Email
+                </Text>
+              )}
               <InputField
                 placeholder="Email"
                 value={field.value}
                 onChangeText={field.onChange}
-                onBlur={field.onBlur}
+                onBlur={() => {
+                  field.onBlur();
+                  setFocusedField((prev) => (prev === 'email' ? null : prev));
+                }}
+                onFocus={() => setFocusedField('email')}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 textContentType="emailAddress"
+                className={inputFieldClassName}
               />
             </Input>
           </Flex>
@@ -109,22 +138,42 @@ export function AuthForm({
         control={control}
         name="password"
         render={({ field }) => (
-          <Flex className="w-full" gap={2}>
-            {showFieldLabels && (
+          <Flex className="w-full" gap={floatingLabel && showFieldLabels ? 0 : 2}>
+            {showFieldLabels && !floatingLabel && (
               <Text size="sm" bold className="text-typography-light">
                 Password
               </Text>
             )}
             <Input size={inputSize} className={inputClassName}>
+              {showFieldLabels && floatingLabel && (
+                <Text
+                  size="xs"
+                  bold
+                  className={cn(
+                    'absolute left-3 top-0 -translate-y-1/2 bg-background-dark px-1 text-xs text-background-500',
+                    floatingLabelWrapperClassName,
+                    floatingLabelTextClassName,
+                    focusedField === 'password' && floatingLabelActiveTextClassName
+                  )}>
+                  Password
+                </Text>
+              )}
               <InputField
                 placeholder="Password"
                 value={field.value}
                 onChangeText={field.onChange}
-                onBlur={field.onBlur}
+                onBlur={() => {
+                  field.onBlur();
+                  setFocusedField((prev) => (prev === 'password' ? null : prev));
+                }}
+                onFocus={() => setFocusedField('password')}
                 secureTextEntry={showPassword ? false : true}
                 textContentType="password"
+                className={inputFieldClassName}
               />
-              <Pressable className="bg-white p-2" onPress={handleShowPassword}>
+              <Pressable
+                className={cn('p-2', floatingLabel ? 'bg-transparent' : 'bg-white')}
+                onPress={handleShowPassword}>
                 {showPassword ? (
                   <EyeOffIcon size={24} color={'grey'} />
                 ) : (

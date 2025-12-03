@@ -1,22 +1,10 @@
 import React from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Box, Button, Flex, Pressable, Text } from '~/components/ui';
 import { Icon } from '~/components/ui/icon';
-import {
-  Bell,
-  FileText,
-  FileWarning,
-  Gem,
-  HelpCircle,
-  Lock,
-  Mail,
-  Phone,
-  ScrollText,
-  Shield,
-  User,
-} from 'lucide-react-native';
+import { FileText, ScrollText, Sparkles, User } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { RootStackParamList } from '~/types/navigation.types';
 import { supabase } from '~/lib/supabase';
@@ -37,11 +25,19 @@ const settingsSections: {
     items: [
       {
         id: 'profile',
-        label: 'Profile',
+        label: 'Update Profile',
         description: 'Update your profile information',
         icon: User,
         accentBg: '#EFE7FF',
         accentColor: '#6C3FB6',
+      },
+      {
+        id: 'onboarding',
+        label: 'Onboarding Preferences',
+        description: 'Retake onboarding questions to refresh your data',
+        icon: Sparkles,
+        accentBg: '#E0F2FE',
+        accentColor: '#0284C7',
       },
       // {
       //   id: 'contact',
@@ -134,6 +130,12 @@ export function ProfileSettingsScreen() {
 
   const handleItemPress = (id: string) => {
     switch (id) {
+      case 'profile':
+        navigation.navigate('Update Profile');
+        break;
+      case 'onboarding':
+        navigation.navigate('OnboardingStart', { editMode: true, returnToSettings: true });
+        break;
       case 'membership':
         navigation.navigate('Membership');
         break;

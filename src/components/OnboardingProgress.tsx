@@ -21,7 +21,7 @@ export function OnboardingProgress({
         <Text className="text-gray-400"></Text>
       </Flex>
       <Flex className="h-2 w-full rounded-full bg-white/10">
-        <Flex className="h-full rounded-full bg-secondary" style={{ width: `${percent}%` }} />
+        <Flex className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
       </Flex>
     </Flex>
   );

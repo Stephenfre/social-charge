@@ -3,9 +3,8 @@ import { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Flex, InputField, Text, Input, Image, Pressable } from '~/components/ui';
 import * as z from 'zod';
-import { useSignupWizard } from '~/hooks/useSignupWizard';
 import { useNavigation } from '@react-navigation/native';
-import { NavigationProp } from '~/types/navigation';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { KeyboardAvoidingView, Platform, Alert, ScrollView } from 'react-native';
 
 import { ArrowLeft, User } from 'lucide-react-native';
@@ -15,9 +14,10 @@ import * as Location from 'expo-location';
 import 'react-native-get-random-values';
 import { cn } from '~/utils/cn';
 import { DatePickerInput } from '~/components';
-import { useSignUp } from '~/hooks';
+import { useUpdateProfile, useStorageImages } from '~/hooks';
 import { useAuth } from '~/providers/AuthProvider';
 import dayjs from 'dayjs';
+import { RootStackParamList } from '~/types/navigation.types';
 
 interface FormData {
   firstName: string;
@@ -27,26 +27,20 @@ interface FormData {
   birthDate: string;
 }
 
-export function RegisterUserNameScreen() {
-  const navigation = useNavigation<NavigationProp<'RegisterUserName'>>();
-
-  const {
-    email,
-    password,
-    firstName,
-    lastName,
-    nickName,
-    profileImageUri,
-    gender,
-    birthDate,
-    city,
-    state,
-    country,
-    setField,
-    reset,
-  } = useSignupWizard();
+export function UpdateProfileScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user, refreshUser } = useAuth();
-  const signUp = useSignUp();
+  const updateProfile = useUpdateProfile();
+
+  // Get current profile image URL
+  const { data: profileImageUrls } = useStorageImages({
+    bucket: 'avatars',
+    paths: [user?.profile_picture ?? null],
+  });
+  const currentProfileImageUrl = profileImageUrls?.[0] ?? null;
+
+  // Local state for profile image
+  const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
 
   // helpers
   const nonEmpty = (label: string) =>
@@ -95,20 +89,63 @@ export function RegisterUserNameScreen() {
     })
     .required();
 
+  // Format birth_date from database (ISO or legacy MM/DD/YYYY) to MM/DD/YYYY
+  const formatBirthDateForInput = (birthDate?: string | null): string => {
+    if (!birthDate) return '';
+    const trimmed = birthDate.trim();
+    if (!trimmed) return '';
+
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
+      return trimmed;
+    }
+
+    const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (isoMatch) {
+      const [, year, month, day] = isoMatch;
+      return `${month}/${day}/${year}`;
+    }
+
+    const parsedIso = dayjs(trimmed);
+    if (parsedIso.isValid()) {
+      return parsedIso.format('MM/DD/YYYY');
+    }
+
+    const fallbackTime = Date.parse(trimmed);
+    if (!Number.isNaN(fallbackTime)) {
+      return formatBirthDateValue(new Date(fallbackTime));
+    }
+
+    return '';
+  };
+
   const {
     control,
     handleSubmit,
     formState: { errors },
+    reset,
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      firstName,
-      lastName,
-      nickName: nickName ?? '',
-      gender: gender ?? '',
-      birthDate,
+      firstName: user?.first_name ?? '',
+      lastName: user?.last_name ?? '',
+      nickName: '', // Note: nickName is not in the database schema, so we'll leave it empty
+      gender: (user?.gender as string) ?? '',
+      birthDate: formatBirthDateForInput(user?.birth_date),
     },
   });
+
+  // Reset form when user data changes
+  useEffect(() => {
+    if (user) {
+      reset({
+        firstName: user.first_name ?? '',
+        lastName: user.last_name ?? '',
+        nickName: '',
+        gender: (user.gender as string) ?? '',
+        birthDate: formatBirthDateForInput(user.birth_date),
+      });
+    }
+  }, [user, reset]);
 
   const handleImagePick = async (useCamera: boolean = false) => {
     try {
@@ -139,11 +176,10 @@ export function RegisterUserNameScreen() {
 
       if (!result.canceled && result.assets[0]) {
         const uri = result.assets[0].uri;
-        setField('profileImageUri', uri);
+        setProfileImageUri(uri);
       }
     } catch (error) {
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to pick image');
-    } finally {
     }
   };
 
@@ -155,7 +191,7 @@ export function RegisterUserNameScreen() {
     ]);
   };
 
-  const parseBirthDateValue = (input?: string) => {
+  function parseBirthDateValue(input?: string) {
     if (!input) return undefined;
     const [month, day, year] = input.split('/').map(Number);
     if (
@@ -170,18 +206,17 @@ export function RegisterUserNameScreen() {
       return undefined;
     }
     return new Date(year, month - 1, day);
-  };
+  }
 
-  const formatBirthDateValue = (date: Date) => {
+  function formatBirthDateValue(date: Date) {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const year = date.getFullYear();
     return `${month}/${day}/${year}`;
-  };
+  }
 
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
 
   const captureLocation = async () => {
     try {
@@ -191,10 +226,7 @@ export function RegisterUserNameScreen() {
           'Location Permission',
           'We could not access your location. Enable permissions later in Settings to get nearby events.'
         );
-        setField('city', '');
-        setField('state', '');
-        setField('country', '');
-        return { city: '', state: '', country: '' };
+        return { city: user?.city ?? '', state: user?.state ?? '', country: user?.country ?? '' };
       }
 
       const current = await Location.getCurrentPositionAsync({
@@ -207,46 +239,23 @@ export function RegisterUserNameScreen() {
       });
 
       const locationData = {
-        city: geo?.city ?? '',
-        state: geo?.region ?? '',
-        country: geo?.country ?? '',
+        city: geo?.city ?? user?.city ?? '',
+        state: geo?.region ?? user?.state ?? '',
+        country: geo?.country ?? user?.country ?? '',
       };
 
-      setField('city', locationData.city);
-      setField('state', locationData.state);
-      setField('country', locationData.country);
       return locationData;
     } catch (error) {
       console.warn('Location capture failed', error);
       Alert.alert('Location Error', 'Unable to fetch your location right now.');
-      setField('city', '');
-      setField('state', '');
-      setField('country', '');
-      return { city: '', state: '', country: '' };
+      return { city: user?.city ?? '', state: user?.state ?? '', country: user?.country ?? '' };
     }
   };
 
-  useEffect(() => {
-    if (!pendingUserId || !user || user.id !== pendingUserId) return;
-
-    if (user.onboarded === false) {
-      navigation.reset({ index: 0, routes: [{ name: 'OnboardingStart' }] });
-    } else {
-      navigation.reset({ index: 0, routes: [{ name: 'Root' }] });
-    }
-
-    setPendingUserId(null);
-  }, [navigation, pendingUserId, user]);
-
   const onSubmit = handleSubmit(async (values) => {
-    if (isSubmitting) return;
+    if (isSubmitting || !user) return;
     setIsSubmitting(true);
     try {
-      setField('firstName', values.firstName);
-      setField('lastName', values.lastName);
-      setField('nickName', values.nickName);
-      setField('gender', values.gender);
-      setField('birthDate', values.birthDate);
       const locationData = await captureLocation();
       const [month, day, year] = values.birthDate.split('/').map(Number);
       const birthDateObj = dayjs(`${year}-${month}-${day}`);
@@ -258,36 +267,32 @@ export function RegisterUserNameScreen() {
       const birthDateISO = birthDateObj.format('YYYY-MM-DD');
       const age = dayjs().diff(birthDateObj, 'year');
 
-      signUp.mutate(
+      updateProfile.mutate(
         {
-          email,
-          password,
+          userId: user.id,
           firstName: values.firstName,
           lastName: values.lastName,
-          city: locationData?.city ?? city ?? '',
-          state: locationData?.state ?? state ?? '',
-          country: locationData?.country ?? country ?? '',
+          gender: values.gender || null,
+          city: locationData?.city ?? user.city ?? null,
+          state: locationData?.state ?? user.state ?? null,
+          country: locationData?.country ?? user.country ?? null,
           birthDate: birthDateISO,
           age,
-          profileImageUri,
-          selectedInterests: [],
-          skipInterests: true,
+          profileImageUri: profileImageUri,
         },
         {
-          onSuccess: async ({ needsEmailConfirm, userId }) => {
-            reset();
-            if (needsEmailConfirm) {
-              navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
-              return;
-            }
-            if (userId) {
-              setPendingUserId(userId);
-              await refreshUser();
-            }
+          onSuccess: async () => {
+            await refreshUser();
+            Alert.alert('Success', 'Profile updated successfully', [
+              {
+                text: 'OK',
+                onPress: () => navigation.goBack(),
+              },
+            ]);
           },
           onError: async (err: any) => {
-            Alert.alert(err?.message ?? 'An unexpected error occurred. Please try again.');
-            console.error('Signup error:', err);
+            Alert.alert('Error', err?.message ?? 'An unexpected error occurred. Please try again.');
+            console.error('Update profile error:', err);
           },
           onSettled: () => setIsSubmitting(false),
         }
@@ -309,8 +314,11 @@ export function RegisterUserNameScreen() {
   const inputFieldClassName =
     'text-typography-light placeholder:text-typography-light/60 bg-background-dark text-base placeholder:text-base pb-1';
 
+  // Determine which image to show
+  const displayImageUri = profileImageUri || currentProfileImageUrl;
+
   return (
-    <SafeAreaView className="flex-1 bg-background-dark" edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-background-dark" edges={['top']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1">
@@ -326,25 +334,32 @@ export function RegisterUserNameScreen() {
 
               <Flex gap={2}>
                 <Text size="4xl" bold className="text-typography-light">
-                  Tell us about you
+                  Update Profile
                 </Text>
                 <Text className="text-typography-light">
-                  Add a photo and a few details so friends can find you.
+                  Update your profile information and photo.
                 </Text>
               </Flex>
 
               <Flex align="center" className="w-full" gap={6}>
-                {profileImageUri ? (
-                  <Pressable onPress={() => setField('profileImageUri', '')}>
+                {displayImageUri ? (
+                  <Pressable
+                    onPress={() => {
+                      if (profileImageUri) {
+                        setProfileImageUri('');
+                      } else {
+                        chooseImageSource();
+                      }
+                    }}>
                     <Flex align="center" gap={2}>
                       <Image
-                        source={{ uri: profileImageUri }}
+                        source={{ uri: displayImageUri }}
                         rounded="full"
                         alt="Profile picture"
                         className="h-24 w-24"
                       />
                       <Text size="sm" className="text-primary-600">
-                        Remove Photo
+                        {profileImageUri ? 'Remove Photo' : 'Change Photo'}
                       </Text>
                     </Flex>
                   </Pressable>
@@ -547,15 +562,15 @@ export function RegisterUserNameScreen() {
                 />
               </Flex>
             </Flex>
+            <Button
+              className="h-14 w-full rounded-xl bg-primary-500"
+              onPress={onSubmit}
+              disabled={isSubmitting}>
+              <Text size="lg" weight="600" className="text-white">
+                {isSubmitting ? 'Saving...' : 'Save Changes'}
+              </Text>
+            </Button>
           </ScrollView>
-          <Button
-            className="h-14 w-full rounded-xl bg-primary-500"
-            onPress={onSubmit}
-            disabled={isSubmitting}>
-            <Text size="lg" weight="600" className="text-white">
-              {isSubmitting ? 'Saving...' : 'Continue'}
-            </Text>
-          </Button>
         </Flex>
       </KeyboardAvoidingView>
     </SafeAreaView>

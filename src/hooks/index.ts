@@ -3,5 +3,8 @@ export * from './useEvents';
 export * from './useRsvps';
 export * from './useStorageImage';
 export * from './useSignup';
+export * from './useUpdateProfile';
 export * from './useEventCreateStore';
 export * from './useTokens';
+export * from './useNightPreferences';
+export * from './useUserEventGoals';

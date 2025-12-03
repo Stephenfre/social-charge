@@ -1,14 +1,15 @@
-import { useMemo, useState, useCallback } from 'react';
-import { Alert, ScrollView, View } from 'react-native';
+import { useMemo, useState, useCallback, useEffect } from 'react';
+import { ActivityIndicator, Alert, ScrollView } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, ButtonText, Flex, Pressable, Text } from '~/components/ui';
+import { Button, Flex, Pressable, Text } from '~/components/ui';
 import { Beer, Calendar, Coffee, Moon, PartyPopper, Sun, Sunset, Users } from 'lucide-react-native';
 import { cn } from '~/utils/cn';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NavigationProp } from '~/types/navigation';
 import { RootRoute } from '~/types/navigation.types';
 import { useAuth } from '~/providers/AuthProvider';
+import { useNightPreferences } from '~/hooks';
 import { supabase } from '~/lib/supabase';
 import { Enums, TablesInsert } from '~/types/database.types';
 import { OnboardingProgress } from '~/components/OnboardingProgress';
@@ -34,6 +35,15 @@ const DAY_OPTIONS = [
   { id: 'friday', label: 'Friday' },
   { id: 'saturday', label: 'Saturday' },
 ] as const;
+type DayOption = (typeof DAY_OPTIONS)[number];
+type DayId = DayOption['id'];
+
+const normalizeDayValue = (value?: string | null): DayId | null => {
+  if (!value) return null;
+  const lower = value.toLowerCase();
+  const match = DAY_OPTIONS.find((day) => day.id === lower || day.label.toLowerCase() === lower);
+  return match?.id ?? null;
+};
 
 const GROUP_LABELS = ['Solo', 'Duo', 'Crew', 'Party', 'Large'];
 
@@ -42,6 +52,12 @@ const ARCHETYPE_MAP: Record<(typeof VIBE_OPTIONS)[number]['id'], Enums<'social_a
   social: 'social',
   adventure: 'adventurer',
 };
+const ARCHETYPE_TO_OPTION = Object.entries(ARCHETYPE_MAP).reduce<
+  Record<string, (typeof VIBE_OPTIONS)[number]['id']>
+>((acc, [optionId, archetype]) => {
+  acc[archetype] = optionId as (typeof VIBE_OPTIONS)[number]['id'];
+  return acc;
+}, {});
 
 type NightRoute = RootRoute<'OnboardingNight'>;
 
@@ -52,10 +68,17 @@ export function OnboardingNightScreen() {
   const [selectedVibe, setSelectedVibe] = useState<(typeof VIBE_OPTIONS)[number]['id']>('chill');
   const [groupSize, setGroupSize] = useState(3);
   const [selectedTimes, setSelectedTimes] = useState<Enums<'time_bucket'>[]>(['evening']);
-  const [selectedDays, setSelectedDays] = useState<string[]>([DAY_OPTIONS[0].id]);
+  const [selectedDays, setSelectedDays] = useState<DayId[]>([DAY_OPTIONS[0].id]);
   const [submitting, setSubmitting] = useState(false);
 
-  const reasonCopy = useMemo(() => route.params?.entryReason, [route.params?.entryReason]);
+  const editMode = route.params?.editMode ?? false;
+  const returnToSettings = route.params?.returnToSettings ?? false;
+  const {
+    data: nightPreferences,
+    isLoading: nightPrefLoading,
+    error: nightPrefError,
+  } = useNightPreferences({ userId, enabled: editMode });
+  const prefillLoading = editMode && nightPrefLoading;
   const groupLabel = useMemo(() => {
     const idx = Math.min(GROUP_LABELS.length - 1, Math.max(0, Math.round(groupSize) - 1));
     return GROUP_LABELS[idx];
@@ -67,6 +90,55 @@ export function OnboardingNightScreen() {
     }
     return [...current, value];
   }, []);
+
+  useEffect(() => {
+    if (nightPrefError) {
+      console.error('Failed to load night preferences', nightPrefError);
+    }
+  }, [nightPrefError]);
+
+  useEffect(() => {
+    if (!editMode) return;
+    if (!nightPreferences) return;
+
+    const { profile, times, days } = nightPreferences;
+
+    if (profile?.primary_archetype) {
+      const optionId = ARCHETYPE_TO_OPTION[profile.primary_archetype];
+      if (optionId) {
+        setSelectedVibe(optionId);
+      }
+    }
+
+    const savedGroupSize = profile?.preferred_group_size_min ?? profile?.preferred_group_size_max;
+    if (typeof savedGroupSize === 'number' && !Number.isNaN(savedGroupSize)) {
+      setGroupSize(savedGroupSize);
+    }
+
+    if (times.length) {
+      setSelectedTimes(times);
+    }
+
+    if (days.length) {
+      const normalizedDays = Array.from(
+        new Set(
+          days
+            .map((value) => normalizeDayValue(value))
+            .filter((value): value is DayId => Boolean(value))
+        )
+      );
+      if (normalizedDays.length) {
+        setSelectedDays(normalizedDays);
+      }
+    }
+  }, [
+    editMode,
+    nightPreferences,
+    setGroupSize,
+    setSelectedDays,
+    setSelectedTimes,
+    setSelectedVibe,
+  ]);
 
   const handleNext = useCallback(async () => {
     console.log('pressed');
@@ -95,26 +167,51 @@ export function OnboardingNightScreen() {
       }
 
       await supabase.from('user_day_prefs').delete().eq('user_id', userId);
-      const dayRows: TablesInsert<'user_day_prefs'>[] = selectedDays.map((day_pref) => ({
-        user_id: userId,
-        day_pref: day_pref as Enums<'day_bucket'>,
-      }));
+      const dayRows: TablesInsert<'user_day_prefs'>[] = selectedDays
+        .map((dayId) => {
+          const option = DAY_OPTIONS.find((day) => day.id === dayId);
+          if (!option) return null;
+          return {
+            user_id: userId,
+            available_days: option.label as Enums<'days_available'>,
+          };
+        })
+        .filter((row): row is TablesInsert<'user_day_prefs'> => Boolean(row));
       if (dayRows.length) {
         await supabase.from('user_day_prefs').insert(dayRows);
       }
 
-      navigation.navigate('Interest');
+      const nextParams = editMode || returnToSettings ? { editMode, returnToSettings } : undefined;
+      navigation.navigate('Interest', nextParams);
     } catch (error) {
       Alert.alert('Something went wrong', 'Please try again.');
       console.error('Failed to save night preferences', error);
     } finally {
       setSubmitting(false);
     }
-  }, [groupSize, navigation, selectedDays, selectedTimes, selectedVibe, submitting, userId]);
+  }, [
+    editMode,
+    groupSize,
+    navigation,
+    returnToSettings,
+    selectedDays,
+    selectedTimes,
+    selectedVibe,
+    submitting,
+    userId,
+  ]);
 
-  console.log(userId, submitting, selectedTimes.length, selectedDays.length);
+  const disabledForm = prefillLoading || !userId || !selectedTimes.length || !selectedDays.length;
 
-  const disabledForm = !userId || !selectedTimes.length || !selectedDays.length;
+  if (editMode && prefillLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-background-dark px-4">
+        <Flex flex={1} align="center" justify="center">
+          <ActivityIndicator size="large" />
+        </Flex>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-background-dark px-4">
@@ -143,7 +240,7 @@ export function OnboardingNightScreen() {
                     onPress={() => setSelectedTimes((prev) => toggleItem(prev, value))}
                     className={cn(
                       'rounded-xl border px-4 py-3',
-                      selected ? 'border-secondary' : 'border-white/10 bg-white/5'
+                      selected ? 'border-primary' : 'border-white/10 bg-white/5'
                     )}>
                     <Flex direction="row" align="center" gap={2}>
                       <Icon size={18} color={'white'} />
@@ -168,7 +265,7 @@ export function OnboardingNightScreen() {
                     onPress={() => setSelectedDays((prev) => toggleItem(prev, id))}
                     className={cn(
                       'flex-1 rounded-xl border py-3',
-                      selected ? 'border-secondary' : 'border-white/10'
+                      selected ? 'border-primary' : 'border-white/10'
                     )}>
                     <Text className={cn('text-center text-base')} bold>
                       {label}
@@ -211,7 +308,7 @@ export function OnboardingNightScreen() {
                     onPress={() => setSelectedVibe(id)}
                     className={cn(
                       'rounded-2xl border px-4 py-3',
-                      selected ? 'border-secondary ' : 'border-white/10'
+                      selected ? 'border-primary ' : 'border-white/10'
                     )}>
                     <Flex direction="row" align="center" gap={2}>
                       {/* <Icon size={18} color={selected ? '#0F1012' : '#F4F4F5'} /> */}
@@ -228,7 +325,7 @@ export function OnboardingNightScreen() {
           <Button
             size="xl"
             className={cn(
-              'h-14 w-full rounded-xl bg-secondary-500',
+              'h-14 w-full rounded-xl bg-primary-500',
               disabledForm && 'bg-background-500'
             )}
             disabled={disabledForm}

@@ -1,11 +1,11 @@
 // app-navigation.tsx
-import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { RootStackParamList, AppTabParamList } from '~/types/navigation.types';
 
-import { Icon, AddIcon } from '~/components/ui/icon';
-import { Home as HomeIcon, TicketCheck, User, Wallet as WalletIcon } from 'lucide-react-native';
+import { Icon } from '~/components/ui/icon';
+import { Home as HomeIcon, User } from 'lucide-react-native';
+import Svg, { Path } from 'react-native-svg';
 
 import { useAuth } from '~/providers/AuthProvider';
 import { useTheme } from '~/providers/ThemeProvider';
@@ -20,12 +20,14 @@ import {
   ProfileScreen,
   ProfileSettingsScreen,
   ReviewCreateEventScreen,
+  UpdateProfileScreen,
   ViewEventScreen,
   ViewUserEventsScreen,
   WalletScreen,
 } from '~/screens';
 import CreateEventScreen from '~/screens/create-event-screen';
 import { EventCheckInList } from '~/components';
+import { cn } from '~/utils/cn';
 
 /** ----------------------------------
  * Root + Tabs (typed)
@@ -41,6 +43,7 @@ type ProfileStackParams = {
   ProfileIndex: undefined;
   'Event History': { filter?: 'all' | 'upcoming' | 'history' } | undefined;
   'Profile Settings': undefined;
+  'Update Profile': undefined;
   Membership: undefined;
 };
 type CheckInStackParams = { EventCheckInIndex: undefined; CheckInIndex: { eventId: string } };
@@ -106,6 +109,13 @@ function ProfileStackNavigator() {
           headerTintColor: '#fff',
           headerTitleStyle: { color: '#fff' },
           title: 'Settings',
+        }}
+      />
+      <ProfileStack.Screen
+        name="Update Profile"
+        component={UpdateProfileScreen}
+        options={{
+          headerShown: false,
         }}
       />
       <ProfileStack.Screen
@@ -179,6 +189,48 @@ function EmptyScreen() {
   return null;
 }
 
+function TicketTabIcon({ focused }: { focused: boolean }) {
+  const color = focused ? '#F4F4F5' : '#A1A1AA';
+  return (
+    <Svg width={28} height={28} viewBox="0 0 56 56">
+      {focused ? (
+        <Path
+          fill={color}
+          fillRule="evenodd"
+          d="M3 20.279V16a4 4 0 0 1 4-4h42a4 4 0 0 1 4 4v4.45a3.2 3.2 0 0 1-1.95 2.945a5.001 5.001 0 0 0 .046 9.23A3.08 3.08 0 0 1 53 35.469V40a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4v-4.263c0-1.37.803-2.613 2.053-3.176a5.001 5.001 0 0 0-.01-9.126A3.46 3.46 0 0 1 3 20.28M39 23a3 3 0 1 0 0-6a3 3 0 0 0 0 6m0 8a3 3 0 1 0 0-6a3 3 0 0 0 0 6m0 8a3 3 0 1 0 0-6a3 3 0 0 0 0 6"
+        />
+      ) : (
+        <Path
+          fill={color}
+          d="M49 12a4 4 0 0 1 4 4v4.45a3.2 3.2 0 0 1-1.767 2.86l-.183.085a5.001 5.001 0 0 0-.154 9.142l.2.088A3.08 3.08 0 0 1 53 35.469V40a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4v-4.263c0-1.302.725-2.489 1.869-3.087l.184-.09a5.001 5.001 0 0 0 .19-9.03l-.2-.095A3.46 3.46 0 0 1 3 20.28V16a4 4 0 0 1 4-4zm-.038 3.45H7.038a1 1 0 0 0-1 1v3.117A9.41 9.41 0 0 1 11.267 28a9.41 9.41 0 0 1-5.23 8.433v3.117a1 1 0 0 0 1 1h41.925a1 1 0 0 0 1-1v-3.117A9.41 9.41 0 0 1 44.733 28a9.41 9.41 0 0 1 5.23-8.433V16.45a1 1 0 0 0-1-1M39 33a3 3 0 1 1 0 6a3 3 0 0 1 0-6m0-8a3 3 0 1 1 0 6a3 3 0 0 1 0-6m0-8a3 3 0 1 1 0 6a3 3 0 0 1 0-6"
+        />
+      )}
+    </Svg>
+  );
+}
+
+function WalletTabIcon({ focused }: { focused: boolean }) {
+  const color = focused ? '#F4F4F5' : '#A1A1AA';
+  return (
+    <Svg width={24} height={24} viewBox="0 0 36 36">
+      {focused ? (
+        <Path
+          fill={color}
+          d="M32.94 14H31V9a1 1 0 0 0-1-1H6a1 1 0 0 1-1-1a1 1 0 0 1 1-1h23.6a1 1 0 1 0 0-2H6a2.94 2.94 0 0 0-3 2.88v21A4.13 4.13 0 0 0 7.15 32H30a1 1 0 0 0 1-1v-5h1.94a.93.93 0 0 0 1-.91v-10a1.08 1.08 0 0 0-1-1.09M32 24h-8.58a3.87 3.87 0 0 1-3.73-4a3.87 3.87 0 0 1 3.73-4H32Z"
+        />
+      ) : (
+        <>
+          <Path
+            fill={color}
+            d="M32 15h-1V9a1 1 0 0 0-1-1H6a1 1 0 0 1-1-.82v-.36A1 1 0 0 1 6 6h23.58a1 1 0 0 0 0-2H6a3 3 0 0 0-3 3a3 3 0 0 0 0 .36v20.57A4.1 4.1 0 0 0 7.13 32H30a1 1 0 0 0 1-1v-6h1a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1m-3 15H7.13A2.11 2.11 0 0 1 5 27.93V9.88A3.1 3.1 0 0 0 6 10h23v5h-7a5 5 0 0 0 0 10h7Zm2-7h-9a3 3 0 0 1 0-6h9Z"
+          />
+          <Path fill={color} d="M23.01 21.5a1.5 1.5 0 1 0 0-3a1.5 1.5 0 0 0 0 3" />
+        </>
+      )}
+    </Svg>
+  );
+}
+
 function Tabs() {
   const { user } = useAuth();
 
@@ -187,6 +239,20 @@ function Tabs() {
     borderTopWidth: 0,
   } as const;
 
+  const renderTabIcon =
+    (IconComponent: typeof HomeIcon) =>
+    ({ focused }: { focused: boolean }) => (
+      <Icon
+        as={IconComponent}
+        size="2xl"
+        className={cn(
+          'fill-transparent text-typography-light/70',
+          focused && 'fill-typography-light text-typography-light'
+        )}
+        fill={focused ? '#ffff' : ''}
+      />
+    );
+
   return (
     <AppTabsNav.Navigator screenOptions={{ headerShown: false }}>
       <AppTabsNav.Screen
@@ -194,7 +260,7 @@ function Tabs() {
         component={HomeStackNavigator}
         options={{
           tabBarLabel: () => null,
-          tabBarIcon: () => <Icon as={HomeIcon} size="xl" className="text-typography-light" />,
+          tabBarIcon: renderTabIcon(HomeIcon),
           tabBarStyle: baseTabBar,
         }}
       />
@@ -204,7 +270,7 @@ function Tabs() {
         component={CheckInEventStackNavigator}
         options={{
           tabBarLabel: () => null,
-          tabBarIcon: () => <Icon as={TicketCheck} size="xl" className="text-typography-light" />,
+          tabBarIcon: ({ focused }) => <TicketTabIcon focused={focused} />,
           tabBarStyle: baseTabBar,
         }}
       />
@@ -222,7 +288,7 @@ function Tabs() {
           })}
           options={{
             tabBarLabel: () => null,
-            tabBarIcon: () => <Icon as={AddIcon} size="xl" className="text-typography-light" />,
+            tabBarIcon: () => <Icon as={AddIcon} size="2xl" className="text-typography-light" />,
             tabBarStyle: baseTabBar,
           }}
         />
@@ -233,7 +299,7 @@ function Tabs() {
         component={WalletStackNavigator}
         options={{
           tabBarLabel: () => null,
-          tabBarIcon: () => <Icon as={WalletIcon} size="xl" className="text-typography-light" />,
+          tabBarIcon: ({ focused }) => <WalletTabIcon focused={focused} />,
           tabBarStyle: baseTabBar,
         }}
       />
@@ -243,7 +309,7 @@ function Tabs() {
         component={ProfileStackNavigator}
         options={{
           tabBarLabel: () => null,
-          tabBarIcon: () => <Icon as={User} size="xl" className="text-typography-light" />,
+          tabBarIcon: renderTabIcon(User),
           tabBarStyle: baseTabBar,
         }}
       />

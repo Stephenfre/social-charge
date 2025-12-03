@@ -32,6 +32,13 @@ export function SignInScreen() {
     { id: 'facebook', label: 'Facebook', accent: '#1877F2' },
   ];
 
+  const inputClassName =
+    'relative rounded-xl border border-background-500 bg-transparent px-2 py-1 data-[focus=true]:border-primary/50 overflow-visible';
+  const floatingLabelWrapperClass = '-top-0.5';
+  const floatingLabelTextClass = 'pointer-events-none bg-background-dark px-1 text-xs';
+  const inputFieldClassName =
+    'text-typography-light placeholder:text-typography-light/60 bg-background-dark text-base placeholder:text-base pb-1';
+
   return (
     <SafeAreaView className="flex-1 bg-background-dark">
       <KeyboardAvoidingView
@@ -55,21 +62,26 @@ export function SignInScreen() {
             <AuthForm
               onNavigate={onSignIm}
               showFieldLabels
+              floatingLabel
               submitButtonLabel="Continue"
-              buttonClassName="rounded-2xl bg-secondary-500"
-              inputSize="xl"
-              inputClassName="rounded-xl border-background-100 bg-white"
-              afterFields={
-                <Flex className="w-full items-end">
-                  <Pressable onPress={handleForgotPassword}>
-                    <Text size="sm" bold className="text-secondary-600">
-                      Forgot Password?
-                    </Text>
-                  </Pressable>
-                </Flex>
-              }
+              buttonClassName="rounded-xl bg-primary-500"
+              inputSize="3xl"
+              inputClassName={inputClassName}
+              inputFieldClassName={inputFieldClassName}
+              floatingLabelWrapperClassName={floatingLabelWrapperClass}
+              floatingLabelTextClassName={floatingLabelTextClass}
+              floatingLabelActiveTextClassName="text-primary-500"
+              // afterFields={
+              //   <Flex className="w-full items-end">
+              //     <Pressable onPress={handleForgotPassword}>
+              //       <Text size="sm" bold className="text-primary-600">
+              //         Forgot Password?
+              //       </Text>
+              //     </Pressable>
+              //   </Flex>
+              // }
             />
-
+            {/* 
             <Flex direction="row" align="center" className="my-6 w-full">
               <Divider className="flex-1" />
               <Text className="px-4 text-typography-light">Or, Login with</Text>
@@ -90,7 +102,7 @@ export function SignInScreen() {
                   </Text>
                 </Pressable>
               ))}
-            </Flex>
+            </Flex> */}
           </Flex>
 
           <Flex align="center" className="pb-4">
@@ -98,7 +110,7 @@ export function SignInScreen() {
               Don&apos;t have an account?{' '}
               <Text
                 bold
-                className="text-secondary-600"
+                className="text-primary-600"
                 onPress={() => navigation.navigate('Register')}>
                 Register.
               </Text>

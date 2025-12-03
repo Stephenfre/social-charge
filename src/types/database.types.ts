@@ -1225,18 +1225,18 @@ export type Database = {
       }
       user_day_prefs: {
         Row: {
+          available_days: Database["public"]["Enums"]["days_available"]
           created_at: string
-          day_pref: Database["public"]["Enums"]["day_bucket"]
           user_id: string
         }
         Insert: {
+          available_days: Database["public"]["Enums"]["days_available"]
           created_at?: string
-          day_pref: Database["public"]["Enums"]["day_bucket"]
           user_id: string
         }
         Update: {
+          available_days?: Database["public"]["Enums"]["days_available"]
           created_at?: string
-          day_pref?: Database["public"]["Enums"]["day_bucket"]
           user_id?: string
         }
         Relationships: [
@@ -3157,7 +3157,15 @@ export type Database = {
     Enums: {
       attend_status: "yes" | "no" | "can"
       budget_band: "budget" | "moderate" | "premium" | "luxury"
-      day_bucket: "weekdays" | "weekends"
+      day_bucket: "weekdays" | "weekends" | "Sunday"
+      days_available:
+        | "Sunday"
+        | "Monday"
+        | "Tuesday"
+        | "Wednesday"
+        | "Thursday"
+        | "Friday"
+        | "Saturday"
       event_goal:
         | "meet_new_friends"
         | "dating_connections"
@@ -3355,7 +3363,16 @@ export const Constants = {
     Enums: {
       attend_status: ["yes", "no", "can"],
       budget_band: ["budget", "moderate", "premium", "luxury"],
-      day_bucket: ["weekdays", "weekends"],
+      day_bucket: ["weekdays", "weekends", "Sunday"],
+      days_available: [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ],
       event_goal: [
         "meet_new_friends",
         "dating_connections",

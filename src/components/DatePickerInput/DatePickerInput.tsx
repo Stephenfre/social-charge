@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Modal, Platform, Text as RNText, useColorScheme, View } from 'react-native';
+import { Keyboard, Modal, Platform, Text as RNText, useColorScheme, View } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 
 import { Flex, Input, InputField, Pressable, Text } from '~/components/ui';
@@ -18,6 +18,8 @@ interface DatePickerInputProps {
   labelClassName?: string;
   floatingLabelWrapperClassName?: string;
   activeLabelClassName?: string;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }
 
 const monthNames = [
@@ -48,6 +50,8 @@ export function DatePickerInput({
   labelClassName,
   floatingLabelWrapperClassName,
   activeLabelClassName,
+  onFocus,
+  onBlur,
 }: DatePickerInputProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -109,11 +113,14 @@ export function DatePickerInput({
   }, [value]);
 
   const openPicker = () => {
+    Keyboard.dismiss();
+    onFocus?.();
     setShowPicker(true);
   };
 
   const closePicker = () => {
     setShowPicker(false);
+    onBlur?.();
   };
 
   const persistTempDate = () => {
@@ -182,10 +189,10 @@ export function DatePickerInput({
             <View className="rounded-t-3xl bg-background-900">
               <View className="flex-row items-center justify-between px-4 py-2">
                 <Pressable onPress={closePicker}>
-                  <RNText className="text-base font-bold text-secondary-500">Cancel</RNText>
+                  <RNText className="text-base font-bold text-primary-500">Cancel</RNText>
                 </Pressable>
                 <Pressable onPress={persistTempDate}>
-                  <RNText className="text-base font-bold text-secondary-500">Done</RNText>
+                  <RNText className="text-base font-bold text-primary-500">Done</RNText>
                 </Pressable>
               </View>
 

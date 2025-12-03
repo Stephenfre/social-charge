@@ -1,14 +1,15 @@
-import { useCallback, useMemo, useState } from 'react';
-import { Alert, ScrollView } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, ButtonText, Flex, Pressable, Text } from '~/components/ui';
+import { Button, Flex, Pressable, Text } from '~/components/ui';
 import { cn } from '~/utils/cn';
 import { useAuth } from '~/providers/AuthProvider';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NavigationProp } from '~/types/navigation';
 import { supabase } from '~/lib/supabase';
 import { Enums } from '~/types/database.types';
 import { OnboardingProgress } from '~/components/OnboardingProgress';
+import { RootRoute } from '~/types/navigation.types';
 
 const VIBE_OPTIONS: { slug: Enums<'vibe_slug'>; label: string; emoji: string }[] = [
   { slug: 'chill', label: 'Chill Hangouts', emoji: '🛋️' },
@@ -19,17 +20,53 @@ const VIBE_OPTIONS: { slug: Enums<'vibe_slug'>; label: string; emoji: string }[]
 
 export function OnboardingVibeScreen() {
   const navigation = useNavigation<NavigationProp<'OnboardingVibe'>>();
-  const { userId } = useAuth();
+  const { userId, user } = useAuth();
   const [selected, setSelected] = useState<Enums<'vibe_slug'> | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const route = useRoute<RootRoute<'OnboardingVibe'>>();
+  const editMode = route.params?.editMode ?? false;
+  const returnToSettings = route.params?.returnToSettings ?? false;
+  const [prefillLoading, setPrefillLoading] = useState(editMode);
 
   const handleSelect = useCallback((slug: Enums<'vibe_slug'>) => {
     setSelected((prev) => (prev === slug ? null : slug));
   }, []);
 
+  const goBackToSettings = useCallback(() => {
+    navigation.reset({
+      index: 0,
+      routes: [
+        {
+          name: 'Root' as never,
+          params: {
+            screen: 'Tabs',
+            params: {
+              screen: 'Profile',
+              params: {
+                screen: 'Profile Settings',
+              },
+            },
+          },
+        } as never,
+      ],
+    });
+  }, [navigation]);
+
+  useEffect(() => {
+    if (!editMode) return;
+    if (!user) {
+      setPrefillLoading(false);
+      return;
+    }
+    if (user.preferred_vibe_slug) {
+      setSelected(user.preferred_vibe_slug as Enums<'vibe_slug'>);
+    }
+    setPrefillLoading(false);
+  }, [editMode, user]);
+
   const canContinue = useMemo(
-    () => Boolean(selected) && !!userId && !submitting,
-    [selected, submitting, userId]
+    () => Boolean(selected) && !!userId && !submitting && !prefillLoading,
+    [prefillLoading, selected, submitting, userId]
   );
 
   const handleFinish = useCallback(async () => {
@@ -37,14 +74,29 @@ export function OnboardingVibeScreen() {
     setSubmitting(true);
     try {
       await supabase.from('users').update({ preferred_vibe_slug: selected }).eq('id', userId);
-      navigation.navigate('OnboardingComplete');
+      if (returnToSettings) {
+        goBackToSettings();
+      } else {
+        const nextParams = editMode ? { editMode } : undefined;
+        navigation.navigate('OnboardingComplete', nextParams);
+      }
     } catch (error) {
       Alert.alert('Something went wrong', 'Please try again.');
       console.error('Failed to save vibe preference', error);
     } finally {
       setSubmitting(false);
     }
-  }, [navigation, selected, submitting, userId]);
+  }, [editMode, goBackToSettings, navigation, returnToSettings, selected, submitting, userId]);
+
+  if (editMode && prefillLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-background-dark px-4">
+        <Flex flex={1} align="center" justify="center">
+          <ActivityIndicator size="large" />
+        </Flex>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-background-dark px-4">
@@ -66,7 +118,7 @@ export function OnboardingVibeScreen() {
                 onPress={() => handleSelect(slug)}
                 className={cn(
                   'rounded-2xl border px-4 py-4',
-                  active ? 'border-secondary' : 'border-white/10 '
+                  active ? 'border-primary' : 'border-white/10 '
                 )}>
                 <Flex direction="row" align="center" gap={3}>
                   <Text size="lg">{emoji}</Text>
@@ -81,7 +133,7 @@ export function OnboardingVibeScreen() {
 
         <Button
           size="xl"
-          className={cn('h-14 w-full rounded-xl bg-secondary-500', !canContinue && 'bg-gray-500')}
+          className={cn('h-14 w-full rounded-xl bg-primary-500', !canContinue && 'bg-gray-500')}
           disabled={!canContinue}
           onPress={handleFinish}>
           <Text size="lg" weight="600" className="text-white">

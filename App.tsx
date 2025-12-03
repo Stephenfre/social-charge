@@ -22,10 +22,12 @@ import {
 import './global.css';
 import { AuthProvider, useAuth } from '~/providers/AuthProvider';
 import { RootStack } from '~/types/navigation.types';
-import { ActivityIndicator, StatusBar, View } from 'react-native';
+import { StatusBar } from 'react-native';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ThemeProvider } from '~/providers/ThemeProvider';
+import { useEffect, useState } from 'react';
+import { SplashScreen } from '~/components';
 
 const queryClient = new QueryClient();
 
@@ -56,13 +58,17 @@ function AppNavigation() {
 
 function RootNavigator() {
   const { session, initializing } = useAuth();
+  const [showSplash, setShowSplash] = useState(true);
 
-  if (initializing) {
-    return (
-      <View className="bg-background-0 flex-1 items-center justify-center">
-        <ActivityIndicator size="large" />
-      </View>
-    );
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setShowSplash(false);
+    }, 1500);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  if (showSplash || initializing) {
+    return <SplashScreen />;
   }
 
   return session ? <AppStack /> : <AuthStack />;
@@ -80,8 +86,44 @@ const AuthStack = () => (
 );
 
 function AppStack() {
-  const { user } = useAuth();
-  const showOnboarding = user ? user.onboarded === false : false;
+  const { user, refreshUser } = useAuth();
+  const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      setShowOnboarding(false);
+      setHasCheckedOnboarding(true);
+      return;
+    }
+
+    let isMounted = true;
+    const handleCheck = async () => {
+      try {
+        const refreshed = await refreshUser();
+        if (!isMounted) return;
+        setShowOnboarding((refreshed ?? user)?.onboarded !== true);
+      } catch {
+        if (!isMounted) return;
+        setShowOnboarding(false);
+      } finally {
+        if (isMounted) setHasCheckedOnboarding(true);
+      }
+    };
+    handleCheck();
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user) return;
+    setShowOnboarding(user.onboarded !== true);
+  }, [user?.onboarded]);
+
+  if (!hasCheckedOnboarding) {
+    return <SplashScreen />;
+  }
 
   if (showOnboarding) {
     return (
@@ -101,6 +143,12 @@ function AppStack() {
   return (
     <RootStack.Navigator screenOptions={{ headerShown: false }}>
       <RootStack.Screen name="Root" component={MainTabNavigator} />
+      <RootStack.Screen name="OnboardingStart" component={OnboardingStartScreen} />
+      <RootStack.Screen name="OnboardingNight" component={OnboardingNightScreen} />
+      <RootStack.Screen name="Interest" component={InterestScreen} />
+      <RootStack.Screen name="OnboardingBudget" component={OnboardingBudgetScreen} />
+      <RootStack.Screen name="OnboardingVibe" component={OnboardingVibeScreen} />
+      <RootStack.Screen name="OnboardingComplete" component={OnboardingCompletionScreen} />
       <RootStack.Screen name="Terms" component={TermsAndConditionsScreen} />
       <RootStack.Screen name="Privacy" component={PrivacyPolicyScreen} />
     </RootStack.Navigator>

@@ -23,21 +23,24 @@ export type AppTabParamList = {
 export type RootStackParamList = {
   Root: NavigatorScreenParams<AppTabParamList>;
   Tabs: NavigatorScreenParams<AppTabParamList>;
-  OnboardingStart: undefined;
-  OnboardingNight: { entryReason?: string } | undefined;
-  OnboardingBudget: undefined;
-  OnboardingVibe: undefined;
-  OnboardingComplete: undefined;
+  OnboardingStart: { editMode?: boolean; returnToSettings?: boolean } | undefined;
+  OnboardingNight:
+    | { entryReason?: string; editMode?: boolean; returnToSettings?: boolean }
+    | undefined;
+  OnboardingBudget: { editMode?: boolean; returnToSettings?: boolean } | undefined;
+  OnboardingVibe: { editMode?: boolean; returnToSettings?: boolean } | undefined;
+  OnboardingComplete: { editMode?: boolean; returnToSettings?: boolean } | undefined;
   Welcome: undefined;
   Register: undefined;
   RegisterUserName: undefined;
-  Interest: undefined;
+  Interest: { editMode?: boolean; returnToSettings?: boolean } | undefined;
   SignIn: undefined;
   Terms: undefined;
   Privacy: undefined;
   HomeIndex: undefined;
   ProfileIndex: undefined;
   'Profile Settings': undefined;
+  'Update Profile': undefined;
   Membership: undefined;
   ViewEvent: { eventId: string };
   'All Events': undefined;
