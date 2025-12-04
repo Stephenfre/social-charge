@@ -19,7 +19,6 @@ export { OnboardingStartScreen } from './onboarding-start-screen';
 export { OnboardingNightScreen } from './onboarding-night-screen';
 export { OnboardingBudgetScreen } from './onboarding-budget-screen';
 export { OnboardingVibeScreen } from './onboarding-vibe-screen';
-export { OnboardingCompletionScreen } from './onboarding-completion-screen';
 export { TermsAndConditionsScreen } from './terms-and-conditions-screen';
 export { PrivacyPolicyScreen } from './privacy-policy-screen';
 export { UpdateProfileScreen } from './update-profile-screen';

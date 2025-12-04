@@ -11,3 +11,4 @@ export { HostEventCheckInList } from './HostEventCheckInList/HostEventCheckInLis
 export { UserCheckInQr } from './UserCheckInQr/UserCheckInQr';
 export { DatePickerInput } from './DatePickerInput/DatePickerInput';
 export { SplashScreen } from './SplashScreen';
+export { OnboardingCompletionModal } from './OnboardingCompletionModal';

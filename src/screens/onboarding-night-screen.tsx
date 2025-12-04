@@ -240,7 +240,7 @@ export function OnboardingNightScreen() {
                     onPress={() => setSelectedTimes((prev) => toggleItem(prev, value))}
                     className={cn(
                       'rounded-xl border px-4 py-3',
-                      selected ? 'border-primary' : 'border-white/10 bg-white/5'
+                      selected ? 'border-primary' : 'border-white/10'
                     )}>
                     <Flex direction="row" align="center" gap={2}>
                       <Icon size={18} color={'white'} />

@@ -16,7 +16,6 @@ export type RootStackParamList = {
     | undefined;
   OnboardingBudget: { editMode?: boolean; returnToSettings?: boolean } | undefined;
   OnboardingVibe: { editMode?: boolean; returnToSettings?: boolean } | undefined;
-  OnboardingComplete: { editMode?: boolean; returnToSettings?: boolean } | undefined;
   'Review Event': undefined;
 };
 

@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { Button, Flex, Pressable, Skeleton, Text } from '~/components/ui';
 import { FontAwesome } from '@expo/vector-icons';
@@ -15,6 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '~/types/navigation.types';
 import { EventCard } from '~/components/EventCard/EventCard';
+import { OnboardingCompletionModal } from '~/components';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type HomeNav = NativeStackNavigationProp<RootStackParamList, 'HomeIndex'>;
@@ -22,7 +24,17 @@ type HomeNav = NativeStackNavigationProp<RootStackParamList, 'HomeIndex'>;
 export function HomeScreen() {
   const navigation = useNavigation<HomeNav>();
 
-  const { userId } = useAuth();
+  const { userId, justCompletedOnboarding, setJustCompletedOnboarding } = useAuth();
+  const [completionVisible, setCompletionVisible] = useState(false);
+
+  useEffect(() => {
+    setCompletionVisible(justCompletedOnboarding);
+  }, [justCompletedOnboarding]);
+
+  const handleCloseCompletion = useCallback(() => {
+    setCompletionVisible(false);
+    setJustCompletedOnboarding(false);
+  }, [setJustCompletedOnboarding]);
 
   const { data: forYouEvents = [], isLoading: forYouEventsLoading } = useForYouEvents(userId);
   const { data: upcomingEvents = [], isLoading: upcomingEventsLoading } = useUpcomingEvents();
@@ -428,6 +440,7 @@ export function HomeScreen() {
           </Flex> */}
         </Flex>
       </ScrollView>
+      <OnboardingCompletionModal visible={completionVisible} onClose={handleCloseCompletion} />
     </SafeAreaView>
   );
 }

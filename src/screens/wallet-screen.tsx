@@ -12,10 +12,12 @@ import { Box, Button, Flex, Pressable, Text } from '~/components/ui';
 import { usePurchaseTokens, useTokenBalance, useTokenTransactions } from '~/hooks';
 import { useTheme } from '~/providers/ThemeProvider';
 
+const CREDIT_OPTIONS = [3, 5, 7, 10, 15];
+
 export function WalletScreen() {
   const { palette } = useTheme();
   const bottomSheetRef = useRef<BottomSheetModal>(null);
-  const [selectedAmount, setSelectedAmount] = useState(10);
+  const [selectedAmount, setSelectedAmount] = useState(CREDIT_OPTIONS[0]);
   const {
     data: balance,
     isLoading: isBalanceInitialLoading,
@@ -24,8 +26,6 @@ export function WalletScreen() {
 
   const { data: tokenTransactions, isLoading: isTransactionsLoading } = useTokenTransactions();
   const purchaseTokens = usePurchaseTokens();
-  const minAmount = 5;
-  const step = 5;
 
   const snapPoints = useMemo(() => ['45%'], []);
 
@@ -52,12 +52,27 @@ export function WalletScreen() {
 
   const handleDecrease = () => {
     if (purchaseTokens.isPending) return;
-    setSelectedAmount((prev) => Math.max(minAmount, prev - step));
+    setSelectedAmount((prev) => {
+      const currentIndex = CREDIT_OPTIONS.indexOf(prev);
+      if (currentIndex <= 0) {
+        return CREDIT_OPTIONS[0];
+      }
+      return CREDIT_OPTIONS[currentIndex - 1];
+    });
   };
 
   const handleIncrease = () => {
     if (purchaseTokens.isPending) return;
-    setSelectedAmount((prev) => prev + step);
+    setSelectedAmount((prev) => {
+      const currentIndex = CREDIT_OPTIONS.indexOf(prev);
+      if (currentIndex === -1) {
+        return CREDIT_OPTIONS[0];
+      }
+      if (currentIndex >= CREDIT_OPTIONS.length - 1) {
+        return CREDIT_OPTIONS[CREDIT_OPTIONS.length - 1];
+      }
+      return CREDIT_OPTIONS[currentIndex + 1];
+    });
   };
 
   const handleConfirmPurchase = () => {
@@ -155,7 +170,11 @@ export function WalletScreen() {
                           <Text
                             size="xl"
                             className={
-                              isRefund ? 'text-yellow-600' : isSpend ? 'text-red-500' : 'text-green-500'
+                              isRefund
+                                ? 'text-yellow-600'
+                                : isSpend
+                                  ? 'text-red-500'
+                                  : 'text-green-500'
                             }
                             weight="600">
                             {formattedAmount}
@@ -195,7 +214,7 @@ export function WalletScreen() {
               <Pressable
                 className="h-14 w-14 items-center justify-center rounded-full"
                 style={{ backgroundColor: palette.surfaceMuted }}
-                disabled={selectedAmount <= minAmount || purchaseTokens.isPending}
+                disabled={selectedAmount === CREDIT_OPTIONS[0] || purchaseTokens.isPending}
                 onPress={handleDecrease}>
                 <Minus color={palette.text} size={24} />
               </Pressable>
@@ -208,7 +227,10 @@ export function WalletScreen() {
               <Pressable
                 className="h-14 w-14 items-center justify-center rounded-full"
                 style={{ backgroundColor: palette.surface }}
-                disabled={purchaseTokens.isPending}
+                disabled={
+                  selectedAmount === CREDIT_OPTIONS[CREDIT_OPTIONS.length - 1] ||
+                  purchaseTokens.isPending
+                }
                 onPress={handleIncrease}>
                 <Plus color={palette.text} size={24} />
               </Pressable>

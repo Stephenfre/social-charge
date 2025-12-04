@@ -10,6 +10,9 @@ type AuthCtx = {
   user: UsersRow | null;
   initializing: boolean;
   refreshUser: () => Promise<UsersRow | null>;
+  justCompletedOnboarding: boolean;
+  setJustCompletedOnboarding: (value: boolean) => void;
+  setUserState: React.Dispatch<React.SetStateAction<UsersRow | null>>;
 };
 
 const AuthContext = createContext<AuthCtx>({
@@ -18,12 +21,16 @@ const AuthContext = createContext<AuthCtx>({
   user: null,
   initializing: true,
   refreshUser: async () => null,
+  justCompletedOnboarding: false,
+  setJustCompletedOnboarding: () => {},
+  setUserState: () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<UsersRow | null>(null);
   const [initializing, setInitializing] = useState(true);
+  const [justCompletedOnboarding, setJustCompletedOnboarding] = useState(false);
 
   const fetchUser = useCallback(async (userId: string) => {
     const { data, error } = await supabase.from('users').select('*').eq('id', userId).single();
@@ -70,8 +77,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user: user ?? null,
       initializing,
       refreshUser,
+      justCompletedOnboarding,
+      setJustCompletedOnboarding,
+      setUserState: setUser,
     }),
-    [session, user, initializing, refreshUser]
+    [session, user, initializing, refreshUser, justCompletedOnboarding]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

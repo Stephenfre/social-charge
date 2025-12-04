@@ -20,7 +20,7 @@ const VIBE_OPTIONS: { slug: Enums<'vibe_slug'>; label: string; emoji: string }[]
 
 export function OnboardingVibeScreen() {
   const navigation = useNavigation<NavigationProp<'OnboardingVibe'>>();
-  const { userId, user } = useAuth();
+  const { userId, user, refreshUser, setJustCompletedOnboarding, setUserState } = useAuth();
   const [selected, setSelected] = useState<Enums<'vibe_slug'> | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const route = useRoute<RootRoute<'OnboardingVibe'>>();
@@ -73,20 +73,47 @@ export function OnboardingVibeScreen() {
     if (!userId || !selected || submitting) return;
     setSubmitting(true);
     try {
-      await supabase.from('users').update({ preferred_vibe_slug: selected }).eq('id', userId);
+      await supabase
+        .from('users')
+        .update({ preferred_vibe_slug: selected, onboarded: true })
+        .eq('id', userId);
+      await supabase
+        .from('user_onboarding_profile')
+        .upsert(
+          { user_id: userId, completed: true, updated_at: new Date().toISOString() },
+          { onConflict: 'user_id' }
+        );
+      await refreshUser();
       if (returnToSettings) {
         goBackToSettings();
-      } else {
-        const nextParams = editMode ? { editMode } : undefined;
-        navigation.navigate('OnboardingComplete', nextParams);
+        return;
       }
+      setUserState((prev) =>
+        prev
+          ? {
+              ...prev,
+              preferred_vibe_slug: selected,
+              onboarded: true,
+            }
+          : prev
+      );
+      setJustCompletedOnboarding(true);
     } catch (error) {
       Alert.alert('Something went wrong', 'Please try again.');
       console.error('Failed to save vibe preference', error);
     } finally {
       setSubmitting(false);
     }
-  }, [editMode, goBackToSettings, navigation, returnToSettings, selected, submitting, userId]);
+  }, [
+    goBackToSettings,
+    refreshUser,
+    returnToSettings,
+    selected,
+    setJustCompletedOnboarding,
+    setUserState,
+    submitting,
+    userId,
+  ]);
 
   if (editMode && prefillLoading) {
     return (

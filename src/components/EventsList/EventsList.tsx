@@ -43,8 +43,12 @@ export function EventsList({ events, loading }: EventsListProp) {
           <Pressable key={event.id} onPress={() => handlePressNavigateToViewEvent(event.id)}>
             <Flex direction="row" align="center" justify="space-between">
               <Flex direction="row" gap={4} align="center">
-                <Image alt="picture of host" size="sm" source={{ uri: eventImage?.[i] ?? '' }} />
-                <Flex>
+                <Image
+                  alt="picture of host"
+                  size="sm"
+                  source={{ uri: eventImage?.[i] ?? event.cover_img ?? '' }}
+                />
+                <Flex className="w-52">
                   <Text bold>{event.title}</Text>
                   <Text size="sm">{dayjs(event.starts_at).format('ddd, MMM DD, YYYY h:mm A')}</Text>
                 </Flex>
