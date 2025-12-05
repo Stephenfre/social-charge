@@ -124,20 +124,20 @@ function AppNavigation() {
     return <SplashScreen />;
   }
 
-  const target = resolveRootStackTarget(session, user);
+  // const target = resolveRootStackTarget(session, user);
 
   return (
     // 👈 key forces a full remount when target changes (auth → onboarding → app)
     <NavigationContainer
-      key={target}
+      // key={target}
       ref={navigationRef}
       onReady={() => {
         routingInstrumentation.registerNavigationContainer(navigationRef);
       }}>
       <StatusBar barStyle="light-content" />
-      {target === 'auth' && <AuthStack />}
-      {target === 'onboarding' && <OnboardingStack />}
-      {target === 'app' && <AppStack />}
+      <AuthStack />
+      {/* {target === 'onboarding' && <OnboardingStack />} */}
+      {/* {target === 'app' && <AppStack />} */}
     </NavigationContainer>
   );
 }
