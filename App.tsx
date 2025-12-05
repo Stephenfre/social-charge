@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { StatusBar } from 'react-native';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import './global.css';
 import { MainTabNavigator } from '~/navigation/MainTabNavigator';
@@ -21,6 +21,7 @@ import {
   WelcomeScreen,
 } from '~/screens';
 import { AuthProvider, useAuth } from '~/providers/AuthProvider';
+import { RevenueCatProvider } from '~/providers/RevenueCatProvider';
 import { ThemeProvider } from '~/providers/ThemeProvider';
 import { RootStack } from '~/types/navigation.types';
 import { SplashScreen } from '~/components';
@@ -32,28 +33,21 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>
-        <QueryClientProvider client={queryClient}>
-          <BottomSheetModalProvider>
-            <ThemeProvider>
-              <AppNavigation />
-            </ThemeProvider>
-          </BottomSheetModalProvider>
-        </QueryClientProvider>
+        <RevenueCatProvider>
+          <QueryClientProvider client={queryClient}>
+            <BottomSheetModalProvider>
+              <ThemeProvider>
+                <AppNavigation />
+              </ThemeProvider>
+            </BottomSheetModalProvider>
+          </QueryClientProvider>
+        </RevenueCatProvider>
       </AuthProvider>
     </GestureHandlerRootView>
   );
 }
 
 function AppNavigation() {
-  return (
-    <NavigationContainer>
-      <StatusBar barStyle="light-content" />
-      <RootNavigator />
-    </NavigationContainer>
-  );
-}
-
-function RootNavigator() {
   const { session, user, initializing } = useAuth();
   const [showSplash, setShowSplash] = useState(true);
 
@@ -62,22 +56,24 @@ function RootNavigator() {
     return () => clearTimeout(timeout);
   }, []);
 
-  const target = useMemo(() => resolveRootStackTarget(session, user), [session, user]);
-
   if (showSplash || initializing) {
     return <SplashScreen />;
   }
 
-  if (target === 'auth') {
-    return <AuthStack />;
-  }
+  const target = resolveRootStackTarget(session, user);
 
-  if (target === 'onboarding') {
-    return <OnboardingStack />;
-  }
-
-  return <AppStack />;
+  return (
+    // 👈 key forces a full remount when target changes (auth → onboarding → app)
+    <NavigationContainer key={target}>
+      <StatusBar barStyle="light-content" />
+      {target === 'auth' && <AuthStack />}
+      {target === 'onboarding' && <OnboardingStack />}
+      {target === 'app' && <AppStack />}
+    </NavigationContainer>
+  );
 }
+
+/* ---------- Navigators ---------- */
 
 const AuthStack = () => (
   <RootStack.Navigator screenOptions={{ headerShown: false }}>
@@ -91,7 +87,7 @@ const AuthStack = () => (
 );
 
 const OnboardingStack = () => (
-  <RootStack.Navigator key="onboarding" screenOptions={{ headerShown: false }}>
+  <RootStack.Navigator screenOptions={{ headerShown: false }}>
     <RootStack.Screen name="OnboardingStart" component={OnboardingStartScreen} />
     <RootStack.Screen name="OnboardingNight" component={OnboardingNightScreen} />
     <RootStack.Screen name="Interest" component={InterestScreen} />
@@ -103,8 +99,9 @@ const OnboardingStack = () => (
 );
 
 const AppStack = () => (
-  <RootStack.Navigator key="app" screenOptions={{ headerShown: false }}>
+  <RootStack.Navigator screenOptions={{ headerShown: false }}>
     <RootStack.Screen name="Root" component={MainTabNavigator} />
+    {/* optional: reuse onboarding screens for settings flows */}
     <RootStack.Screen name="OnboardingStart" component={OnboardingStartScreen} />
     <RootStack.Screen name="OnboardingNight" component={OnboardingNightScreen} />
     <RootStack.Screen name="Interest" component={InterestScreen} />

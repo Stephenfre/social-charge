@@ -16,7 +16,6 @@ import {
   EventReviewScreen,
   HostScannerScreen,
   HomeScreen,
-  MembershipScreen,
   ProfileScreen,
   ProfileSettingsScreen,
   ReviewCreateEventScreen,
@@ -44,7 +43,6 @@ type ProfileStackParams = {
   'Event History': { filter?: 'all' | 'upcoming' | 'history' } | undefined;
   'Profile Settings': undefined;
   'Update Profile': undefined;
-  Membership: undefined;
 };
 type CheckInStackParams = { EventCheckInIndex: undefined; CheckInIndex: { eventId: string } };
 type WalletStackParams = { WalletIndex: undefined };
@@ -116,18 +114,6 @@ function ProfileStackNavigator() {
         component={UpdateProfileScreen}
         options={{
           headerShown: false,
-        }}
-      />
-      <ProfileStack.Screen
-        name="Membership"
-        component={MembershipScreen}
-        options={{
-          headerShown: true,
-          headerBackButtonDisplayMode: 'minimal',
-          headerStyle: { backgroundColor: '#0F1012' },
-          headerTintColor: '#fff',
-          headerTitleStyle: { color: '#fff' },
-          title: 'My Membership',
         }}
       />
     </ProfileStack.Navigator>
@@ -232,11 +218,10 @@ function WalletTabIcon({ focused }: { focused: boolean }) {
 }
 
 function Tabs() {
-  const { user } = useAuth();
-
   const baseTabBar = {
     backgroundColor: '#0F1012',
-    borderTopWidth: 0,
+    borderTopWidth: 1,
+    borderTopColor: '#1F1F1F',
   } as const;
 
   const renderTabIcon =
@@ -274,25 +259,6 @@ function Tabs() {
           tabBarStyle: baseTabBar,
         }}
       />
-      {/* 
-      {(user?.role === 'admin' || user?.role === 'super_admin') && (
-        <AppTabsNav.Screen
-          name="Create Event"
-          component={EmptyScreen}
-          listeners={({ navigation }) => ({
-            tabPress: (e) => {
-              e.preventDefault();
-              // getParent() is ParamListBase; cast to never to satisfy TS safely
-              navigation.getParent()?.navigate('CreateEvent' as never);
-            },
-          })}
-          options={{
-            tabBarLabel: () => null,
-            tabBarIcon: () => <Icon as={AddIcon} size="2xl" className="text-typography-light" />,
-            tabBarStyle: baseTabBar,
-          }}
-        />
-      )} */}
 
       <AppTabsNav.Screen
         name="Wallet"
@@ -340,12 +306,6 @@ export function MainTabNavigator() {
         name="ViewEvent"
         component={ViewEventScreen}
         options={{ headerShown: false }}
-      />
-
-      <RootStackNav.Screen
-        name="CreateEvent"
-        component={CreateEventScreen}
-        options={{ ...headerCommon, title: 'Create / Edit Event' }}
       />
 
       <RootStackNav.Screen
