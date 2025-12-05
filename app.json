@@ -11,7 +11,15 @@
     },
     "plugins": [
       "expo-font",
-      "expo-maps"
+      "expo-maps",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "react-native",
+          "organization": "social-charge"
+        }
+      ]
     ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",

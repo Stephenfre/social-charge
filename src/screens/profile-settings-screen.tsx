@@ -2,6 +2,7 @@ import React, { useCallback, useMemo } from 'react';
 import { ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as Sentry from '@sentry/react-native';
 import { Box, Button, Flex, Pressable, Text } from '~/components/ui';
 import { Icon } from '~/components/ui/icon';
 import { FileText, Gem, ScrollText, Sparkles, User } from 'lucide-react-native';
