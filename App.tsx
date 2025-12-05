@@ -21,7 +21,7 @@ import {
   WelcomeScreen,
 } from '~/screens';
 import { AuthProvider, useAuth } from '~/providers/AuthProvider';
-import { RevenueCatProvider } from '~/providers/RevenueCatProvider';
+// import { RevenueCatProvider } from '~/providers/RevenueCatProvider';
 import { ThemeProvider } from '~/providers/ThemeProvider';
 import { RootStack, type RootStackParamList } from '~/types/navigation.types';
 import { SplashScreen } from '~/components';
@@ -96,15 +96,14 @@ export default Sentry.wrap(function App() {
     <Sentry.ErrorBoundary fallback={(errorProps) => <RootErrorFallback {...errorProps} />}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <AuthProvider>
-          <RevenueCatProvider>
-            <QueryClientProvider client={queryClient}>
-              <BottomSheetModalProvider>
-                <ThemeProvider>
-                  <AppNavigation />
-                </ThemeProvider>
-              </BottomSheetModalProvider>
-            </QueryClientProvider>
-          </RevenueCatProvider>
+          {/* RevenueCatProvider temporarily disabled */}
+          <QueryClientProvider client={queryClient}>
+            <BottomSheetModalProvider>
+              <ThemeProvider>
+                <AppNavigation />
+              </ThemeProvider>
+            </BottomSheetModalProvider>
+          </QueryClientProvider>
         </AuthProvider>
       </GestureHandlerRootView>
     </Sentry.ErrorBoundary>
@@ -124,20 +123,20 @@ function AppNavigation() {
     return <SplashScreen />;
   }
 
-  // const target = resolveRootStackTarget(session, user);
+  const target = resolveRootStackTarget(session, user);
 
   return (
     // 👈 key forces a full remount when target changes (auth → onboarding → app)
     <NavigationContainer
-      // key={target}
+      key={target}
       ref={navigationRef}
       onReady={() => {
         routingInstrumentation.registerNavigationContainer(navigationRef);
       }}>
       <StatusBar barStyle="light-content" />
-      <AuthStack />
-      {/* {target === 'onboarding' && <OnboardingStack />} */}
-      {/* {target === 'app' && <AppStack />} */}
+      {target === 'auth' && <AuthStack />}
+      {target === 'onboarding' && <OnboardingStack />}
+      {target === 'app' && <AppStack />}
     </NavigationContainer>
   );
 }
