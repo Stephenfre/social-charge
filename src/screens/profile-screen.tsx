@@ -8,7 +8,6 @@ import { Badge, Box, Button, Flex, Image, Pressable, Text } from '~/components/u
 import { Icon, MenuIcon } from '~/components/ui/icon';
 import { useStorageImages, useTokenBalance, useUserEvents, useUserInterests } from '~/hooks';
 import { useAuth } from '~/providers/AuthProvider';
-import { useRevenueCat } from '~/providers/RevenueCatProvider';
 import { RootStackParamList } from '~/types/navigation.types';
 import { interestEmojis } from '~/utils/const';
 

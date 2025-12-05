@@ -13,7 +13,7 @@ interface FormData {
 }
 
 export interface AuthFormProps {
-  onNavigate?: () => void;
+  onNavigate?: (values: FormData) => void;
   from?: string;
   showFieldLabels?: boolean;
   submitButtonLabel?: string;
@@ -77,7 +77,7 @@ export function AuthForm({
   const onSubmit = handleSubmit(({ email, password }) => {
     setField('email', email);
     setField('password', password);
-    onNavigate?.();
+    onNavigate?.({ email, password });
   });
 
   const handleShowPassword = () => {

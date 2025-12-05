@@ -10,10 +10,10 @@ import { useSignupWizard } from '~/hooks/useSignupWizard';
 import { NavigationProp } from '~/types/navigation';
 
 export function SignInScreen() {
-  const { email, password, reset } = useSignupWizard();
+  const { reset } = useSignupWizard();
   const navigation = useNavigation<NavigationProp<'SignIn'>>();
 
-  const onSignIm = async () => {
+  const onSignIn = async ({ email, password }: { email: string; password: string }) => {
     const { error } = await supabase.auth.signInWithPassword({
       email: email,
       password: password,
@@ -60,7 +60,7 @@ export function SignInScreen() {
             </Flex>
 
             <AuthForm
-              onNavigate={onSignIm}
+              onNavigate={onSignIn}
               showFieldLabels
               floatingLabel
               submitButtonLabel="Continue"
