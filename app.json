@@ -9,7 +9,10 @@
     "experiments": {
       "tsconfigPaths": true
     },
-    "plugins": ["expo-font", "expo-maps"],
+    "plugins": [
+      "expo-font",
+      "expo-maps"
+    ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -35,6 +38,19 @@
     },
     "newArchEnabled": true,
     "extra": {
+      "revenuecat": {
+        "apiKey": "test_gReKYJMgdINDFUNLBtAWZBHxyoR",
+        "entitlementIdentifier": "Social Charge Pro",
+        "offeringIdentifier": "default",
+        "products": {
+          "monthly": "monthly",
+          "yearly": "yearly",
+          "lifetime": "lifetime"
+        },
+        "customerCenter": {
+          "enabled": true
+        }
+      },
       "eas": {
         "projectId": "d23885a9-5980-4fdb-a5ca-6f7921bc883b"
       }

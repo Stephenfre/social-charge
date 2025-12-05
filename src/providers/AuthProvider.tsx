@@ -1,7 +1,7 @@
 // src/providers/AuthProvider.tsx
-import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
-import { supabase } from '~/lib/supabase';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
+import { supabase } from '~/lib/supabase';
 import { UsersRow } from '~/types/user.type';
 
 type AuthCtx = {
@@ -10,9 +10,11 @@ type AuthCtx = {
   user: UsersRow | null;
   initializing: boolean;
   refreshUser: () => Promise<UsersRow | null>;
-  justCompletedOnboarding: boolean;
-  setJustCompletedOnboarding: (value: boolean) => void;
   setUserState: React.Dispatch<React.SetStateAction<UsersRow | null>>;
+
+  // 👇 NEW
+  justCompletedOnboarding: boolean;
+  setJustCompletedOnboarding: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 const AuthContext = createContext<AuthCtx>({
@@ -21,19 +23,22 @@ const AuthContext = createContext<AuthCtx>({
   user: null,
   initializing: true,
   refreshUser: async () => null,
+  setUserState: () => {},
   justCompletedOnboarding: false,
   setJustCompletedOnboarding: () => {},
-  setUserState: () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<UsersRow | null>(null);
   const [initializing, setInitializing] = useState(true);
+
+  // 👇 NEW
   const [justCompletedOnboarding, setJustCompletedOnboarding] = useState(false);
 
   const fetchUser = useCallback(async (userId: string) => {
     const { data, error } = await supabase.from('users').select('*').eq('id', userId).single();
+
     if (!error && data) {
       setUser(data);
       return data;
@@ -60,9 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, s) => load(s));
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, [fetchUser]);
 
   const refreshUser = useCallback(async () => {
@@ -74,12 +77,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => ({
       session,
       userId: session?.user?.id ?? null,
-      user: user ?? null,
+      user,
       initializing,
       refreshUser,
+      setUserState: setUser,
+
       justCompletedOnboarding,
       setJustCompletedOnboarding,
-      setUserState: setUser,
     }),
     [session, user, initializing, refreshUser, justCompletedOnboarding]
   );

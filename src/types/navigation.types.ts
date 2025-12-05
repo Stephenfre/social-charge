@@ -40,7 +40,6 @@ export type RootStackParamList = {
   ProfileIndex: undefined;
   'Profile Settings': undefined;
   'Update Profile': undefined;
-  Membership: undefined;
   ViewEvent: { eventId: string };
   'All Events': undefined;
   'Event History': { filter?: 'all' | 'upcoming' | 'history' } | undefined;

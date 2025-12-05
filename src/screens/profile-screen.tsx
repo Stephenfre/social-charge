@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import dayjs from 'dayjs';
+import { useState } from 'react';
 import { ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EventsList } from '~/components';
@@ -8,6 +8,7 @@ import { Badge, Box, Button, Flex, Image, Pressable, Text } from '~/components/u
 import { Icon, MenuIcon } from '~/components/ui/icon';
 import { useStorageImages, useTokenBalance, useUserEvents, useUserInterests } from '~/hooks';
 import { useAuth } from '~/providers/AuthProvider';
+import { useRevenueCat } from '~/providers/RevenueCatProvider';
 import { RootStackParamList } from '~/types/navigation.types';
 import { interestEmojis } from '~/utils/const';
 
@@ -20,6 +21,7 @@ export function ProfileScreen() {
   const navigation = useNavigation<ProfileNav>();
 
   const { user } = useAuth();
+  const { isPro, presentPaywall, loadingOfferings } = useRevenueCat();
   const { data: events, isLoading: eventsLoading } = useUserEvents(6);
   const { data: interests, isLoading: interestsLoading } = useUserInterests(user?.id!);
   const { data: tokens } = useTokenBalance();
@@ -27,6 +29,7 @@ export function ProfileScreen() {
     bucket: 'avatars',
     paths: [user?.profile_picture],
   });
+  const [isOpeningPaywall, setIsOpeningPaywall] = useState(false);
 
   const handleViewAllPress = () => {
     navigation.navigate('Event History', { filter: 'history' });
@@ -38,6 +41,15 @@ export function ProfileScreen() {
 
   const handleOpenSettings = () => {
     navigation.navigate('Profile Settings');
+  };
+
+  const handleUpgradePress = async () => {
+    setIsOpeningPaywall(true);
+    try {
+      await presentPaywall();
+    } finally {
+      setIsOpeningPaywall(false);
+    }
   };
 
   const upcomingEvents = (events ?? []).filter((event) => event.event_status === 'upcoming');
@@ -104,6 +116,14 @@ export function ProfileScreen() {
               </Flex>
             </Pressable>
           </Flex>
+          {!isPro && (
+            <Button
+              className="rounded-xl bg-primary-500"
+              disabled={isOpeningPaywall || loadingOfferings}
+              onPress={handleUpgradePress}>
+              <Text bold>Go Premium</Text>
+            </Button>
+          )}
           <Flex>
             <Text size="2xl" bold className="mb-2">
               Interests

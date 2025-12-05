@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Flex, Pressable, Text } from '~/components/ui';
 import { cn } from '~/utils/cn';
 import { useAuth } from '~/providers/AuthProvider';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { CommonActions, useNavigation, useRoute } from '@react-navigation/native';
 import type { NavigationProp } from '~/types/navigation';
 import { supabase } from '~/lib/supabase';
 import { Enums } from '~/types/database.types';
@@ -20,7 +20,7 @@ const VIBE_OPTIONS: { slug: Enums<'vibe_slug'>; label: string; emoji: string }[]
 
 export function OnboardingVibeScreen() {
   const navigation = useNavigation<NavigationProp<'OnboardingVibe'>>();
-  const { userId, user, refreshUser, setJustCompletedOnboarding, setUserState } = useAuth();
+  const { userId, user, refreshUser, setUserState, setJustCompletedOnboarding } = useAuth();
   const [selected, setSelected] = useState<Enums<'vibe_slug'> | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const route = useRoute<RootRoute<'OnboardingVibe'>>();
@@ -31,26 +31,6 @@ export function OnboardingVibeScreen() {
   const handleSelect = useCallback((slug: Enums<'vibe_slug'>) => {
     setSelected((prev) => (prev === slug ? null : slug));
   }, []);
-
-  const goBackToSettings = useCallback(() => {
-    navigation.reset({
-      index: 0,
-      routes: [
-        {
-          name: 'Root' as never,
-          params: {
-            screen: 'Tabs',
-            params: {
-              screen: 'Profile',
-              params: {
-                screen: 'Profile Settings',
-              },
-            },
-          },
-        } as never,
-      ],
-    });
-  }, [navigation]);
 
   useEffect(() => {
     if (!editMode) return;
@@ -69,6 +49,39 @@ export function OnboardingVibeScreen() {
     [prefillLoading, selected, submitting, userId]
   );
 
+  const handleReturnToSettings = useCallback(() => {
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'Root',
+            state: {
+              index: 0,
+              routes: [
+                {
+                  name: 'Tabs',
+                  state: {
+                    index: 0,
+                    routes: [
+                      {
+                        name: 'Profile',
+                        state: {
+                          index: 1,
+                          routes: [{ name: 'ProfileIndex' }, { name: 'Profile Settings' }],
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      })
+    );
+  }, [navigation]);
+
   const handleFinish = useCallback(async () => {
     if (!userId || !selected || submitting) return;
     setSubmitting(true);
@@ -77,27 +90,28 @@ export function OnboardingVibeScreen() {
         .from('users')
         .update({ preferred_vibe_slug: selected, onboarded: true })
         .eq('id', userId);
+
       await supabase
         .from('user_onboarding_profile')
         .upsert(
           { user_id: userId, completed: true, updated_at: new Date().toISOString() },
           { onConflict: 'user_id' }
         );
-      await refreshUser();
-      if (returnToSettings) {
-        goBackToSettings();
-        return;
-      }
-      setUserState((prev) =>
-        prev
-          ? {
-              ...prev,
-              preferred_vibe_slug: selected,
-              onboarded: true,
-            }
-          : prev
-      );
+
+      const refreshed = await refreshUser();
+
+      setUserState((prev) => {
+        const base = refreshed ?? prev;
+        if (!base) return base;
+        return { ...base, preferred_vibe_slug: selected, onboarded: true };
+      });
+
+      // 👉 this flag is what HomeScreen listens for
       setJustCompletedOnboarding(true);
+
+      if (returnToSettings) {
+        handleReturnToSettings();
+      }
     } catch (error) {
       Alert.alert('Something went wrong', 'Please try again.');
       console.error('Failed to save vibe preference', error);
@@ -105,7 +119,7 @@ export function OnboardingVibeScreen() {
       setSubmitting(false);
     }
   }, [
-    goBackToSettings,
+    handleReturnToSettings,
     refreshUser,
     returnToSettings,
     selected,
