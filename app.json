@@ -51,9 +51,9 @@
         "entitlementIdentifier": "Social Charge Pro",
         "offeringIdentifier": "default",
         "products": {
-          "monthly": "monthly",
-          "yearly": "yearly",
-          "lifetime": "lifetime"
+          "monthly": "sub_monthly_1",
+          "yearly": "sub_yearly",
+          "lifetime": "sub_lifetime"
         },
         "customerCenter": {
           "enabled": true

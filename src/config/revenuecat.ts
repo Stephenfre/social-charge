@@ -47,9 +47,11 @@ const resolveExtra = (): Record<string, unknown> => {
 const extra = resolveExtra();
 const rawRevenueCat = (extra.revenuecat ?? {}) as RevenueCatExtra;
 
+console.log(' rawRevenueCat.offeringIdentifier ', rawRevenueCat.offeringIdentifier);
+
 const defaultProducts: RevenueCatProductsConfig = {
-  monthly: 'monthly',
-  yearly: 'yearly',
+  monthly: 'sub_monthly_1',
+  yearly: 'sub_yearly',
 };
 
 export const revenueCatConfig: RevenueCatConfig = {
