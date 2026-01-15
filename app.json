@@ -33,6 +33,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.socialcharge.app",
+      "config": {
+        "googleMapsApiKey": "AIzaSyBCcCKvxUWXnP_qg9N2zoJclTIe4K_Cz8A"
+      },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }

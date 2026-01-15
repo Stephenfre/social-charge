@@ -516,6 +516,7 @@ export type VibeSlug = 'chill' | 'party-animal' | 'low-key' | 'adventurous';
 
 export type SubmitEventReviewArgs = {
   eventId: string;
+  venueId: string | null;
   ratings: {
     event: { rating: number; comment: string | null };
     venue: { rating: number; comment: string | null };
@@ -523,6 +524,7 @@ export type SubmitEventReviewArgs = {
   };
   // array of votes: { user_id, vibe_slug }
   attendeeVibes: Array<{ user_id: string; vibe_slug: VibeSlug }>;
+  hostIds: string[];
 };
 
 export function useSubmitEventReview() {
@@ -531,24 +533,51 @@ export function useSubmitEventReview() {
 
   return useMutation({
     mutationFn: async (payload: SubmitEventReviewArgs) => {
-      const { eventId, ratings, attendeeVibes } = payload;
+      const { eventId, venueId, ratings, attendeeVibes, hostIds } = payload;
+      if (!userId) throw new Error('User is not authenticated.');
 
-      const { data, error } = await supabase.rpc('submit_full_review', {
+      const hostReviews = hostIds.map((hostId) => ({
+        host_user_id: hostId,
+        rating: ratings.host.rating,
+        comment: ratings.host.comment ?? '',
+      }));
+
+      const rpcPromise = supabase.rpc('submit_full_review', {
         p_event_id: eventId,
         p_event_rating: ratings.event.rating,
         p_event_comment: ratings.event.comment ?? '',
-        p_host_reviews: JSON.stringify([
-          {
-            host_user_id: userId, // or event.host.id if reviewing a host
-            rating: ratings.host.rating,
-            comment: ratings.host.comment,
-          },
-        ]),
+        p_host_reviews: JSON.stringify(hostReviews),
         p_attendee_vibes: JSON.stringify(attendeeVibes),
       });
 
-      if (error) throw error;
-      return data;
+      const venueReviewPromise =
+        venueId && ratings.venue.rating
+          ? supabase.from('venue_reviews').upsert(
+              {
+                event_id: eventId,
+                place_id: null,
+                reviewer_id: userId,
+                rating: ratings.venue.rating,
+                comment: ratings.venue.comment ?? null,
+              },
+              { onConflict: 'event_id,place_id,reviewer_id' }
+            )
+          : null;
+
+      const settled = await Promise.all([
+        rpcPromise,
+        ...(venueReviewPromise ? [venueReviewPromise] : []),
+      ]);
+
+      const rpcResult = settled[0] as { data: unknown; error: Error | null };
+      if (rpcResult.error) throw rpcResult.error;
+
+      if (venueReviewPromise) {
+        const venueResult = settled[1] as { error: Error | null };
+        if (venueResult.error) throw venueResult.error;
+      }
+
+      return rpcResult.data;
     },
 
     onSuccess: (_res, vars) => {

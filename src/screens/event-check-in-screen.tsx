@@ -24,10 +24,10 @@ import { cn } from '~/utils/cn';
 import { CancelRsvpButton } from './view-event-screen';
 import { UserCheckInQr } from '~/components';
 
-type HomeNav = NativeStackNavigationProp<RootStackParamList, 'HomeIndex'>;
+type CheckInNav = NativeStackNavigationProp<RootStackParamList>;
 
 export function EventCheckInScreen() {
-  const navigation = useNavigation<HomeNav>();
+  const navigation = useNavigation<CheckInNav>();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { params } = useRouteStack<'CheckInIndex'>();
@@ -63,13 +63,19 @@ export function EventCheckInScreen() {
   const handleUserCheckInPress = () => {
     setIsUserCheckInModalVisible(true);
   };
+  const handleReviewPress = () => {
+    if (!event?.id) return;
+    navigation.navigate('EventReview', { eventId: event.id });
+  };
 
   const startsAt = event?.starts_at ? dayjs(event.starts_at) : null;
+  const endsAt = event?.ends_at ? dayjs(event.ends_at) : null;
   const isUserAlreadyCheckedIn =
     !!effectiveEventId && !!user && !!userCheckedIn
       ? effectiveEventId === userCheckedIn.event_id && user.id === userCheckedIn.user_id
       : false;
   const isBeforeStart = startsAt ? dayjs().isBefore(startsAt) : false;
+  const hasEventEnded = endsAt ? dayjs().isAfter(endsAt) : false;
   const withinTwoHours = startsAt ? startsAt.diff(dayjs(), 'hour', true) <= 2 : false;
 
   if (!eventIdParam) {
@@ -124,6 +130,81 @@ export function EventCheckInScreen() {
     latitude: event.latitude ?? undefined,
     longitude: event.longitude ?? undefined,
   };
+  const checkInDisabled = isUserAlreadyCheckedIn || isBeforeStart || isPending || hasEventEnded;
+  const checkInLabel = isUserAlreadyCheckedIn ? 'Checked In' : 'Check In';
+
+  const renderCheckInButton = (overrideClass?: string) => (
+    <Button
+      className={cn(
+        'h-14 rounded-lg',
+        checkInDisabled ? 'bg-gray-500' : 'bg-primary',
+        overrideClass
+      )}
+      onPress={handleUserCheckInPress}
+      disabled={checkInDisabled}>
+      <Flex align="center">
+        <Text bold size="lg">
+          {checkInLabel}
+        </Text>
+        {event.starts_at && <Countdown to={event.starts_at} />}
+      </Flex>
+    </Button>
+  );
+
+  const renderHostAction = () => (
+    <Button
+      className={cn('h-14 w-full rounded-lg', checkInDisabled ? 'bg-gray-500' : 'bg-primary')}
+      onPress={() => console}
+      disabled={checkInDisabled}>
+      <Flex align="center">
+        <Text bold size="lg">
+          Scan Qr code
+        </Text>
+        {event.starts_at && <Countdown to={event.starts_at} />}
+      </Flex>
+    </Button>
+  );
+
+  const renderUserActions = () => {
+    if (hasEventEnded) {
+      return (
+        <Button className="h-14 w-full rounded-lg bg-primary" onPress={handleReviewPress}>
+          <Text bold size="lg" className="text-white">
+            Review Event
+          </Text>
+        </Button>
+      );
+    }
+
+    if (withinTwoHours) {
+      return renderCheckInButton('w-full');
+    }
+
+    return (
+      <Flex direction="row" align="center" justify="space-between">
+        <Flex align="center">
+          <Text bold size="md">
+            Tokens Cost
+          </Text>
+          <Text size="2xl" bold className="text-primary">
+            {event.token_cost ?? 0}
+          </Text>
+        </Flex>
+        <Flex direction="row" align="center" gap={2} className="w-1/2">
+          {renderCheckInButton('flex-1')}
+          {event.id && (
+            <CancelRsvpButton
+              className="flex-1 rounded-lg bg-background-dark"
+              eventId={event.id}
+              tokenCost={event.token_cost ?? 0}
+              eventTitle={event.title ?? ''}
+              eventStartsAt={event.starts_at ?? null}
+            />
+          )}
+        </Flex>
+      </Flex>
+    );
+  };
 
   return (
     <Flex flex className="bg-background-dark">
@@ -160,7 +241,7 @@ export function EventCheckInScreen() {
         <BottomSheetScrollView
           contentContainerStyle={{
             paddingHorizontal: 16,
-            paddingBottom: insets.bottom + 48,
+            paddingBottom: insets.bottom + 120,
           }}>
           <Flex className="px-4" gap={8}>
             <Flex gap={3}>
@@ -190,55 +271,6 @@ export function EventCheckInScreen() {
             </Flex>
 
             <Map location={mapLocation} height={220} rounded />
-
-            <Flex direction="row" gap={2} align="center">
-              {user?.role === 'user' ? (
-                <>
-                  <Button
-                    size="xl"
-                    className={cn(
-                      'w-1/2',
-                      isBeforeStart || isUserAlreadyCheckedIn ? 'bg-gray-500' : 'bg-primary',
-                      withinTwoHours && 'w-full'
-                    )}
-                    onPress={handleUserCheckInPress}
-                    disabled={isUserAlreadyCheckedIn || isBeforeStart || isPending}>
-                    <Flex align="center">
-                      <Text bold size="lg">
-                        {isUserAlreadyCheckedIn ? 'Checked In' : 'Check In'}
-                      </Text>
-                      {event.starts_at && <Countdown to={event.starts_at} />}
-                    </Flex>
-                  </Button>
-                  {!withinTwoHours && event.id && (
-                    <CancelRsvpButton
-                      className="w-1/2 bg-background-dark"
-                      eventId={event.id}
-                      tokenCost={event.token_cost ?? 0}
-                      eventTitle={event.title ?? ''}
-                      eventStartsAt={event.starts_at ?? null}
-                    />
-                  )}
-                </>
-              ) : (
-                <Button
-                  size="xl"
-                  className={cn(
-                    'w-1/2',
-                    isBeforeStart || isUserAlreadyCheckedIn ? 'bg-gray-500' : 'bg-primary',
-                    withinTwoHours && 'w-full'
-                  )}
-                  onPress={() => console}
-                  disabled={isUserAlreadyCheckedIn || isBeforeStart || isPending}>
-                  <Flex align="center">
-                    <Text bold size="lg">
-                      Scan Qr code
-                    </Text>
-                    {event.starts_at && <Countdown to={event.starts_at} />}
-                  </Flex>
-                </Button>
-              )}
-            </Flex>
 
             <Flex direction="row" align="center" gap={4}>
               {event.event_hosts?.length ? (
@@ -351,6 +383,13 @@ export function EventCheckInScreen() {
           </Flex>
         </BottomSheetScrollView>
       </BottomSheet>
+      <View
+        className="absolute bottom-0 left-0 right-0 border-t bg-background-dark px-14 pt-3"
+        style={{
+          paddingBottom: insets.bottom - 20,
+        }}>
+        {user?.role === 'user' ? renderUserActions() : renderHostAction()}
+      </View>
       <Modal
         animationType="slide"
         transparent
@@ -376,8 +415,14 @@ export function EventCheckInScreen() {
             <Text bold size="xl">
               Welcome
             </Text>
-            <Text size="sm">Show QR code to checkIn</Text>
-            <UserCheckInQr eventId={event.id!} size={160} />
+            {hasEventEnded ? (
+              <Text size="sm">Event has ended, QR code is no longer available.</Text>
+            ) : (
+              <>
+                <Text size="sm">Show QR code to checkIn</Text>
+                <UserCheckInQr eventId={event.id!} size={160} />
+              </>
+            )}
 
             <Pressable onPress={() => setIsUserCheckInModalVisible(false)}>
               <Text bold size="md">
