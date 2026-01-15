@@ -293,9 +293,9 @@ export function MainTabNavigator() {
   const headerCommon = {
     headerShown: true,
     headerBackButtonDisplayMode: 'minimal' as const,
-    headerStyle: { backgroundColor: palette.header },
-    headerTintColor: palette.text,
-    headerTitleStyle: { color: palette.text },
+    headerStyle: { backgroundColor: '#0F1012' },
+    headerTintColor: '#fff',
+    headerTitleStyle: { color: '#fff' },
   };
 
   return (
@@ -323,7 +323,7 @@ export function MainTabNavigator() {
       <RootStackNav.Screen
         name="ScanQrModal"
         component={HostScannerScreen}
-        options={{ headerShown: false, presentation: 'modal' }}
+        options={{ headerShown: false, presentation: 'fullScreenModal' }}
       />
     </RootStackNav.Navigator>
   );

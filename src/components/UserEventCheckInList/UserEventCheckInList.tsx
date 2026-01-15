@@ -36,59 +36,65 @@ export function UserEventCheckInList() {
   };
 
   const renderItem = useCallback(
-    ({ item }: { item: UserEventCardRow }) => (
-      <Pressable
-        className="mr-8 mt-16 flex h-[90%] rounded-2xl bg-background-900"
-        onPress={() => {
-          console.log('pressed');
-          navigation.navigate('CheckInIndex', { eventId: item.id! });
-        }}
-        style={{
-          width: CARD_W,
-          marginRight: GAP,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 10 },
-          shadowOpacity: 0.6,
-          shadowRadius: 10,
-          elevation: 6,
-        }}>
-        <View style={{ borderRadius: 16, overflow: 'hidden' }}>
-          <Image
-            source={item?.cover_img ? { uri: item.cover_img } : undefined}
-            size="cover"
-            overlay={false}
-            alt="image"
-            rounded="2xl"
-          />
-          <LinearGradient colors={['transparent', '#18191f']} style={styles.gradient} />
-        </View>
+    ({ item }: { item: UserEventCardRow }) => {
+      const hasEventEnded =
+        item.event_status === 'past' ||
+        (item.ends_at ? dayjs().isAfter(dayjs(item.ends_at)) : false);
 
-        <Flex className="px-4">
-          <Text size="5xl" bold>
-            {item.title}
-          </Text>
+      return (
+        <Pressable
+          className="mr-8 mt-16 flex h-[90%] rounded-2xl bg-background-900"
+          onPress={() => {
+            console.log('pressed');
+            navigation.navigate('CheckInIndex', { eventId: item.id! });
+          }}
+          style={{
+            width: CARD_W,
+            marginRight: GAP,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 10 },
+            shadowOpacity: 0.6,
+            shadowRadius: 10,
+            elevation: 6,
+          }}>
+          <View style={{ borderRadius: 16, overflow: 'hidden' }}>
+            <Image
+              source={item?.cover_img ? { uri: item.cover_img } : undefined}
+              size="cover"
+              overlay={false}
+              alt="image"
+              rounded="2xl"
+            />
+            <LinearGradient colors={['transparent', '#18191f']} style={styles.gradient} />
+          </View>
 
-          <Flex direction="row" gap={4}>
-            <Flex direction="row" align="center" gap={2}>
-              <Icon as={Calendar} size={'lg'} className="text-typography-light" />
-              <Text size="lg">{dayjs(item.starts_at).format('ddd, MMM DD')}</Text>
+          <Flex className="px-4">
+            <Text size="5xl" bold>
+              {item.title}
+            </Text>
+
+            <Flex direction="row" gap={4}>
+              <Flex direction="row" align="center" gap={2}>
+                <Icon as={Calendar} size={'lg'} className="text-typography-light" />
+                <Text size="lg">{dayjs(item.starts_at).format('ddd, MMM DD')}</Text>
+              </Flex>
+              <Flex direction="row" align="center" gap={2}>
+                <Icon as={Clock} size={'lg'} className="text-typography-light" />
+                <Text size="lg">{dayjs(item.starts_at).format('h:mm A')}</Text>
+              </Flex>
             </Flex>
             <Flex direction="row" align="center" gap={2}>
-              <Icon as={Clock} size={'lg'} className="text-typography-light" />
-              <Text size="lg">{dayjs(item.starts_at).format('h:mm A')}</Text>
+              <Icon as={MapPin} size={'lg'} className="text-typography-light" />
+              <Text size="lg">{item.location_text}</Text>
+            </Flex>
+
+            <Flex align="center" className="mt-10">
+              {!hasEventEnded && <UserCheckInQr eventId={item.id!} size={160} />}
             </Flex>
           </Flex>
-          <Flex direction="row" align="center" gap={2}>
-            <Icon as={MapPin} size={'lg'} className="text-typography-light" />
-            <Text size="lg">{item.location_text}</Text>
-          </Flex>
-
-          <Flex align="center" className="mt-10">
-            <UserCheckInQr eventId={item.id!} size={160} />
-          </Flex>
-        </Flex>
-      </Pressable>
-    ),
+        </Pressable>
+      );
+    },
     [navigation]
   );
 

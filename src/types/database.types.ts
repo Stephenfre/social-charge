@@ -90,13 +90,6 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "check_ins_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       event_attendance: {
@@ -181,13 +174,6 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "event_attendance_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       event_hosts: {
@@ -210,13 +196,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "event_host_user_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "event_hosts_event_id_fkey"
@@ -273,13 +252,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "event_hosts_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -364,13 +336,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "event_messages_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -462,13 +427,6 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "event_reviews_reviewer_id_fkey"
-            columns: ["reviewer_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       events: {
@@ -545,13 +503,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "events_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -630,13 +581,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "favorited_events_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -729,25 +673,11 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "host_reviews_host_id_fkey"
-            columns: ["host_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
-          },
-          {
             foreignKeyName: "host_reviews_reviewer_id_fkey"
             columns: ["reviewer_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "host_reviews_reviewer_id_fkey"
-            columns: ["reviewer_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -792,13 +722,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "qr_tokens_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "qr_tokens_event_id_fkey"
@@ -855,13 +778,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "qr_tokens_subject_user_id_fkey"
-            columns: ["subject_user_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -942,25 +858,11 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "review_vibes_vibe_user_id_fkey"
-            columns: ["vibe_user_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
-          },
-          {
             foreignKeyName: "review_vibes_voter_id_fkey"
             columns: ["voter_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "review_vibes_voter_id_fkey"
-            columns: ["voter_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -990,13 +892,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rsvp_user_fk"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "rsvps_event_id_fkey"
@@ -1053,13 +948,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rsvps_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1172,13 +1060,6 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "token_ledger_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       token_transactions: {
@@ -1214,13 +1095,6 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "token_transactions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       user_day_prefs: {
@@ -1246,13 +1120,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_day_prefs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1280,13 +1147,6 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "user_event_goals_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       user_interests: {
@@ -1312,13 +1172,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_interests_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1370,13 +1223,6 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "user_onboarding_profile_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       user_time_prefs: {
@@ -1402,13 +1248,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_time_prefs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1501,25 +1340,11 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_vibe_history_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
-          },
-          {
             foreignKeyName: "user_vibe_history_voter_id_fkey"
             columns: ["voter_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_vibe_history_voter_id_fkey"
-            columns: ["voter_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1593,7 +1418,7 @@ export type Database = {
           event_id: string | null
           id: string
           is_anonymous: boolean
-          place_id: string
+          place_id: string | null
           rating: number
           reviewer_id: string
           updated_at: string
@@ -1604,7 +1429,7 @@ export type Database = {
           event_id?: string | null
           id?: string
           is_anonymous?: boolean
-          place_id: string
+          place_id?: string | null
           rating: number
           reviewer_id: string
           updated_at?: string
@@ -1615,7 +1440,7 @@ export type Database = {
           event_id?: string | null
           id?: string
           is_anonymous?: boolean
-          place_id?: string
+          place_id?: string | null
           rating?: number
           reviewer_id?: string
           updated_at?: string
@@ -1683,13 +1508,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "venue_reviews_reviewer_id_fkey"
-            columns: ["reviewer_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1865,71 +1683,6 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "events_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
-          },
-        ]
-      }
-      v_event_user_vibes: {
-        Row: {
-          event_id: string | null
-          vibe_count: number | null
-          vibe_slug: Database["public"]["Enums"]["vibe_slug"] | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "rsvps_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "events"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rsvps_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "v_event_counts"
-            referencedColumns: ["event_id"]
-          },
-          {
-            foreignKeyName: "rsvps_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "v_event_summary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rsvps_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "v_event_with_host_rsvp_checkin"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rsvps_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "v_events_for_current_user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rsvps_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "v_user_events"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rsvps_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "view_weekend_events"
-            referencedColumns: ["id"]
-          },
         ]
       }
       v_event_with_host_rsvp_checkin: {
@@ -1974,13 +1727,6 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "events_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       v_events_for_current_user: {
@@ -2013,13 +1759,6 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "events_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       v_host_ratings: {
@@ -2035,13 +1774,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "host_reviews_host_id_fkey"
-            columns: ["host_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2077,13 +1809,6 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "events_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       v_user_token_balance: {
@@ -2098,13 +1823,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "token_ledger_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2153,68 +1871,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "events_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
-          },
-        ]
-      }
-      vw_user_current_vibe: {
-        Row: {
-          user_id: string | null
-          vibe_slug: Database["public"]["Enums"]["vibe_slug"] | null
-        }
-        Relationships: []
-      }
-      vw_user_peer_vibe_90d: {
-        Row: {
-          rn: number | null
-          score: number | null
-          user_id: string | null
-          vibe_slug: Database["public"]["Enums"]["vibe_slug"] | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_vibe_history_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_vibe_history_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
-          },
-        ]
-      }
-      vw_user_peer_vibe_all: {
-        Row: {
-          rn: number | null
-          score: number | null
-          user_id: string | null
-          vibe_slug: Database["public"]["Enums"]["vibe_slug"] | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_vibe_history_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_vibe_history_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "vw_user_current_vibe"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2314,29 +1970,6 @@ export type Database = {
       addgeometrycolumn:
         | {
             Args: {
-              column_name: string
-              new_dim: number
-              new_srid: number
-              new_type: string
-              schema_name: string
-              table_name: string
-              use_typmod?: boolean
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              column_name: string
-              new_dim: number
-              new_srid: number
-              new_type: string
-              table_name: string
-              use_typmod?: boolean
-            }
-            Returns: string
-          }
-        | {
-            Args: {
               catalog_name: string
               column_name: string
               new_dim: number
@@ -2348,9 +1981,41 @@ export type Database = {
             }
             Returns: string
           }
+        | {
+            Args: {
+              column_name: string
+              new_dim: number
+              new_srid: number
+              new_type: string
+              schema_name: string
+              table_name: string
+              use_typmod?: boolean
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              column_name: string
+              new_dim: number
+              new_srid: number
+              new_type: string
+              table_name: string
+              use_typmod?: boolean
+            }
+            Returns: string
+          }
       check_in: { Args: { event_id: string }; Returns: undefined }
       disablelongtransactions: { Args: never; Returns: string }
       dropgeometrycolumn:
+        | {
+            Args: {
+              catalog_name: string
+              column_name: string
+              schema_name: string
+              table_name: string
+            }
+            Returns: string
+          }
         | {
             Args: {
               column_name: string
@@ -2360,26 +2025,17 @@ export type Database = {
             Returns: string
           }
         | { Args: { column_name: string; table_name: string }; Returns: string }
+      dropgeometrytable:
         | {
             Args: {
               catalog_name: string
-              column_name: string
               schema_name: string
               table_name: string
             }
             Returns: string
           }
-      dropgeometrytable:
         | { Args: { schema_name: string; table_name: string }; Returns: string }
         | { Args: { table_name: string }; Returns: string }
-        | {
-            Args: {
-              catalog_name: string
-              schema_name: string
-              table_name: string
-            }
-            Returns: string
-          }
       enablelongtransactions: { Args: never; Returns: string }
       equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
       f_user_event_current_or_next: { Args: never; Returns: Json }
@@ -2487,8 +2143,8 @@ export type Database = {
       gettransactionid: { Args: never; Returns: unknown }
       longtransactionsenabled: { Args: never; Returns: boolean }
       populate_geometry_columns:
-        | { Args: { use_typmod?: boolean }; Returns: string }
         | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }
+        | { Args: { use_typmod?: boolean }; Returns: string }
       postgis_constraint_dims: {
         Args: { geomcolumn: string; geomschema: string; geomtable: string }
         Returns: number
@@ -2535,7 +2191,7 @@ export type Database = {
         Returns: Json
       }
       set_self_vibe: {
-        Args: { vibe_slug: Database["public"]["Enums"]["vibe_slug"] }
+        Args: { p_vibe: Database["public"]["Enums"]["vibe_slug"] }
         Returns: undefined
       }
       spend_tokens: {
@@ -2590,6 +2246,14 @@ export type Database = {
       st_asewkt: { Args: { "": string }; Returns: string }
       st_asgeojson:
         | {
+            Args: { geog: unknown; maxdecimaldigits?: number; options?: number }
+            Returns: string
+          }
+        | {
+            Args: { geom: unknown; maxdecimaldigits?: number; options?: number }
+            Returns: string
+          }
+        | {
             Args: {
               geom_column?: string
               maxdecimaldigits?: number
@@ -2598,16 +2262,34 @@ export type Database = {
             }
             Returns: string
           }
+        | { Args: { "": string }; Returns: string }
+      st_asgml:
+        | {
+            Args: {
+              geog: unknown
+              id?: string
+              maxdecimaldigits?: number
+              nprefix?: string
+              options?: number
+            }
+            Returns: string
+          }
         | {
             Args: { geom: unknown; maxdecimaldigits?: number; options?: number }
             Returns: string
           }
+        | { Args: { "": string }; Returns: string }
         | {
-            Args: { geog: unknown; maxdecimaldigits?: number; options?: number }
+            Args: {
+              geog: unknown
+              id?: string
+              maxdecimaldigits?: number
+              nprefix?: string
+              options?: number
+              version: number
+            }
             Returns: string
           }
-        | { Args: { "": string }; Returns: string }
-      st_asgml:
         | {
             Args: {
               geom: unknown
@@ -2619,39 +2301,13 @@ export type Database = {
             }
             Returns: string
           }
-        | {
-            Args: { geom: unknown; maxdecimaldigits?: number; options?: number }
-            Returns: string
-          }
-        | {
-            Args: {
-              geog: unknown
-              id?: string
-              maxdecimaldigits?: number
-              nprefix?: string
-              options?: number
-              version: number
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              geog: unknown
-              id?: string
-              maxdecimaldigits?: number
-              nprefix?: string
-              options?: number
-            }
-            Returns: string
-          }
-        | { Args: { "": string }; Returns: string }
       st_askml:
         | {
-            Args: { geom: unknown; maxdecimaldigits?: number; nprefix?: string }
+            Args: { geog: unknown; maxdecimaldigits?: number; nprefix?: string }
             Returns: string
           }
         | {
-            Args: { geog: unknown; maxdecimaldigits?: number; nprefix?: string }
+            Args: { geom: unknown; maxdecimaldigits?: number; nprefix?: string }
             Returns: string
           }
         | { Args: { "": string }; Returns: string }
@@ -2672,11 +2328,11 @@ export type Database = {
       }
       st_assvg:
         | {
-            Args: { geom: unknown; maxdecimaldigits?: number; rel?: number }
+            Args: { geog: unknown; maxdecimaldigits?: number; rel?: number }
             Returns: string
           }
         | {
-            Args: { geog: unknown; maxdecimaldigits?: number; rel?: number }
+            Args: { geom: unknown; maxdecimaldigits?: number; rel?: number }
             Returns: string
           }
         | { Args: { "": string }; Returns: string }
@@ -2684,8 +2340,7 @@ export type Database = {
       st_astwkb:
         | {
             Args: {
-              geom: unknown[]
-              ids: number[]
+              geom: unknown
               prec?: number
               prec_m?: number
               prec_z?: number
@@ -2696,7 +2351,8 @@ export type Database = {
           }
         | {
             Args: {
-              geom: unknown
+              geom: unknown[]
+              ids: number[]
               prec?: number
               prec_m?: number
               prec_z?: number
@@ -2710,8 +2366,8 @@ export type Database = {
         Returns: string
       }
       st_azimuth:
-        | { Args: { geom1: unknown; geom2: unknown }; Returns: number }
         | { Args: { geog1: unknown; geog2: unknown }; Returns: number }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: number }
       st_boundingdiagonal: {
         Args: { fits?: boolean; geom: unknown }
         Returns: unknown
@@ -2776,11 +2432,11 @@ export type Database = {
         Returns: boolean
       }
       st_distance:
-        | { Args: { geom1: unknown; geom2: unknown }; Returns: number }
         | {
             Args: { geog1: unknown; geog2: unknown; use_spheroid?: boolean }
             Returns: number
           }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: number }
       st_distancesphere:
         | { Args: { geom1: unknown; geom2: unknown }; Returns: number }
         | {
@@ -2802,6 +2458,11 @@ export type Database = {
       }
       st_equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
       st_expand:
+        | { Args: { box: unknown; dx: number; dy: number }; Returns: unknown }
+        | {
+            Args: { box: unknown; dx: number; dy: number; dz?: number }
+            Returns: unknown
+          }
         | {
             Args: {
               dm?: number
@@ -2812,11 +2473,6 @@ export type Database = {
             }
             Returns: unknown
           }
-        | {
-            Args: { box: unknown; dx: number; dy: number; dz?: number }
-            Returns: unknown
-          }
-        | { Args: { box: unknown; dx: number; dy: number }; Returns: unknown }
       st_force3d: { Args: { geom: unknown; zvalue?: number }; Returns: unknown }
       st_force3dm: {
         Args: { geom: unknown; mvalue?: number }
@@ -2831,16 +2487,16 @@ export type Database = {
         Returns: unknown
       }
       st_generatepoints:
+        | { Args: { area: unknown; npoints: number }; Returns: unknown }
         | {
             Args: { area: unknown; npoints: number; seed: number }
             Returns: unknown
           }
-        | { Args: { area: unknown; npoints: number }; Returns: unknown }
       st_geogfromtext: { Args: { "": string }; Returns: unknown }
       st_geographyfromtext: { Args: { "": string }; Returns: unknown }
       st_geohash:
-        | { Args: { geom: unknown; maxchars?: number }; Returns: string }
         | { Args: { geog: unknown; maxchars?: number }; Returns: string }
+        | { Args: { geom: unknown; maxchars?: number }; Returns: string }
       st_geomcollfromtext: { Args: { "": string }; Returns: unknown }
       st_geometricmedian: {
         Args: {
@@ -2884,8 +2540,8 @@ export type Database = {
         Returns: unknown
       }
       st_intersects:
-        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
         | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
       st_isvaliddetail: {
         Args: { flags?: number; geom: unknown }
         Returns: Database["public"]["CompositeTypes"]["valid_detail"]
@@ -3038,8 +2694,8 @@ export type Database = {
         Returns: unknown
       }
       st_setsrid:
-        | { Args: { geom: unknown; srid: number }; Returns: unknown }
         | { Args: { geog: unknown; srid: number }; Returns: unknown }
+        | { Args: { geom: unknown; srid: number }; Returns: unknown }
       st_sharedpaths: {
         Args: { geom1: unknown; geom2: unknown }
         Returns: unknown
@@ -3062,8 +2718,8 @@ export type Database = {
         Returns: Record<string, unknown>[]
       }
       st_srid:
-        | { Args: { geom: unknown }; Returns: number }
         | { Args: { geog: unknown }; Returns: number }
+        | { Args: { geom: unknown }; Returns: number }
       st_subdivide: {
         Args: { geom: unknown; gridsize?: number; maxvertices?: number }
         Returns: unknown[]
@@ -3092,22 +2748,22 @@ export type Database = {
       }
       st_touches: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
       st_transform:
-        | { Args: { geom: unknown; to_proj: string }; Returns: unknown }
-        | {
-            Args: { from_proj: string; geom: unknown; to_srid: number }
-            Returns: unknown
-          }
         | {
             Args: { from_proj: string; geom: unknown; to_proj: string }
             Returns: unknown
           }
+        | {
+            Args: { from_proj: string; geom: unknown; to_srid: number }
+            Returns: unknown
+          }
+        | { Args: { geom: unknown; to_proj: string }; Returns: unknown }
       st_triangulatepolygon: { Args: { g1: unknown }; Returns: unknown }
       st_union:
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: unknown }
         | {
             Args: { geom1: unknown; geom2: unknown; gridsize: number }
             Returns: unknown
           }
-        | { Args: { geom1: unknown; geom2: unknown }; Returns: unknown }
       st_voronoilines: {
         Args: { extend_to?: unknown; g1: unknown; tolerance?: number }
         Returns: unknown
@@ -3125,11 +2781,11 @@ export type Database = {
       }
       submit_full_review: {
         Args: {
-          p_attendee_vibes?: Json
-          p_event_comment?: string
+          p_attendee_vibes: Json
+          p_event_comment: string
           p_event_id: string
-          p_event_rating?: number
-          p_host_reviews?: Json
+          p_event_rating: number
+          p_host_reviews: Json
         }
         Returns: Json
       }
@@ -3147,9 +2803,9 @@ export type Database = {
       }
       vote_user_vibe: {
         Args: {
-          event: string
-          subject_user: string
-          vibe_slug: Database["public"]["Enums"]["vibe_slug"]
+          p_event_id: string
+          p_vibe: Database["public"]["Enums"]["vibe_slug"]
+          p_vibe_user_id: string
         }
         Returns: undefined
       }
@@ -3204,7 +2860,37 @@ export type Database = {
         | "splurge_big_events"
       time_bucket: "morning" | "afternoon" | "evening" | "late_night"
       user_role: "user" | "host" | "admin" | "super_admin"
-      vibe_slug: "chill" | "party-animal" | "low-key" | "adventurous"
+      vibe_slug:
+        | "explorer"
+        | "chill"
+        | "nightlife"
+        | "culture"
+        | "wildcard"
+        | "deep_connector"
+        | "fun_maker"
+        | "connector"
+        | "observer"
+        | "hype_starter"
+        | "early_riser"
+        | "night_owl"
+        | "planner"
+        | "spontaneous"
+        | "homebody"
+        | "karaoke_star"
+        | "late_night_foodie"
+        | "trailblazer"
+        | "music_lover"
+        | "spontaneous_traveler"
+        | "style_icon"
+        | "chill_gamer"
+        | "dog_person"
+        | "zen"
+        | "social_butterfly"
+        | "summer_energy"
+        | "holiday_spirit"
+        | "mvp"
+        | "vibe_validator"
+        | "mystery"
       vibe_source: "self" | "peer"
     }
     CompositeTypes: {
@@ -3414,7 +3100,38 @@ export const Constants = {
       ],
       time_bucket: ["morning", "afternoon", "evening", "late_night"],
       user_role: ["user", "host", "admin", "super_admin"],
-      vibe_slug: ["chill", "party-animal", "low-key", "adventurous"],
+      vibe_slug: [
+        "explorer",
+        "chill",
+        "nightlife",
+        "culture",
+        "wildcard",
+        "deep_connector",
+        "fun_maker",
+        "connector",
+        "observer",
+        "hype_starter",
+        "early_riser",
+        "night_owl",
+        "planner",
+        "spontaneous",
+        "homebody",
+        "karaoke_star",
+        "late_night_foodie",
+        "trailblazer",
+        "music_lover",
+        "spontaneous_traveler",
+        "style_icon",
+        "chill_gamer",
+        "dog_person",
+        "zen",
+        "social_butterfly",
+        "summer_energy",
+        "holiday_spirit",
+        "mvp",
+        "vibe_validator",
+        "mystery",
+      ],
       vibe_source: ["self", "peer"],
     },
   },

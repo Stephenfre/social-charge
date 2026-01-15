@@ -45,13 +45,12 @@ export function EventCard({
   imageSize,
   className,
 }: EventCardProps) {
-  const { data } = useStorageImages({
-    bucket: 'event_cover',
-    paths: [event?.cover_img], // stored in users table
-  });
-  const { isDark } = useTheme();
+  // const { data } = useStorageImages({
+  //   bucket: 'event_cover',
+  //   paths: [event?.cover_img], // stored in users table
+  // });
 
-  const src = event.cover_img;
+  const src = event?.cover_img;
   // Array.isArray(data) && data[0]
   //   ? { uri: data[0] as string } // never null ✅
   //   : '';

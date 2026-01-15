@@ -10,6 +10,7 @@ import {
   UserEventCardRow,
   VEventWithFullDetails,
 } from '~/types/event.types';
+import type { Enums } from '~/types/database.types';
 
 export const EVENT_KEYS = {
   events: ['events'] as const,
@@ -121,6 +122,22 @@ export function useEvents() {
         .select('*')
         .is('deleted_at', null)
         .gte('starts_at', nowIso)
+        .order('starts_at', { ascending: true });
+      if (error) throw error;
+      return data as EventRow[];
+    },
+  });
+}
+
+export function useHostEvents() {
+  return useQuery<EventRow[]>({
+    queryKey: ['events'],
+    refetchOnMount: 'always',
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .is('deleted_at', null)
         .order('starts_at', { ascending: true });
       if (error) throw error;
       return data as EventRow[];
@@ -512,7 +529,7 @@ export function useDeleteEvent() {
   });
 }
 
-export type VibeSlug = 'chill' | 'party-animal' | 'low-key' | 'adventurous';
+export type VibeSlug = Enums<'vibe_slug'>;
 
 export type SubmitEventReviewArgs = {
   eventId: string;
@@ -522,8 +539,8 @@ export type SubmitEventReviewArgs = {
     venue: { rating: number; comment: string | null };
     host: { rating: number; comment: string | null };
   };
-  // array of votes: { user_id, vibe_slug }
-  attendeeVibes: Array<{ user_id: string; vibe_slug: VibeSlug }>;
+  // array of votes: { subject_user, vibe_slug }
+  attendeeVibes: Array<{ subject_user: string; vibe_slug: VibeSlug }>;
   hostIds: string[];
 };
 
@@ -542,48 +559,81 @@ export function useSubmitEventReview() {
         comment: ratings.host.comment ?? '',
       }));
 
-      const rpcPromise = supabase.rpc('submit_full_review', {
+      const attendeeReviewPayload = attendeeVibes.map((vote) => ({
+        subject_user: vote.subject_user,
+        vibe_slug: vote.vibe_slug,
+        weight: 1,
+      }));
+
+      // ✅ CALL THE NEW RPC NAME
+      console.log('[submit_review] payload', {
+        eventId,
+        venueId,
+        hostIds,
+        hostReviews,
+        attendeeVibes,
+      });
+
+      const rpcReq = supabase.rpc('submit_full_review', {
         p_event_id: eventId,
         p_event_rating: ratings.event.rating,
         p_event_comment: ratings.event.comment ?? '',
-        p_host_reviews: JSON.stringify(hostReviews),
-        p_attendee_vibes: JSON.stringify(attendeeVibes),
+        p_host_reviews: hostReviews.length ? hostReviews : null,
+        p_attendee_vibes: attendeeReviewPayload.length ? attendeeReviewPayload : null,
       });
 
-      const venueReviewPromise =
+      const venueReq =
         venueId && ratings.venue.rating
           ? supabase.from('venue_reviews').upsert(
               {
                 event_id: eventId,
-                place_id: null,
+                place_id: venueId,
                 reviewer_id: userId,
                 rating: ratings.venue.rating,
                 comment: ratings.venue.comment ?? null,
               },
-              { onConflict: 'event_id,place_id,reviewer_id' }
+              { onConflict: 'place_id,reviewer_id,event_id' }
             )
           : null;
 
-      const settled = await Promise.all([
-        rpcPromise,
-        ...(venueReviewPromise ? [venueReviewPromise] : []),
-      ]);
-
-      const rpcResult = settled[0] as { data: unknown; error: Error | null };
-      if (rpcResult.error) throw rpcResult.error;
-
-      if (venueReviewPromise) {
-        const venueResult = settled[1] as { error: Error | null };
-        if (venueResult.error) throw venueResult.error;
+      let rpcData: unknown;
+      let rpcError: { message?: string } | null = null;
+      let venueRes: { error: { message?: string } | null } | undefined;
+      try {
+        const rpcResult = await rpcReq;
+        rpcData = rpcResult.data;
+        rpcError = rpcResult.error;
+        if (venueReq) {
+          venueRes = (await venueReq) as typeof venueRes;
+        }
+      } catch (err) {
+        console.error('[submit_review] request failed', err);
+        throw err;
       }
 
-      return rpcResult.data;
+      console.log('[submit_review] rpc result', rpcData, rpcError);
+
+      if (rpcError) throw new Error(rpcError.message);
+
+      if (venueReq) {
+        console.log('[submit_review] venue result', venueRes);
+        if (venueRes?.error) {
+          throw new Error(venueRes.error.message ?? 'Failed to save venue review');
+        }
+      }
+
+      console.log('[submit_review] success');
+      return rpcData;
     },
 
     onSuccess: (_res, vars) => {
       qc.invalidateQueries({ queryKey: ['events', 'eventById', vars.eventId] });
       qc.invalidateQueries({ queryKey: ['reviews', vars.eventId] });
       qc.invalidateQueries({ queryKey: ['user', userId, 'vibes'] });
+    },
+
+    onError: (err) => {
+      console.error('submit review failed:', err);
     },
   });
 }

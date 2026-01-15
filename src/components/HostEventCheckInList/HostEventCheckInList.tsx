@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { Dimensions, FlatList, StyleSheet, View } from 'react-native';
 import { Button, Flex, Image, Pressable, Text } from '~/components/ui';
 import { Spinner } from '~/components/ui/spinner';
-import { useEvents } from '~/hooks';
+import { useHostEvents } from '~/hooks';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '../ui/icon';
 import { Calendar, Clock, MapPin, QrCode } from 'lucide-react-native';
@@ -21,7 +21,7 @@ const SIDE_SPACER = Math.max(0, Math.round((SCREEN_W - CARD_W) / 2));
 type HostNav = NativeStackNavigationProp<RootStackParamList>;
 
 export function HostEventCheckInList() {
-  const { data: events, isLoading: eventsLoading } = useEvents();
+  const { data: events, isLoading: eventsLoading } = useHostEvents();
   const navigation = useNavigation<HostNav>();
 
   const keyExtractor = useCallback(

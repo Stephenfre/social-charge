@@ -63,6 +63,16 @@ export function EventCheckInScreen() {
   const handleUserCheckInPress = () => {
     setIsUserCheckInModalVisible(true);
   };
+  const handleHostScannerPress = () => {
+    if (!event?.id) return;
+    navigation.navigate('ScanQrModal', {
+      runId: event.id,
+      runTitle: event.title ?? null,
+      runStartTime: event.starts_at ?? null,
+      runEndTime: event.ends_at ?? null,
+      locationName: event.location_text ?? null,
+    });
+  };
   const handleReviewPress = () => {
     if (!event?.id) return;
     navigation.navigate('EventReview', { eventId: event.id });
@@ -154,7 +164,7 @@ export function EventCheckInScreen() {
   const renderHostAction = () => (
     <Button
       className={cn('h-14 w-full rounded-lg', checkInDisabled ? 'bg-gray-500' : 'bg-primary')}
-      onPress={() => console}
+      onPress={handleHostScannerPress}
       disabled={checkInDisabled}>
       <Flex align="center">
         <Text bold size="lg">
@@ -182,26 +192,16 @@ export function EventCheckInScreen() {
 
     return (
       <Flex direction="row" align="center" justify="space-between">
-        <Flex align="center">
-          <Text bold size="md">
-            Tokens Cost
-          </Text>
-          <Text size="2xl" bold className="text-primary">
-            {event.token_cost ?? 0}
-          </Text>
-        </Flex>
-        <Flex direction="row" align="center" gap={2} className="w-1/2">
-          {renderCheckInButton('flex-1')}
-          {event.id && (
-            <CancelRsvpButton
-              className="flex-1 rounded-lg bg-background-dark"
-              eventId={event.id}
-              tokenCost={event.token_cost ?? 0}
-              eventTitle={event.title ?? ''}
-              eventStartsAt={event.starts_at ?? null}
-            />
-          )}
-        </Flex>
+        {renderCheckInButton('flex-1')}
+        {event.id && (
+          <CancelRsvpButton
+            className="flex-1 rounded-lg bg-background-dark"
+            eventId={event.id}
+            tokenCost={event.token_cost ?? 0}
+            eventTitle={event.title ?? ''}
+            eventStartsAt={event.starts_at ?? null}
+          />
+        )}
       </Flex>
     );
   };
@@ -273,7 +273,7 @@ export function EventCheckInScreen() {
             <Map location={mapLocation} height={220} rounded />
 
             <Flex direction="row" align="center" gap={4}>
-              {event.event_hosts?.length ? (
+              {/* {event.event_hosts?.length ? (
                 <>
                   {event.event_hosts.map((host, index) => (
                     <React.Fragment key={`${host?.id ?? 'host'}-${index}`}>
@@ -297,7 +297,7 @@ export function EventCheckInScreen() {
                 </>
               ) : (
                 <Text>Host not assigned yet</Text>
-              )}
+              )} */}
             </Flex>
 
             <Flex>
@@ -335,7 +335,7 @@ export function EventCheckInScreen() {
                 <Text bold size="2xl">
                   Who's Going:
                 </Text>
-                {event.rsvps?.length ? (
+                {/* {event.rsvps?.length ? (
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     <Flex direction="row" align="center" gap={6}>
                       {event.rsvps.map((rsvp, index) => (
@@ -362,7 +362,7 @@ export function EventCheckInScreen() {
                   </ScrollView>
                 ) : (
                   <Text>Be the first to RSVP!</Text>
-                )}
+                )} */}
               </Flex>
             )}
 

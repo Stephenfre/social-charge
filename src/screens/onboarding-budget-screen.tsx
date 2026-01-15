@@ -212,7 +212,7 @@ export function OnboardingBudgetScreen() {
                     onPress={() => setSelectedStyle(id)}
                     className={cn(
                       'rounded-2xl border px-4 py-3',
-                      selected ? 'border-primary' : 'border-white/10'
+                      selected ? 'border-white/20 bg-white/10' : 'border-white/10'
                     )}>
                     <Flex direction="row" align="center" gap={3}>
                       <Icon size={18} color={'#FFFF'} />

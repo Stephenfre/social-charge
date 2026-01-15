@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { Button, Flex, Pressable, Skeleton, Text } from '~/components/ui';
+import { Button, ButtonText, Flex, Pressable, Skeleton, Text } from '~/components/ui';
 import { FontAwesome } from '@expo/vector-icons';
 
 import { useAuth } from '~/providers/AuthProvider';
@@ -272,9 +272,16 @@ export function HomeScreen() {
                                   showToken={false}
                                 />
                                 <Flex>
-                                  <Text size="md" weight="600">
-                                    {event?.title}
-                                  </Text>
+                                  <Flex direction="row" gap={2}>
+                                    <Text size="md" weight="600">
+                                      {event?.title}
+                                    </Text>
+                                    <Button className="h-6 w-8 rounded-md bg-green-500 p-0">
+                                      <ButtonText className="text-xs text-white">
+                                        ${event?.token_cost}
+                                      </ButtonText>
+                                    </Button>
+                                  </Flex>
                                   <Flex>
                                     <Text size="sm" className="text-gray-500">
                                       {event?.location_text}

@@ -65,6 +65,10 @@ export function ViewEventScreen() {
   const projectedBalance = useMemo(() => currentBalance - tokenCost, [currentBalance, tokenCost]);
 
   const isRsvped = useMemo(() => rsvps.some((r) => r.user_id === userId), [rsvps, userId]);
+  const hasEventEnded = useMemo(() => {
+    if (!event?.ends_at) return false;
+    return dayjs().isAfter(dayjs(event.ends_at));
+  }, [event?.ends_at]);
 
   const openRsvpModal = () => {
     setRsvpError(null);
@@ -200,6 +204,10 @@ export function ViewEventScreen() {
     primaryHost && (primaryHost.first_name || primaryHost.last_name)
       ? `${primaryHost.first_name ?? ''} ${primaryHost.last_name ?? ''}`.trim()
       : null;
+  const handleReviewPress = () => {
+    if (!event?.id) return;
+    navigation.navigate('EventReview', { eventId: event.id });
+  };
 
   return (
     <Flex flex className="bg-background-dark">
@@ -378,28 +386,36 @@ export function ViewEventScreen() {
         style={{
           paddingBottom: insets.bottom + 10,
         }}>
-        <Flex direction="row" align="center" justify="space-between">
-          <Flex align="center">
-            <Text bold size="md">
-              Tokens Cost
+        {hasEventEnded ? (
+          <Button className="h-14 w-full rounded-lg bg-primary-600" onPress={handleReviewPress}>
+            <Text bold size="lg" className="text-white">
+              Review Event
             </Text>
-            <Text size="2xl" bold className="text-primary">
-              {event.token_cost ?? 0}
-            </Text>
+          </Button>
+        ) : (
+          <Flex direction="row" align="center" justify="space-between">
+            <Flex align="center">
+              <Text bold size="md">
+                Tokens Cost
+              </Text>
+              <Text size="2xl" bold className="text-primary">
+                {event.token_cost ?? 0}
+              </Text>
+            </Flex>
+            <Flex className="w-1/2">
+              {isRsvped && event.id ? (
+                <CancelRsvpButton
+                  eventId={event.id}
+                  tokenCost={event.token_cost ?? 0}
+                  eventTitle={event.title ?? ''}
+                  eventStartsAt={event.starts_at ?? null}
+                />
+              ) : (
+                <RsvpButton onPress={openRsvpModal} />
+              )}
+            </Flex>
           </Flex>
-          <Flex className="w-1/2">
-            {isRsvped && event.id ? (
-              <CancelRsvpButton
-                eventId={event.id}
-                tokenCost={event.token_cost ?? 0}
-                eventTitle={event.title ?? ''}
-                eventStartsAt={event.starts_at ?? null}
-              />
-            ) : (
-              <RsvpButton onPress={openRsvpModal} />
-            )}
-          </Flex>
-        </Flex>
+        )}
       </View>
 
       {/* RSVP CONFIRMATION MODAL (unchanged) */}

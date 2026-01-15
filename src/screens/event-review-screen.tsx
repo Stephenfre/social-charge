@@ -8,13 +8,47 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { VibeSlug } from '~/hooks/useEvents';
 
-// --- Vibe options (use your canonical set) ---
-const VIBE_OPTIONS = [
-  { slug: 'chill', label: 'Chill' },
-  { slug: 'party-animal', label: 'Party Animal' },
-  { slug: 'low-key', label: 'Low-key' },
-  { slug: 'adventurous', label: 'Adventurous' },
-] as const;
+export const VIBE_CATEGORIES = {
+  personality: [
+    'chill',
+    'wildcard',
+    'observer',
+    'deep_connector',
+    'fun_maker',
+    'connector',
+    'mystery',
+  ],
+  social_energy: ['nightlife', 'hype_starter', 'social_butterfly', 'karaoke_star'],
+  lifestyle: ['homebody', 'early_riser', 'night_owl', 'planner', 'spontaneous', 'zen'],
+  interests: [
+    'culture',
+    'music_lover',
+    'style_icon',
+    'chill_gamer',
+    'dog_person',
+    'late_night_foodie',
+  ],
+  adventure: ['explorer', 'trailblazer', 'spontaneous_traveler', 'summer_energy'],
+  seasonal: ['holiday_spirit'],
+  reputation: ['mvp', 'vibe_validator'],
+} as const satisfies Record<string, readonly VibeSlug[]>;
+
+const formatVibeLabel = (slug: VibeSlug) => {
+  if (slug === 'mvp') return 'MVP';
+  return slug
+    .split(/[-_]/g)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
+const formatCategoryLabel = (key: keyof typeof VIBE_CATEGORIES) =>
+  key
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
+const VIBE_ENUM_VALUES = Object.values(VIBE_CATEGORIES).flat() as VibeSlug[];
+const VIBE_ENUM_TUPLE = VIBE_ENUM_VALUES as [VibeSlug, ...VibeSlug[]];
 
 // --- Zod Schema ---
 const reviewSchema = z.object({
@@ -27,11 +61,7 @@ const reviewSchema = z.object({
   hostRating: z.number().min(1, 'Please rate the host'),
   hostComment: z.string().optional(),
 
-  // attendeeVibes: { [userId: string]: 'chill' | 'party-animal' | 'low-key' | 'adventurous' | undefined }
-  attendeeVibes: z.record(
-    z.string(), // user_id key
-    z.enum(['chill', 'party-animal', 'low-key', 'adventurous']).optional()
-  ),
+  attendeeVibes: z.record(z.string(), z.enum(VIBE_ENUM_TUPLE).optional()),
 });
 type ReviewFormValues = z.infer<typeof reviewSchema>;
 
@@ -71,8 +101,12 @@ export function EventReviewScreen() {
   const RatingRow = ({ value, onChange }: { value: number; onChange: (n: number) => void }) => (
     <Flex direction="row" gap={4}>
       {[1, 2, 3, 4, 5].map((num) => (
-        <Button key={num} variant={value === num ? 'solid' : 'muted'} onPress={() => onChange(num)}>
-          <Text>{num}</Text>
+        <Button
+          key={num}
+          variant={value === num ? 'primary' : 'muted'}
+          className="rounded-xl"
+          onPress={() => onChange(num)}>
+          <Text bold={value === num ? true : false}>{num}</Text>
         </Button>
       ))}
     </Flex>
@@ -86,34 +120,61 @@ export function EventReviewScreen() {
     current?: VibeSlug;
     onPick: (slug: VibeSlug) => void;
   }) => (
-    <Flex direction="row" gap={6} wrap="wrap">
-      {VIBE_OPTIONS.map((v) => (
-        <Button
-          key={v.slug}
-          variant={current === v.slug ? 'solid' : 'muted'}
-          onPress={() => onPick(v.slug)}>
-          <Text>{v.label}</Text>
-        </Button>
+    <Flex gap={4} className="w-full">
+      {(
+        Object.entries(VIBE_CATEGORIES) as [keyof typeof VIBE_CATEGORIES, readonly VibeSlug[]][]
+      ).map(([categoryKey, slugs]) => (
+        <Flex key={categoryKey} gap={2}>
+          <Text bold size="sm" className="uppercase text-typography-light">
+            {formatCategoryLabel(categoryKey)}
+          </Text>
+          <Flex direction="row" gap={4} wrap="wrap">
+            {slugs.map((slug) => (
+              <Button
+                className="rounded-xl"
+                key={slug}
+                variant={current === slug ? 'primary' : 'muted'}
+                onPress={() => onPick(slug)}>
+                <Text bold={current === slug ? true : false}>{formatVibeLabel(slug)}</Text>
+              </Button>
+            ))}
+          </Flex>
+        </Flex>
       ))}
     </Flex>
   );
 
   const onSubmit: SubmitHandler<ReviewFormValues> = async (values) => {
+    if (!event?.id) {
+      Alert.alert('Error', 'Event details are unavailable. Please try again later.');
+      return;
+    }
+
+    const hostIds =
+      event.event_hosts
+        ?.map((host) => {
+          const candidate = host as { id?: string; user_id?: string } | null;
+          return candidate?.id ?? candidate?.user_id ?? null;
+        })
+        .filter((id): id is string => !!id) ?? [];
+
     try {
       // Convert record -> array for RPC
       const attendeeVibesArray =
         Object.entries(values.attendeeVibes)
           .filter(([, vibe]) => !!vibe)
-          .map(([user_id, vibe]) => ({ user_id, vibe_slug: vibe as VibeSlug })) ?? [];
+          .map(([user_id, vibe]) => ({ subject_user: user_id, vibe_slug: vibe as VibeSlug })) ?? [];
 
       await submitReview({
-        eventId: params.eventId!,
+        eventId: event.id,
+        venueId: event.place_id ?? null,
         ratings: {
           event: { rating: values.eventRating, comment: values.eventComment || null },
           venue: { rating: values.venueRating, comment: values.venueComment || null },
           host: { rating: values.hostRating, comment: values.hostComment || null },
         },
         attendeeVibes: attendeeVibesArray,
+        hostIds,
       });
 
       Alert.alert('Thanks!', 'Your review has been submitted.');
@@ -265,7 +326,10 @@ export function EventReviewScreen() {
           </Flex>
 
           {/* Submit */}
-          <Button onPress={handleSubmit(onSubmit)} className="mt-6" disabled={isPending}>
+          <Button
+            onPress={handleSubmit(onSubmit)}
+            className="mb-10 mt-4 h-14 w-full rounded-lg bg-primary-700 "
+            disabled={isPending}>
             <Text bold className="text-white">
               {isPending ? 'Submitting…' : 'Submit Review'}
             </Text>

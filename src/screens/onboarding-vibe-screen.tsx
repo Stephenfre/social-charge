@@ -11,12 +11,29 @@ import { Enums } from '~/types/database.types';
 import { OnboardingProgress } from '~/components/OnboardingProgress';
 import { RootRoute } from '~/types/navigation.types';
 
-const VIBE_OPTIONS: { slug: Enums<'vibe_slug'>; label: string; emoji: string }[] = [
-  { slug: 'chill', label: 'Chill Hangouts', emoji: '🛋️' },
-  { slug: 'low-key', label: 'Low-Key & Cozy', emoji: '☕️' },
-  { slug: 'adventurous', label: 'Adventurous & Outdoors', emoji: '⛰️' },
-  { slug: 'party-animal', label: 'Parties & Festivals', emoji: '🎉' },
-];
+const VIBE_CATEGORIES = {
+  personality: ['chill', 'wildcard', 'observer', 'deep_connector', 'fun_maker', 'connector', 'mystery'],
+  social_energy: ['nightlife', 'hype_starter', 'social_butterfly', 'karaoke_star'],
+  lifestyle: ['homebody', 'early_riser', 'night_owl', 'planner', 'spontaneous', 'zen'],
+  interests: ['culture', 'music_lover', 'style_icon', 'chill_gamer', 'dog_person', 'late_night_foodie'],
+  adventure: ['explorer', 'trailblazer', 'spontaneous_traveler', 'summer_energy'],
+  seasonal: ['holiday_spirit'],
+  reputation: ['mvp', 'vibe_validator'],
+} as const satisfies Record<string, readonly Enums<'vibe_slug'>[]>;
+
+const formatLabel = (slug: Enums<'vibe_slug'>) => {
+  if (slug === 'mvp') return 'MVP';
+  return slug
+    .split(/[-_]/g)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
+const formatCategory = (key: keyof typeof VIBE_CATEGORIES) =>
+  key
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 
 export function OnboardingVibeScreen() {
   const navigation = useNavigation<NavigationProp<'OnboardingVibe'>>();
@@ -150,26 +167,34 @@ export function OnboardingVibeScreen() {
           <Text className="text-gray-300">Pick a few so we can prioritize the right events.</Text>
         </Flex>
 
-        <ScrollView contentContainerStyle={{ gap: 12, paddingBottom: 32 }}>
-          {VIBE_OPTIONS.map(({ slug, label, emoji }) => {
-            const active = selected === slug;
-            return (
-              <Pressable
-                key={slug}
-                onPress={() => handleSelect(slug)}
-                className={cn(
-                  'rounded-2xl border px-4 py-4',
-                  active ? 'border-primary' : 'border-white/10 '
-                )}>
-                <Flex direction="row" align="center" gap={3}>
-                  <Text size="lg">{emoji}</Text>
-                  <Text size="lg" bold={active} className={active ? 'text-white' : undefined}>
-                    {label}
-                  </Text>
+        <ScrollView contentContainerStyle={{ gap: 16, paddingBottom: 32 }}>
+          {(Object.entries(VIBE_CATEGORIES) as [keyof typeof VIBE_CATEGORIES, readonly Enums<'vibe_slug'>[]][]).map(
+            ([category, slugs]) => (
+              <Flex key={category} gap={3}>
+                <Text bold size="lg">
+                  {formatCategory(category)}
+                </Text>
+                <Flex gap={8}>
+                  {slugs.map((slug) => {
+                    const active = selected === slug;
+                    return (
+                      <Pressable
+                        key={slug}
+                        onPress={() => handleSelect(slug)}
+                        className={cn(
+                          'rounded-2xl border px-4 py-4',
+                          active ? 'border-primary' : 'border-white/10 '
+                        )}>
+                        <Text size="lg" bold={active} className={active ? 'text-white' : undefined}>
+                          {formatLabel(slug)}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
                 </Flex>
-              </Pressable>
-            );
-          })}
+              </Flex>
+            )
+          )}
         </ScrollView>
 
         <Button

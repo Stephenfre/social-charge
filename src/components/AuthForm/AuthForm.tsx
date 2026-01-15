@@ -1,4 +1,5 @@
 import { useForm, Controller } from 'react-hook-form';
+import { Alert } from 'react-native';
 import { Button, Flex, Input, InputField, InputIcon, InputSlot, Pressable, Text } from '../ui';
 import { useSignupWizard } from '~/hooks/useSignupWizard';
 import * as z from 'zod';
@@ -6,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ReactNode, useState } from 'react';
 import { EyeIcon, EyeOffIcon } from 'lucide-react-native';
 import { cn } from '~/utils/cn';
+import { useEmailAvailability } from '~/hooks/useEmailAvailability';
 
 interface FormData {
   email: string;
@@ -46,6 +48,7 @@ export function AuthForm({
   const [showPassword, setShowPassword] = useState<Boolean>(false);
   const [focusedField, setFocusedField] = useState<'email' | 'password' | null>(null);
   const { email: storedEmail, password: storedPassword, setField } = useSignupWizard();
+  const { checkEmailExists, checkingEmail } = useEmailAvailability();
 
   const formSchema = z
     .object({
@@ -74,7 +77,18 @@ export function AuthForm({
 
   const buttonText = submitButtonLabel ?? (from === 'register' ? 'Create Account' : 'Login');
 
-  const onSubmit = handleSubmit(({ email, password }) => {
+  const onSubmit = handleSubmit(async ({ email, password }) => {
+    if (from === 'register') {
+      const emailExists = await checkEmailExists(email);
+      if (emailExists) {
+        Alert.alert(
+          'Email already exists',
+          'An account with this email already exists. Please log in or use a different email.'
+        );
+        return;
+      }
+    }
+
     setField('email', email);
     setField('password', password);
     onNavigate?.({ email, password });
@@ -114,7 +128,7 @@ export function AuthForm({
                 placeholder="Email"
                 value={field.value}
                 onChangeText={field.onChange}
-                onBlur={() => {
+                onBlur={async () => {
                   field.onBlur();
                   setFocusedField((prev) => (prev === 'email' ? null : prev));
                 }}

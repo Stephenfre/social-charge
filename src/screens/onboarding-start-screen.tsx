@@ -150,7 +150,7 @@ export function OnboardingStartScreen() {
                   onPress={() => setSelectedReason(id)}
                   className={cn(
                     'rounded-xl border border-white/10  p-4',
-                    isSelected && 'border-primary'
+                    isSelected && 'border-white/20 bg-white/10'
                   )}>
                   <Flex direction="row" align="center" gap={4}>
                     <Flex gap={1}>

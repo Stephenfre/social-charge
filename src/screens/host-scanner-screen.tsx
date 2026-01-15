@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, StyleSheet, Vibration } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { CameraView, type BarcodeScanningResult } from 'expo-camera';
+import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { Buffer } from 'buffer';
 import dayjs from 'dayjs';
 import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from '~/lib/supabase';
 import { QUERY_KEYS } from '~/lib/keys';
 import { useNavigationStack, useRouteStack } from '~/types/navigation.types';
 import { Button, Flex, Text } from '~/components/ui';
+import { useHostCheckIn } from '~/hooks';
 
 type HostScannerScreenProps = {
   hostRunId?: string | null;
@@ -26,14 +26,27 @@ export function HostScannerScreen({ hostRunId = null }: HostScannerScreenProps) 
   const navigation = useNavigationStack<'ScanQrModal'>();
   const { params } = useRouteStack<'ScanQrModal'>();
   const queryClient = useQueryClient();
+  const [permission, requestPermission] = useCameraPermissions();
 
   const [scanning, setScanning] = useState(false);
   const [lastProcessedJti, setLastProcessedJti] = useState<string | null>(null);
 
   const cooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const processingRef = useRef(false);
+  const lastScanAtRef = useRef(0);
 
-  const idForRun = hostRunId ?? params?.runId ?? null;
+  const eventIdFromRoute = hostRunId ?? params?.runId ?? null;
+  const { processScan } = useHostCheckIn();
+
+  const scheduleReset = useCallback(() => {
+    if (cooldownRef.current) {
+      clearTimeout(cooldownRef.current);
+    }
+    cooldownRef.current = setTimeout(() => {
+      processingRef.current = false;
+      setScanning(false);
+    }, 1200);
+  }, []);
 
   const closeScanner = () => navigation.goBack();
 
@@ -44,23 +57,37 @@ export function HostScannerScreen({ hostRunId = null }: HostScannerScreenProps) 
         cooldownRef.current = null;
       }
       processingRef.current = false;
+      setScanning(false);
     };
   }, []);
 
-  const decodeJwtPayload = (segment: string): QrPayload => {
+  useEffect(() => {
+    if (!permission?.granted && permission?.canAskAgain) {
+      requestPermission();
+    }
+  }, [permission?.granted, permission?.canAskAgain, requestPermission]);
+
+  const decodeJwtPayload = useCallback((segment: string): QrPayload => {
     const normalized = segment.replace(/-/g, '+').replace(/_/g, '/');
     const padLength = normalized.length % 4;
     const padded = normalized + (padLength ? '='.repeat(4 - padLength) : '');
     const decoded = Buffer.from(padded, 'base64').toString('utf-8');
     return JSON.parse(decoded);
-  };
+  }, []);
 
   const handleBarCodeScanned = useCallback(
     async ({ data }: BarcodeScanningResult) => {
+      const now = Date.now();
+      if (now - lastScanAtRef.current < 900) {
+        return;
+      }
+      lastScanAtRef.current = now;
+
       if (processingRef.current) {
         return;
       }
       processingRef.current = true;
+      setScanning(true);
 
       try {
         const token = data?.trim();
@@ -70,55 +97,45 @@ export function HostScannerScreen({ hostRunId = null }: HostScannerScreenProps) 
 
         let jti: string | null = null;
         let eventIdFromPayload: string | null = null;
+
         try {
-          const [, payloadB64] = token.split('.');
-          if (payloadB64) {
-            const payload = decodeJwtPayload(payloadB64);
-            if (typeof payload?.jti === 'string') {
-              jti = payload.jti;
-            }
-            if (typeof payload?.event_id === 'string') {
-              eventIdFromPayload = payload.event_id;
-            } else if (typeof payload?.eventId === 'string') {
-              eventIdFromPayload = payload.eventId;
-            }
+          const parsed = JSON.parse(token);
+          if (parsed && typeof parsed === 'object') {
+            if (typeof parsed.jti === 'string') jti = parsed.jti;
+            if (typeof parsed.eventId === 'string') eventIdFromPayload = parsed.eventId;
+            if (typeof parsed.event_id === 'string') eventIdFromPayload = parsed.event_id;
           }
-        } catch (err) {
-          Alert.alert('Invalid QR', 'Could not read QR data. Please try again.');
-          processingRef.current = false;
-          return;
+        } catch {
+          try {
+            const [, payloadB64] = token.split('.');
+            if (payloadB64) {
+              const payload = decodeJwtPayload(payloadB64);
+              if (typeof payload?.jti === 'string') jti = payload.jti;
+              if (typeof payload?.event_id === 'string') eventIdFromPayload = payload.event_id;
+              else if (typeof payload?.eventId === 'string') eventIdFromPayload = payload.eventId;
+            }
+          } catch {
+            Alert.alert('Invalid QR', 'Could not read QR data. Please try again.');
+            return;
+          }
         }
 
-        const eventIdForToken = eventIdFromPayload ?? idForRun ?? null;
+        const eventIdForToken = eventIdFromPayload ?? eventIdFromRoute ?? null;
 
         if (jti && lastProcessedJti === jti) {
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
           Vibration.vibrate(100);
-          processingRef.current = false;
+          // user already checked; pause briefly before next scan in finally
           return;
         }
 
         if (!jti || !eventIdForToken) {
           Alert.alert('Invalid QR', 'Missing QR metadata. Ask the guest to refresh their code.');
-          processingRef.current = false;
+          // no usable data; pause handled in finally
           return;
         }
 
-        setScanning(true);
-
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        const hostAccessToken = session?.access_token;
-        if (!hostAccessToken) {
-          throw new Error('Host not authenticated');
-        }
-
-        const res = await supabase.functions.invoke('consume-user-qr', {
-          headers: { Authorization: `Bearer ${hostAccessToken}` },
-          body: { jti, eventId: eventIdForToken },
-        });
-
+        const res = await processScan({ jti, eventId: eventIdForToken });
         if (res.error) {
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
           Alert.alert('Check-in failed', res.error.message ?? 'Unable to check in player');
@@ -142,11 +159,13 @@ export function HostScannerScreen({ hostRunId = null }: HostScannerScreenProps) 
             ]);
           }
 
-          await Promise.all([
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.runById(idForRun) }),
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.waitlistByRun(idForRun) }),
-            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.isCheckedIn(idForRun) }),
-          ]);
+          if (eventIdFromRoute) {
+            await Promise.all([
+              queryClient.invalidateQueries({ queryKey: QUERY_KEYS.runById(eventIdFromRoute) }),
+              queryClient.invalidateQueries({ queryKey: QUERY_KEYS.waitlistByRun(eventIdFromRoute) }),
+              queryClient.invalidateQueries({ queryKey: QUERY_KEYS.isCheckedIn(eventIdFromRoute) }),
+            ]);
+          }
 
           queryClient.invalidateQueries({ queryKey: QUERY_KEYS.nextRuns });
           queryClient.invalidateQueries({ queryKey: QUERY_KEYS.runs });
@@ -158,13 +177,10 @@ export function HostScannerScreen({ hostRunId = null }: HostScannerScreenProps) 
         Vibration.vibrate(150);
         Alert.alert('Scan error', message);
       } finally {
-        setScanning(false);
-        cooldownRef.current = setTimeout(() => {
-          processingRef.current = false;
-        }, 1200);
+        scheduleReset();
       }
     },
-    [idForRun, lastProcessedJti, queryClient]
+    [decodeJwtPayload, eventIdFromRoute, lastProcessedJti, processScan, queryClient, scheduleReset]
   );
 
   const runWindow =
@@ -173,6 +189,37 @@ export function HostScannerScreen({ hostRunId = null }: HostScannerScreenProps) 
           'h:mm A'
         )}`
       : null;
+
+  if (!permission) {
+    return (
+      <Flex flex justify="center" align="center" className="bg-background-dark px-4">
+        <Text size="lg" className="text-center">
+          Checking camera permissions…
+        </Text>
+      </Flex>
+    );
+  }
+
+  if (!permission.granted) {
+    return (
+      <Flex flex justify="center" align="center" className="bg-background-dark px-4">
+        <Text size="xl" bold className="text-center">
+          Camera access is required to scan QR codes.
+        </Text>
+        <Button
+          onPress={requestPermission}
+          className="mt-4 w-1/2 rounded-xl bg-primary"
+          size="xl">
+          <Text bold className="text-white">
+            Enable Camera
+          </Text>
+        </Button>
+        <Button variant="outline" className="mt-3 w-1/2" onPress={closeScanner}>
+          <Text>Close</Text>
+        </Button>
+      </Flex>
+    );
+  }
 
   return (
     <Flex flex justify="center" className="bg-background-dark px-4" align="center" gap={2}>
@@ -191,6 +238,10 @@ export function HostScannerScreen({ hostRunId = null }: HostScannerScreenProps) 
         <CameraView
           onBarcodeScanned={scanning ? undefined : handleBarCodeScanned}
           barcodeScannerSettings={{ barcodeTypes: BARCODE_TYPES }}
+          onMountError={(error) => {
+            console.error('Camera mount error', error);
+            Alert.alert('Camera error', 'Unable to start the camera. Please try again.');
+          }}
           style={styles.scanner}
         />
       </Flex>

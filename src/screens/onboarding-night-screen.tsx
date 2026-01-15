@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, ScrollView } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Flex, Pressable, Text } from '~/components/ui';
-import { Beer, Calendar, Coffee, Moon, PartyPopper, Sun, Sunset, Users } from 'lucide-react-native';
+import { Calendar, Moon, Sun, Sunset, Users } from 'lucide-react-native';
 import { cn } from '~/utils/cn';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NavigationProp } from '~/types/navigation';
@@ -14,17 +14,45 @@ import { supabase } from '~/lib/supabase';
 import { Enums, TablesInsert } from '~/types/database.types';
 import { OnboardingProgress } from '~/components/OnboardingProgress';
 
-const VIBE_OPTIONS = [
-  { id: 'chill', label: 'Chill', Icon: Coffee },
-  { id: 'social', label: 'Social', Icon: Beer },
-  { id: 'adventure', label: 'Adventurer', Icon: PartyPopper },
-] as const;
+const VIBE_CATEGORIES = {
+  personality: [
+    'chill',
+    'wildcard',
+    'observer',
+    'deep_connector',
+    'fun_maker',
+    'connector',
+    'mystery',
+  ],
+  social_energy: ['nightlife', 'hype_starter', 'social_butterfly', 'karaoke_star'],
+  lifestyle: ['homebody', 'early_riser', 'night_owl', 'planner', 'spontaneous', 'zen'],
+  interests: [
+    'culture',
+    'music_lover',
+    'style_icon',
+    'chill_gamer',
+    'dog_person',
+    'late_night_foodie',
+  ],
+  adventure: ['explorer', 'trailblazer', 'spontaneous_traveler', 'summer_energy'],
+  seasonal: ['holiday_spirit'],
+  reputation: ['mvp', 'vibe_validator'],
+} as const satisfies Record<string, readonly Enums<'vibe_slug'>[]>;
+const VIBE_OPTIONS = Object.values(VIBE_CATEGORIES).flat();
+type VibeOption = (typeof VIBE_OPTIONS)[number];
 
 const TIME_OPTIONS = [
   { id: 'morning', label: 'Morning', Icon: Sun, value: 'morning' as Enums<'time_bucket'> },
   { id: 'afternoon', label: 'Afternoon', Icon: Sunset, value: 'afternoon' as Enums<'time_bucket'> },
   { id: 'evening', label: 'Evening', Icon: Moon, value: 'evening' as Enums<'time_bucket'> },
 ] as const;
+
+const TIME_DESCRIPTIONS: Record<Enums<'time_bucket'>, string> = {
+  morning: '5:00 AM – 11:00 AM',
+  afternoon: '12:00 PM – 4:00 PM',
+  evening: '5:00 PM – 12:00 AM',
+  late_night: '12:00 AM – 4:00 AM',
+};
 
 const DAY_OPTIONS = [
   { id: 'sunday', label: 'Sunday' },
@@ -47,25 +75,67 @@ const normalizeDayValue = (value?: string | null): DayId | null => {
 
 const GROUP_LABELS = ['Solo', 'Duo', 'Crew', 'Party', 'Large'];
 
-const ARCHETYPE_MAP: Record<(typeof VIBE_OPTIONS)[number]['id'], Enums<'social_archetype'>> = {
+const ARCHETYPE_MAP: Partial<Record<VibeOption, Enums<'social_archetype'>>> = {
   chill: 'chill',
-  social: 'social',
-  adventure: 'adventurer',
+  wildcard: 'chill',
+  observer: 'chill',
+  deep_connector: 'chill',
+  fun_maker: 'social',
+  connector: 'social',
+  mystery: 'chill',
+  nightlife: 'social',
+  hype_starter: 'social',
+  social_butterfly: 'social',
+  karaoke_star: 'social',
+  homebody: 'chill',
+  early_riser: 'chill',
+  night_owl: 'social',
+  planner: 'chill',
+  spontaneous: 'adventurer',
+  zen: 'chill',
+  culture: 'chill',
+  music_lover: 'social',
+  style_icon: 'social',
+  chill_gamer: 'chill',
+  dog_person: 'chill',
+  late_night_foodie: 'social',
+  explorer: 'adventurer',
+  trailblazer: 'adventurer',
+  spontaneous_traveler: 'adventurer',
+  summer_energy: 'adventurer',
+  holiday_spirit: 'social',
+  mvp: 'social',
+  vibe_validator: 'chill',
 };
-const ARCHETYPE_TO_OPTION = Object.entries(ARCHETYPE_MAP).reduce<
-  Record<string, (typeof VIBE_OPTIONS)[number]['id']>
->((acc, [optionId, archetype]) => {
-  acc[archetype] = optionId as (typeof VIBE_OPTIONS)[number]['id'];
-  return acc;
-}, {});
+const ARCHETYPE_TO_OPTION = Object.entries(ARCHETYPE_MAP).reduce<Record<string, VibeOption>>(
+  (acc, [optionId, archetype]) => {
+    acc[archetype] = optionId as VibeOption;
+    return acc;
+  },
+  {}
+);
 
 type NightRoute = RootRoute<'OnboardingNight'>;
+
+const formatLabel = (slug: VibeOption) => {
+  if (slug === 'mvp') return 'MVP';
+  return slug
+    .split(/[-_]/g)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
+const formatCategory = (key: keyof typeof VIBE_CATEGORIES) =>
+  key
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 
 export function OnboardingNightScreen() {
   const navigation = useNavigation<NavigationProp<'OnboardingNight'>>();
   const route = useRoute<NightRoute>();
   const { userId } = useAuth();
-  const [selectedVibe, setSelectedVibe] = useState<(typeof VIBE_OPTIONS)[number]['id']>('chill');
+  const [selectedVibes, setSelectedVibes] = useState<VibeOption[]>(['chill']);
   const [groupSize, setGroupSize] = useState(3);
   const [selectedTimes, setSelectedTimes] = useState<Enums<'time_bucket'>[]>(['evening']);
   const [selectedDays, setSelectedDays] = useState<DayId[]>([DAY_OPTIONS[0].id]);
@@ -106,7 +176,7 @@ export function OnboardingNightScreen() {
     if (profile?.primary_archetype) {
       const optionId = ARCHETYPE_TO_OPTION[profile.primary_archetype];
       if (optionId) {
-        setSelectedVibe(optionId);
+        setSelectedVibes([optionId]);
       }
     }
 
@@ -137,7 +207,7 @@ export function OnboardingNightScreen() {
     setGroupSize,
     setSelectedDays,
     setSelectedTimes,
-    setSelectedVibe,
+    setSelectedVibes,
   ]);
 
   const handleNext = useCallback(async () => {
@@ -145,7 +215,8 @@ export function OnboardingNightScreen() {
     if (!userId) return;
     setSubmitting(true);
     try {
-      const archetype = ARCHETYPE_MAP[selectedVibe];
+      const primaryVibe = selectedVibes[0];
+      const archetype = primaryVibe ? ARCHETYPE_MAP[primaryVibe] : undefined;
       await supabase.from('user_onboarding_profile').upsert(
         {
           user_id: userId,
@@ -196,7 +267,7 @@ export function OnboardingNightScreen() {
     returnToSettings,
     selectedDays,
     selectedTimes,
-    selectedVibe,
+    selectedVibes,
     submitting,
     userId,
   ]);
@@ -240,7 +311,7 @@ export function OnboardingNightScreen() {
                     onPress={() => setSelectedTimes((prev) => toggleItem(prev, value))}
                     className={cn(
                       'rounded-xl border px-4 py-3',
-                      selected ? 'border-primary' : 'border-white/10'
+                      selected ? 'border-white/20 bg-white/10' : 'border-white/10'
                     )}>
                     <Flex direction="row" align="center" gap={2}>
                       <Icon size={18} color={'white'} />
@@ -252,6 +323,20 @@ export function OnboardingNightScreen() {
                 );
               })}
             </Flex>
+            {!!selectedTimes.length && (
+              <Flex gap={1} className="pt-2" direction="row">
+                {TIME_OPTIONS.filter((option) => selectedTimes.includes(option.value)).map(
+                  ({ id, label, value }) => (
+                    <Flex key={`${id}-description`} className="mr-8">
+                      <Text bold className="text-white">
+                        {label}
+                      </Text>
+                      <Text className="text-sm text-gray-300">{TIME_DESCRIPTIONS[value]}</Text>
+                    </Flex>
+                  )
+                )}
+              </Flex>
+            )}
           </Flex>
 
           <Flex gap={3}>
@@ -265,7 +350,7 @@ export function OnboardingNightScreen() {
                     onPress={() => setSelectedDays((prev) => toggleItem(prev, id))}
                     className={cn(
                       'flex-1 rounded-xl border py-3',
-                      selected ? 'border-primary' : 'border-white/10'
+                      selected ? 'border-white/20 bg-white/10' : 'border-white/10'
                     )}>
                     <Text className={cn('text-center text-base')} bold>
                       {label}
@@ -300,25 +385,41 @@ export function OnboardingNightScreen() {
           <Flex gap={4}>
             <SectionLabel title="Vibe" />
             <Flex direction="row" gap={3} wrap="wrap">
-              {VIBE_OPTIONS.map(({ id, label, Icon }) => {
-                const selected = selectedVibe === id;
-                return (
-                  <Pressable
-                    key={id}
-                    onPress={() => setSelectedVibe(id)}
-                    className={cn(
-                      'rounded-2xl border px-4 py-3',
-                      selected ? 'border-primary ' : 'border-white/10'
-                    )}>
-                    <Flex direction="row" align="center" gap={2}>
-                      {/* <Icon size={18} color={selected ? '#0F1012' : '#F4F4F5'} /> */}
-                      <Text className={cn('text-base')} bold={selected}>
-                        {label}
-                      </Text>
-                    </Flex>
-                  </Pressable>
-                );
-              })}
+              {(
+                Object.entries(VIBE_CATEGORIES) as [
+                  keyof typeof VIBE_CATEGORIES,
+                  readonly VibeOption[],
+                ][]
+              ).map(([category, slugs]) => (
+                <Flex key={category} gap={2}>
+                  <Text bold>{formatCategory(category)}</Text>
+                  <Flex direction="row" gap={3} wrap="wrap">
+                    {slugs.map((slug) => {
+                      const selected = selectedVibes.includes(slug);
+                      return (
+                        <Pressable
+                          key={slug}
+                          onPress={() =>
+                            setSelectedVibes((prev) => {
+                              if (prev.length === 1 && prev.includes(slug)) {
+                                return prev;
+                              }
+                              return toggleItem(prev, slug);
+                            })
+                          }
+                          className={cn(
+                            'rounded-2xl border px-4 py-3',
+                            selected ? 'border-white/20 bg-white/10' : 'border-white/10'
+                          )}>
+                          <Text className={cn('text-base')} bold={selected}>
+                            {formatLabel(slug)}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </Flex>
+                </Flex>
+              ))}
             </Flex>
           </Flex>
 
