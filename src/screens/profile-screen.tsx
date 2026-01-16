@@ -163,7 +163,7 @@ export function ProfileScreen() {
             {upcomingEvents.length ? (
               <EventsList events={upcomingEvents} loading={eventsLoading} />
             ) : (
-              <Text>No umpcoming events</Text>
+              <Text>No upcoming events</Text>
             )}
           </Flex>
           <Flex>
@@ -178,7 +178,7 @@ export function ProfileScreen() {
             {pastEvents.length ? (
               <EventsList events={pastEvents} loading={eventsLoading} />
             ) : (
-              <Text>No umpcoming events</Text>
+              <Text>No upcoming events</Text>
             )}
           </Flex>
         </Flex>

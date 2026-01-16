@@ -531,14 +531,73 @@ export function useDeleteEvent() {
 
 export type VibeSlug = Enums<'vibe_slug'>;
 
+export type SocialExpectation = 'exceeded' | 'met' | 'below';
+export type AttendAgainFeeling = 'charged_up' | 'sparked' | 'drained';
+export type EventReviewRow = {
+  id?: string;
+  event_id?: string;
+  reviewer_id?: string;
+  rating?: number | null;
+  comment?: string | null;
+  overall_rating?: number | null;
+  venue_rating?: number | null;
+  organization_rating?: number | null;
+  host_rating?: number | null;
+  group_vibe_rating?: number | null;
+  social_expectation?: SocialExpectation | null;
+  social_comment?: string | null;
+  attend_again?: AttendAgainFeeling | null;
+  nps_score?: number | null;
+  event_vibes?: VibeSlug[] | null;
+  attendee_vibes?:
+    | Array<{ subject_user: string; vibe_slug: VibeSlug }>
+    | Record<string, VibeSlug | null>
+    | null;
+  additional_feedback?: string | null;
+  event_comment?: string | null;
+};
+
+export function useEventReview(eventId?: string | null) {
+  const { userId } = useAuth();
+
+  return useQuery<EventReviewRow | null>({
+    queryKey: ['reviews', 'event', eventId, userId],
+    enabled: !!eventId && !!userId,
+    staleTime: 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('event_reviews')
+        .select('*')
+        .eq('event_id', eventId!)
+        .eq('reviewer_id', userId!)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as EventReviewRow | null) ?? null;
+    },
+  });
+}
+
 export type SubmitEventReviewArgs = {
   eventId: string;
   venueId: string | null;
-  ratings: {
-    event: { rating: number; comment: string | null };
-    venue: { rating: number; comment: string | null };
-    host: { rating: number; comment: string | null };
+  venueDetails?: {
+    name: string;
+    formattedAddress: string;
+    lat?: number | null;
+    lon?: number | null;
+    provider?: string | null;
   };
+  overallRating: number;
+  venueRating: number;
+  organizationRating: number;
+  hostRating: number;
+  groupVibeRating: number;
+  socialExpectation: SocialExpectation;
+  socialComment: string | null;
+  attendAgain: AttendAgainFeeling;
+  npsScore: number;
+  eventVibes: VibeSlug[];
+  additionalFeedback: string | null;
   // array of votes: { subject_user, vibe_slug }
   attendeeVibes: Array<{ subject_user: string; vibe_slug: VibeSlug }>;
   hostIds: string[];
@@ -550,13 +609,30 @@ export function useSubmitEventReview() {
 
   return useMutation({
     mutationFn: async (payload: SubmitEventReviewArgs) => {
-      const { eventId, venueId, ratings, attendeeVibes, hostIds } = payload;
+      const {
+        eventId,
+        venueId,
+        venueDetails,
+        overallRating,
+        venueRating,
+        organizationRating,
+        hostRating,
+        groupVibeRating,
+        socialExpectation,
+        socialComment,
+        attendAgain,
+        npsScore,
+        eventVibes,
+        additionalFeedback,
+        attendeeVibes,
+        hostIds,
+      } = payload;
       if (!userId) throw new Error('User is not authenticated.');
 
       const hostReviews = hostIds.map((hostId) => ({
         host_user_id: hostId,
-        rating: ratings.host.rating,
-        comment: ratings.host.comment ?? '',
+        rating: hostRating,
+        comment: '',
       }));
 
       const attendeeReviewPayload = attendeeVibes.map((vote) => ({
@@ -576,25 +652,53 @@ export function useSubmitEventReview() {
 
       const rpcReq = supabase.rpc('submit_full_review', {
         p_event_id: eventId,
-        p_event_rating: ratings.event.rating,
-        p_event_comment: ratings.event.comment ?? '',
+        p_event_rating: overallRating,
+        p_event_comment: additionalFeedback ?? '',
+        p_venue_rating: venueRating,
+        p_organization_rating: organizationRating,
+        p_host_rating: hostRating,
+        p_group_vibe_rating: groupVibeRating,
+        p_social_expectation: socialExpectation,
+        p_social_comment: socialComment ?? '',
+        p_attend_again: attendAgain,
+        p_nps_score: npsScore,
+        p_event_vibes: eventVibes ?? [],
         p_host_reviews: hostReviews.length ? hostReviews : null,
         p_attendee_vibes: attendeeReviewPayload.length ? attendeeReviewPayload : null,
       });
 
-      const venueReq =
-        venueId && ratings.venue.rating
-          ? supabase.from('venue_reviews').upsert(
+      let venueReq: Promise<any> | null = null;
+      if (venueId && venueRating) {
+        if (!venueDetails?.name || !venueDetails?.formattedAddress) {
+          console.warn('[submit_review] missing venue details, skipping venue review');
+        } else {
+          const venueUpsert = await supabase.from('venues').upsert(
+            {
+              place_id: venueId,
+              name: venueDetails.name,
+              formatted_address: venueDetails.formattedAddress,
+              lat: venueDetails.lat ?? null,
+              lon: venueDetails.lon ?? null,
+              provider: venueDetails.provider ?? undefined,
+            },
+            { onConflict: 'place_id' }
+          );
+          if (venueUpsert.error) {
+            console.warn('[submit_review] venue upsert failed, skipping venue review', venueUpsert);
+          } else {
+            venueReq = supabase.from('venue_reviews').upsert(
               {
                 event_id: eventId,
                 place_id: venueId,
                 reviewer_id: userId,
-                rating: ratings.venue.rating,
-                comment: ratings.venue.comment ?? null,
+                rating: venueRating,
+                comment: null,
               },
               { onConflict: 'place_id,reviewer_id,event_id' }
-            )
-          : null;
+            ) as unknown as Promise<any>;
+          }
+        }
+      }
 
       let rpcData: unknown;
       let rpcError: { message?: string } | null = null;
@@ -629,6 +733,7 @@ export function useSubmitEventReview() {
     onSuccess: (_res, vars) => {
       qc.invalidateQueries({ queryKey: ['events', 'eventById', vars.eventId] });
       qc.invalidateQueries({ queryKey: ['reviews', vars.eventId] });
+      qc.invalidateQueries({ queryKey: ['reviews', 'event', vars.eventId, userId] });
       qc.invalidateQueries({ queryKey: ['user', userId, 'vibes'] });
     },
 
