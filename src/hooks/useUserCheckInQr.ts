@@ -17,8 +17,8 @@ export function useUserCheckInQr() {
       headers.Authorization = `Bearer ${accessToken}`;
     }
 
-    const { data, error } = await supabase.functions.invoke<QrResponse>('create-event-qr', {
-      body: { eventId, event_id: eventId },
+    const { data, error } = await supabase.functions.invoke<QrResponse>('qr-mint', {
+      body: { eventId },
       headers,
     });
 

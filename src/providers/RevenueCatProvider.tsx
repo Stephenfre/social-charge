@@ -90,6 +90,7 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
   const loadCustomerInfo = useCallback(async () => {
     try {
       const info = await Purchases.getCustomerInfo();
+      console.log('customerInfo', customerInfo)
       setCustomerInfo(info);
       setError(null);
       return info;

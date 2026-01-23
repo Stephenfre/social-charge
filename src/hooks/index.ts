@@ -11,3 +11,5 @@ export * from './useUserEventGoals';
 export * from './useHostCheckIn';
 export * from './useUserCheckInQr';
 export * from './useEmailAvailability';
+export * from './useEventChat';
+export * from './useChatUserMetadata';

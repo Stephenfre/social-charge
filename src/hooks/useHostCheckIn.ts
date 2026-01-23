@@ -17,7 +17,7 @@ export function useHostCheckIn() {
       throw new Error('You must be signed in to scan.');
     }
 
-    return supabase.functions.invoke('consume-user-qr', {
+    return supabase.functions.invoke('qr-consume', {
       headers: { Authorization: `Bearer ${hostAccessToken}` },
       body: { jti, eventId },
     });

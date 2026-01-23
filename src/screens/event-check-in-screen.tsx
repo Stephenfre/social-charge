@@ -1,9 +1,9 @@
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import dayjs from 'dayjs';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ArrowLeft, Calendar, Clock, MapPin, TicketX } from 'lucide-react-native';
+import { ArrowLeft, Calendar, Clock, MapPin, MessageCircle, TicketX } from 'lucide-react-native';
 import { Modal, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Countdown } from '~/components/Countdown/Countdown';
@@ -23,6 +23,7 @@ import { RootStackParamList, useRouteStack } from '~/types/navigation.types';
 import { cn } from '~/utils/cn';
 import { CancelRsvpButton } from './view-event-screen';
 import { UserCheckInQr } from '~/components';
+import { EventChatModal } from './event-chat-screen';
 
 type CheckInNav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -52,6 +53,7 @@ export function EventCheckInScreen() {
     paths: attendeePaths,
   });
   const [isUserCheckInModalVisible, setIsUserCheckInModalVisible] = useState(false);
+  const [showChatModal, setShowChatModal] = useState(false);
 
   const handlePressNavigateHome = () => {
     navigation.reset({
@@ -77,6 +79,12 @@ export function EventCheckInScreen() {
     if (!event?.id) return;
     navigation.navigate('EventReview', { eventId: event.id });
   };
+  const handleOpenChat = useCallback(() => {
+    if (!effectiveEventId) return;
+    setShowChatModal(true);
+  }, [effectiveEventId]);
+
+  const handleCloseChat = useCallback(() => setShowChatModal(false), []);
 
   const startsAt = event?.starts_at ? dayjs(event.starts_at) : null;
   const endsAt = event?.ends_at ? dayjs(event.ends_at) : null;
@@ -208,12 +216,34 @@ export function EventCheckInScreen() {
 
   return (
     <Flex flex className="bg-background-dark">
+      <EventChatModal
+        visible={showChatModal}
+        onClose={handleCloseChat}
+        eventId={effectiveEventId}
+        currentUserId={user?.id ?? null}
+        topInset={insets.top}
+        eventTitle={`${event?.title} Chat` || 'Event Chat'}
+        eventStartsAt={event?.starts_at ?? null}
+        eventEndsAt={event?.ends_at ?? null}
+      />
       <Flex className="relative">
         <Pressable
           className="absolute left-4 top-20 z-10"
           hitSlop={16}
           onPress={() => navigation.goBack()}>
           <ArrowLeft size={28} color="#fff" />
+        </Pressable>
+        <Pressable
+          className="absolute right-4 top-20 z-10"
+          hitSlop={16}
+          accessibilityRole="button"
+          accessibilityLabel="Open event chat"
+          onPress={handleOpenChat}>
+<Flex align='center'>
+            <MessageCircle size={24} color="#fff" fill="#fff" />
+
+              <Text size='sm' bold>Chat</Text>
+            </Flex>
         </Pressable>
         <EventCard
           event={event}
@@ -273,7 +303,7 @@ export function EventCheckInScreen() {
             <Map location={mapLocation} height={220} rounded />
 
             <Flex direction="row" align="center" gap={4}>
-              {/* {event.event_hosts?.length ? (
+              {event.event_hosts?.length ? (
                 <>
                   {event.event_hosts.map((host, index) => (
                     <React.Fragment key={`${host?.id ?? 'host'}-${index}`}>
@@ -297,7 +327,7 @@ export function EventCheckInScreen() {
                 </>
               ) : (
                 <Text>Host not assigned yet</Text>
-              )} */}
+              )}
             </Flex>
 
             <Flex>
@@ -335,7 +365,7 @@ export function EventCheckInScreen() {
                 <Text bold size="2xl">
                   Who's Going:
                 </Text>
-                {/* {event.rsvps?.length ? (
+                {event.rsvps?.length ? (
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     <Flex direction="row" align="center" gap={6}>
                       {event.rsvps.map((rsvp, index) => (
@@ -362,7 +392,7 @@ export function EventCheckInScreen() {
                   </ScrollView>
                 ) : (
                   <Text>Be the first to RSVP!</Text>
-                )} */}
+                )}
               </Flex>
             )}
 

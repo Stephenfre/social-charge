@@ -13,6 +13,7 @@ import { useTheme } from '~/providers/ThemeProvider';
 import {
   AllEventsScreen,
   EventCheckInScreen,
+  EventChatScreen,
   EventReviewScreen,
   HostScannerScreen,
   HomeScreen,
@@ -318,6 +319,12 @@ export function MainTabNavigator() {
         name="EventReview"
         component={EventReviewScreen}
         options={{ ...headerCommon, title: 'Review Event' }}
+      />
+
+      <RootStackNav.Screen
+        name="EventChat"
+        component={EventChatScreen}
+        options={{ headerShown: false }}
       />
 
       <RootStackNav.Screen

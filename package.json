@@ -11,7 +11,13 @@
     "lint:src:fix": "eslint src --ext .ts,.tsx --fix",
     "format": "eslint \"**/*.{js,jsx,ts,tsx}\" --fix && prettier \"**/*.{js,jsx,ts,tsx,json}\" --write",
     "web": "DARK_MODE=class expo start --web",
-    "db:types": "supabase gen types typescript --project-id qdyrtjzvauhrvyszydnu --schema public > src/types/database.types.ts"
+    "db:types": "supabase gen types typescript --project-id qdyrtjzvauhrvyszydnu --schema public > src/types/database.types.ts",
+    "eas:ios:dev": "eas build --platform ios --profile development",
+    "eas:ios:prod": "eas build --platform ios --profile production",
+    "eas:ios:staging": "eas build --platform ios --profile staging",
+    "eas:ios:preview": "eas build --platform ios --profile preview",
+    "eas:ios:submit": "eas submit --platform ios",
+    "eas:ios:update": "eas update --platform ios --channel staging"
   },
   "dependencies": {
     "@expo/html-elements": "^0.13.7",

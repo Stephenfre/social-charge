@@ -341,34 +341,67 @@ export type Database = {
       }
       event_reviews: {
         Row: {
+          attend_again: string | null
           comment: string | null
           created_at: string
           event_id: string
+          event_vibes: Database["public"]["Enums"]["vibe_slug"][] | null
+          group_vibe_rating: number | null
+          host_rating: number | null
           id: string
           is_anonymous: boolean
+          meta: Json
+          nps_score: number | null
+          organization_rating: number | null
+          quick_vibe_tags: string[] | null
           rating: number
           reviewer_id: string
+          social_comment: string | null
+          social_expectation: string | null
           updated_at: string
+          venue_rating: number | null
         }
         Insert: {
+          attend_again?: string | null
           comment?: string | null
           created_at?: string
           event_id: string
+          event_vibes?: Database["public"]["Enums"]["vibe_slug"][] | null
+          group_vibe_rating?: number | null
+          host_rating?: number | null
           id?: string
           is_anonymous?: boolean
+          meta?: Json
+          nps_score?: number | null
+          organization_rating?: number | null
+          quick_vibe_tags?: string[] | null
           rating: number
           reviewer_id: string
+          social_comment?: string | null
+          social_expectation?: string | null
           updated_at?: string
+          venue_rating?: number | null
         }
         Update: {
+          attend_again?: string | null
           comment?: string | null
           created_at?: string
           event_id?: string
+          event_vibes?: Database["public"]["Enums"]["vibe_slug"][] | null
+          group_vibe_rating?: number | null
+          host_rating?: number | null
           id?: string
           is_anonymous?: boolean
+          meta?: Json
+          nps_score?: number | null
+          organization_rating?: number | null
+          quick_vibe_tags?: string[] | null
           rating?: number
           reviewer_id?: string
+          social_comment?: string | null
+          social_expectation?: string | null
           updated_at?: string
+          venue_rating?: number | null
         }
         Relationships: [
           {
@@ -2779,16 +2812,66 @@ export type Database = {
         Args: { geom: unknown; move: number; wrap: number }
         Returns: unknown
       }
-      submit_full_review: {
-        Args: {
-          p_attendee_vibes: Json
-          p_event_comment: string
-          p_event_id: string
-          p_event_rating: number
-          p_host_reviews: Json
-        }
-        Returns: Json
-      }
+      submit_full_review:
+        | {
+            Args: {
+              p_attendee_vibes: Json
+              p_event_comment: string
+              p_event_id: string
+              p_event_meta: Json
+              p_event_rating: number
+              p_host_reviews: Json
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_attendee_vibes: Json
+              p_event_comment: string
+              p_event_id: string
+              p_event_rating: number
+              p_host_reviews: Json
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_attend_again: string
+              p_attendee_vibes: Json
+              p_event_comment: string
+              p_event_id: string
+              p_event_rating: number
+              p_event_vibes: Database["public"]["Enums"]["vibe_slug"][]
+              p_group_vibe_rating: number
+              p_host_rating: number
+              p_host_reviews: Json
+              p_nps_score: number
+              p_organization_rating: number
+              p_social_comment: string
+              p_social_expectation: string
+              p_venue_rating: number
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_attend_again: string
+              p_attendee_vibes: Json
+              p_event_comment: string
+              p_event_id: string
+              p_event_rating: number
+              p_group_vibe_rating: number
+              p_host_rating: number
+              p_host_reviews: Json
+              p_nps_score: number
+              p_organization_rating: number
+              p_quick_vibe_tags: string[]
+              p_social_comment: string
+              p_social_expectation: string
+              p_venue_rating: number
+            }
+            Returns: Json
+          }
       undo_check_in: { Args: { event_id: string }; Returns: undefined }
       unlockrows: { Args: { "": string }; Returns: number }
       updategeometrysrid: {

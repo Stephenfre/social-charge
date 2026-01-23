@@ -23,6 +23,8 @@ type HomeNav = NativeStackNavigationProp<RootStackParamList, 'HomeIndex'>;
 
 export function HomeScreen() {
   const navigation = useNavigation<HomeNav>();
+  const { session } = useAuth();
+
 
   const { userId, justCompletedOnboarding, setJustCompletedOnboarding } = useAuth();
   const [completionVisible, setCompletionVisible] = useState(false);

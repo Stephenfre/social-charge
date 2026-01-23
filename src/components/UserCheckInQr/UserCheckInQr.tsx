@@ -1,50 +1,58 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import QRCode from 'react-native-qrcode-svg';
 import { Flex, Text } from '~/components/ui';
-import { useUserCheckInQr } from '~/hooks';
+import { supabase } from '~/lib/supabase';
+import { useAuth } from '~/providers/AuthProvider';
 
 type UserCheckInQrProps = {
   eventId: string;
   size?: number;
 };
 
-type QrPayload = {
-  jti: string;
-  eventId: string;
-};
-
 export function UserCheckInQr({ eventId, size = 220 }: UserCheckInQrProps) {
-  const [payload, setPayload] = useState<QrPayload | null>(null);
-  const { fetchQrToken } = useUserCheckInQr();
+  const [token, setToken] = useState<string | null>(null);
+  const { session } = useAuth();
+  const accessToken = session?.access_token;
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     try {
-      const token = await fetchQrToken(eventId);
-      setPayload(token);
+      if (!accessToken || !eventId) {
+        setToken(null);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('qr-mint', {
+        body: { eventId },
+          headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+
+      if (error) {
+        console.log('invoke error:', error.message);
+
+        // ✅ Print the actual edge function error body (text/plain)
+        const res = (error as any).context as Response | undefined;
+        if (res) {
+          const txt = await res.text();
+          console.log('edge body:', txt);
+        }
+      }
+
+      setToken(data?.token ?? null);
     } catch (err) {
-      console.error('Failed to refresh QR token', err);
-      setPayload(null);
+      setToken(null);
     }
-  };
+  }, [eventId, accessToken]);
+
+  // console.log(token)
 
   useEffect(() => {
-    setPayload(null);
+    refresh();
+    const intervalId = setInterval(refresh, 10_000); // rotate every 10s
+    return () => clearInterval(intervalId);
+  }, [refresh]);
 
-    let intervalId: ReturnType<typeof setInterval>;
-
-    const load = async () => {
-      await refresh();
-      intervalId = setInterval(refresh, 10_000); // rotate every 10s
-    };
-
-    load();
-
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [eventId]);
-
-  if (!payload) {
+  if (!token) {
     return (
       <Flex
         align="center"
@@ -58,7 +66,5 @@ export function UserCheckInQr({ eventId, size = 220 }: UserCheckInQrProps) {
     );
   }
 
-  return (
-    <QRCode size={size} value={JSON.stringify({ jti: payload.jti, eventId: payload.eventId })} />
-  );
+  return <QRCode size={size} value={token} />;
 }

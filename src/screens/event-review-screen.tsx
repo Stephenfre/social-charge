@@ -1,8 +1,12 @@
-import { useEffect, useRef } from 'react';
-import { Alert, ScrollView, TextInput, View } from 'react-native';
-import { Box, Button, Flex, Image, Text } from '~/components/ui';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, TextInput, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
+import { Box, Button, Flex, Image, Pressable, Text } from '~/components/ui';
 import { useEventById, useEventReview, useStorageImages, useSubmitEventReview } from '~/hooks';
-import { useRouteStack } from '~/types/navigation.types';
+import { RootStackParamList, useRouteStack } from '~/types/navigation.types';
 
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -70,6 +74,7 @@ const ATTEND_AGAIN_TUPLE = ATTEND_AGAIN_OPTIONS as unknown as [
   AttendAgainFeeling,
   ...AttendAgainFeeling[],
 ];
+const TOTAL_STEPS = 3;
 
 // --- Zod Schema ---
 const reviewSchema = z.object({
@@ -91,32 +96,47 @@ const reviewSchema = z.object({
   attendeeVibes: z.record(z.string(), z.enum(VIBE_ENUM_TUPLE).optional()),
 });
 type ReviewFormValues = z.infer<typeof reviewSchema>;
+type ReviewNav = NativeStackNavigationProp<RootStackParamList>;
 
-const RatingRow = ({ value, onChange }: { value: number; onChange: (n: number) => void }) => (
-  <Flex direction="row" gap={4} wrap="wrap">
-    {[1, 2, 3, 4, 5].map((num) => (
-      <Button
-        key={num}
-        variant={value === num ? 'primary' : 'muted'}
-        className="rounded-xl"
-        onPress={() => onChange(num)}>
-        <Text bold={value === num}>{num}</Text>
-      </Button>
-    ))}
+const RatingRow = ({ value, onChange }: { value?: number; onChange: (n: number) => void }) => (
+  <Flex direction="row" gap={3} wrap="wrap">
+    {[1, 2, 3, 4, 5].map((num) => {
+      const selected = value === num;
+      return (
+        <Pressable
+          key={num}
+          onPress={() => onChange(num)}
+          accessibilityRole="button"
+          className={`h-10 w-10 items-center justify-center rounded-full border ${
+            selected ? 'border-primary bg-primary' : 'border-white/30 bg-transparent'
+          }`}>
+          <Text className="text-white" bold={selected}>
+            {num}
+          </Text>
+        </Pressable>
+      );
+    })}
   </Flex>
 );
 
-const ScoreRow = ({ value, onChange }: { value: number; onChange: (n: number) => void }) => (
-  <Flex direction="row" gap={4} wrap="wrap">
-    {Array.from({ length: 11 }, (_, i) => i).map((num) => (
-      <Button
-        key={num}
-        variant={value === num ? 'primary' : 'muted'}
-        className="rounded-xl"
-        onPress={() => onChange(num)}>
-        <Text bold={value === num}>{num}</Text>
-      </Button>
-    ))}
+const ScoreRow = ({ value, onChange }: { value?: number; onChange: (n: number) => void }) => (
+  <Flex direction="row" gap={3} wrap="wrap">
+    {Array.from({ length: 11 }, (_, i) => i).map((num) => {
+      const selected = value === num;
+      return (
+        <Pressable
+          key={num}
+          onPress={() => onChange(num)}
+          accessibilityRole="button"
+          className={`h-10 w-10 items-center justify-center rounded-full border ${
+            selected ? 'border-primary bg-primary' : 'border-white/30 bg-transparent'
+          }`}>
+          <Text className="text-white" bold={selected}>
+            {num}
+          </Text>
+        </Pressable>
+      );
+    })}
   </Flex>
 );
 
@@ -125,20 +145,32 @@ const SingleSelectRow = <T extends string>({
   onChange,
   options,
 }: {
-  value: T;
+  value?: T;
   onChange: (next: T) => void;
   options: readonly T[];
 }) => (
-  <Flex direction="row" gap={4} wrap="wrap">
-    {options.map((option) => (
-      <Button
-        key={option}
-        variant={value === option ? 'primary' : 'muted'}
-        className="rounded-xl"
-        onPress={() => onChange(option)}>
-        <Text bold={value === option}>{formatTagLabel(option)}</Text>
-      </Button>
-    ))}
+  <Flex gap={2}>
+    {options.map((option) => {
+      const selected = value === option;
+      return (
+        <Pressable
+          key={option}
+          onPress={() => onChange(option)}
+          accessibilityRole="radio"
+          accessibilityState={{ selected }}
+          className="flex-row items-center gap-3 py-1">
+          <View
+            className={`h-5 w-5 items-center justify-center rounded-full border ${
+              selected ? 'border-primary' : 'border-white/30'
+            }`}>
+            {selected ? <View className="h-2.5 w-2.5 rounded-full bg-primary" /> : null}
+          </View>
+          <Text size="sm" className="text-white">
+            {formatTagLabel(option)}
+          </Text>
+        </Pressable>
+      );
+    })}
   </Flex>
 );
 
@@ -208,10 +240,13 @@ const VibeChips = ({
 );
 
 export function EventReviewScreen() {
+  const navigation = useNavigation<ReviewNav>();
   const { params } = useRouteStack<'EventReview'>();
   const { data: event } = useEventById(params.eventId!);
   const { data: existingReview } = useEventReview(params.eventId ?? null);
   const hasPrefilled = useRef(false);
+  const [step, setStep] = useState(1);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   // Load avatars for checked-in attendees
   const checkInAvatarPaths = event?.check_ins?.map((r) => r.profile_picture) ?? [];
@@ -228,19 +263,21 @@ export function EventReviewScreen() {
     control,
     handleSubmit,
     reset,
+    trigger,
+    watch,
     formState: { errors },
   } = useForm<ReviewFormValues>({
     resolver: zodResolver(reviewSchema),
     defaultValues: {
-      overallRating: 3,
-      venueRating: 3,
-      organizationRating: 3,
-      hostRating: 3,
-      groupVibeRating: 3,
-      socialExpectation: 'met',
+      overallRating: undefined,
+      venueRating: undefined,
+      organizationRating: undefined,
+      hostRating: undefined,
+      groupVibeRating: undefined,
+      socialExpectation: undefined,
       socialComment: '',
-      attendAgain: 'sparked',
-      npsScore: 7,
+      attendAgain: undefined,
+      npsScore: undefined,
       additionalFeedback: '',
       eventVibes: [],
       attendeeVibes: {},
@@ -341,250 +378,397 @@ export function EventReviewScreen() {
         hostIds,
       });
 
-      Alert.alert('Thanks!', 'Your review has been submitted.');
+      setIsSubmitted(true);
     } catch (err: any) {
       Alert.alert('Error', err?.message ?? 'Failed to submit review.');
     }
   };
 
-  return (
-    <View className="h-full bg-background-dark p-4">
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <Flex gap={8}>
-          <Flex gap={2}>
-            <Text bold size="lg">
-              Overall Experience
+  const handleBackToEvent = () => {
+    navigation.reset({
+      index: 0,
+      routes: [
+        {
+          name: 'ViewEvent',
+          params: { eventId: params.eventId, fromReview: true },
+        } as never,
+      ],
+    });
+  };
+
+  const handleBack = () => {
+    if (step === 1) {
+      navigation.goBack();
+      return;
+    }
+    setStep((prev) => Math.max(1, prev - 1));
+  };
+
+  const requiredValues = watch([
+    'overallRating',
+    'venueRating',
+    'organizationRating',
+    'hostRating',
+    'groupVibeRating',
+    'socialExpectation',
+    'attendAgain',
+    'npsScore',
+  ]);
+  const isRequiredComplete = useMemo(
+    () => requiredValues.every((value) => value !== undefined && value !== null),
+    [requiredValues]
+  );
+
+  const handleNext = async () => {
+    if (step === 1) {
+      const ok = await trigger([
+        'overallRating',
+        'venueRating',
+        'organizationRating',
+        'hostRating',
+        'groupVibeRating',
+        'socialExpectation',
+        'attendAgain',
+        'npsScore',
+      ]);
+      if (!ok) return;
+    }
+    setStep((prev) => Math.min(TOTAL_STEPS, prev + 1));
+  };
+
+  if (isSubmitted) {
+    return (
+      <LinearGradient colors={['#7B4CFF', '#5A2FD6']} style={{ flex: 1 }}>
+        <View className="flex-1 px-6 py-10">
+          <View className="absolute inset-0">
+            <View className="absolute left-6 top-10 h-8 w-8 rounded-full bg-white/20" />
+            <View className="absolute right-10 top-16 h-12 w-12 rounded-full bg-white/15" />
+            <View className="absolute left-16 top-40 h-6 w-6 rounded-full bg-white/20" />
+            <View className="absolute right-6 top-52 h-16 w-16 rounded-full bg-white/10" />
+            <View className="absolute left-10 top-64 h-10 w-10 rounded-full bg-white/15" />
+            <View className="absolute right-14 top-80 h-6 w-6 rounded-full bg-white/20" />
+          </View>
+
+          <View className="flex-1 items-center justify-center gap-8">
+            <View className="h-32 w-32 items-center justify-center rounded-full bg-white/20">
+              <View className="h-24 w-24 items-center justify-center rounded-full bg-white">
+                <Text className="text-5xl text-[#6C3DF1]">✓</Text>
+              </View>
+            </View>
+            <Text className="text-center text-3xl font-semibold text-white">
+              Thank you for{'\n'}completing the{'\n'}survey!
             </Text>
-            <Controller
-              control={control}
-              name="overallRating"
-              render={({ field: { onChange, value } }) => (
-                <RatingRow value={value} onChange={onChange} />
-              )}
-            />
-            {errors.overallRating && (
-              <Text className="text-error-500">{errors.overallRating.message}</Text>
-            )}
-          </Flex>
+          </View>
 
-          <Flex gap={4}>
-            <Text bold size="lg">
-              Event Quality
-            </Text>
-            <Flex gap={2}>
-              <Text bold>Venue</Text>
-              <Controller
-                control={control}
-                name="venueRating"
-                render={({ field: { onChange, value } }) => (
-                  <RatingRow value={value} onChange={onChange} />
-                )}
-              />
-              {errors.venueRating && (
-                <Text className="text-error-500">{errors.venueRating.message}</Text>
-              )}
-            </Flex>
-            <Flex gap={2}>
-              <Text bold>Organization</Text>
-              <Controller
-                control={control}
-                name="organizationRating"
-                render={({ field: { onChange, value } }) => (
-                  <RatingRow value={value} onChange={onChange} />
-                )}
-              />
-              {errors.organizationRating && (
-                <Text className="text-error-500">{errors.organizationRating.message}</Text>
-              )}
-            </Flex>
-            <Flex gap={2}>
-              <Text bold>Host</Text>
-              <Controller
-                control={control}
-                name="hostRating"
-                render={({ field: { onChange, value } }) => (
-                  <RatingRow value={value} onChange={onChange} />
-                )}
-              />
-              {errors.hostRating && (
-                <Text className="text-error-500">{errors.hostRating.message}</Text>
-              )}
-            </Flex>
-            <Flex gap={2}>
-              <Text bold>Group Size</Text>
-              <Controller
-                control={control}
-                name="groupVibeRating"
-                render={({ field: { onChange, value } }) => (
-                  <RatingRow value={value} onChange={onChange} />
-                )}
-              />
-              {errors.groupVibeRating && (
-                <Text className="text-error-500">{errors.groupVibeRating.message}</Text>
-              )}
-            </Flex>
-          </Flex>
-
-          <Flex gap={2}>
-            <Text bold size="lg">
-              Social Experience
-            </Text>
-            <Controller
-              control={control}
-              name="socialExpectation"
-              render={({ field: { onChange, value } }) => (
-                <SingleSelectRow
-                  value={value}
-                  onChange={onChange}
-                  options={SOCIAL_EXPECTATION_OPTIONS}
-                />
-              )}
-            />
-            {errors.socialExpectation && (
-              <Text className="text-error-500">{errors.socialExpectation.message}</Text>
-            )}
-            <Controller
-              control={control}
-              name="socialComment"
-              render={({ field: { onChange, value } }) => (
-                <TextInput
-                  className="m-2 h-24 rounded-md bg-white px-3"
-                  placeholder="Tell us more (optional)"
-                  value={value}
-                  onChangeText={onChange}
-                  multiline
-                />
-              )}
-            />
-          </Flex>
-
-          <Flex gap={2}>
-            <Text bold size="lg">
-              Would You Attend Again?
-            </Text>
-            <Controller
-              control={control}
-              name="attendAgain"
-              render={({ field: { onChange, value } }) => (
-                <SingleSelectRow value={value} onChange={onChange} options={ATTEND_AGAIN_OPTIONS} />
-              )}
-            />
-            {errors.attendAgain && (
-              <Text className="text-error-500">{errors.attendAgain.message}</Text>
-            )}
-          </Flex>
-
-          <Flex gap={2}>
-            <Text bold size="lg">
-              Recommend to Others?
-            </Text>
-            <Controller
-              control={control}
-              name="npsScore"
-              render={({ field: { onChange, value } }) => (
-                <ScoreRow value={value} onChange={onChange} />
-              )}
-            />
-            {errors.npsScore && <Text className="text-error-500">{errors.npsScore.message}</Text>}
-          </Flex>
-
-          <Flex gap={2}>
-            <Text bold size="lg">
-              Additional Feedback
-            </Text>
-            <Controller
-              control={control}
-              name="additionalFeedback"
-              render={({ field: { onChange, value } }) => (
-                <TextInput
-                  className="m-2 h-24 rounded-md bg-white px-3"
-                  placeholder="Anything else you want to share?"
-                  value={value}
-                  onChangeText={onChange}
-                  multiline
-                />
-              )}
-            />
-          </Flex>
-
-          <Flex gap={2}>
-            <Text bold size="lg">
-              Event Vibes
-            </Text>
-            <Controller
-              control={control}
-              name="eventVibes"
-              render={({ field: { onChange, value } }) => (
-                <MultiSelectVibes
-                  selected={value ?? []}
-                  onToggle={(tag) => {
-                    const next = value?.includes(tag)
-                      ? value.filter((item) => item !== tag)
-                      : [...(value ?? []), tag];
-                    onChange(next);
-                  }}
-                />
-              )}
-            />
-          </Flex>
-
-          <Flex gap={4} className="mt-2">
-            <Text bold size="xl">
-              Attendee Vibes
-            </Text>
-            {event?.check_ins?.length ? (
-              <Flex gap={8}>
-                {event.check_ins.map((att, i) => {
-                  const imgUri =
-                    !eventCheckInUserAvatarLoading && eventCheckInUserAvatar[i]
-                      ? eventCheckInUserAvatar[i]
-                      : undefined;
-                  const fieldName = `attendeeVibes.${att.user_id}` as const;
-
-                  return (
-                    <Flex key={att.user_id} gap={4} className="rounded-xl bg-background-900 p-3">
-                      <Flex direction="row" align="center" gap={10}>
-                        {imgUri ? (
-                          <Image
-                            alt="attendee picture"
-                            source={{ uri: imgUri }}
-                            rounded="full"
-                            size="xl"
-                          />
-                        ) : (
-                          <Box className="h-28 w-28 rounded-full bg-slate-500" />
-                        )}
-                        <Text size="lg" bold>
-                          {att.first_name + ' ' + att.last_name}
-                        </Text>
-                      </Flex>
-
-                      <Controller
-                        control={control}
-                        name={fieldName}
-                        render={({ field: { value, onChange } }) => (
-                          <VibeChips current={value as VibeSlug | undefined} onPick={onChange} />
-                        )}
-                      />
-                    </Flex>
-                  );
-                })}
-              </Flex>
-            ) : (
-              <Text>No check-ins to vote on.</Text>
-            )}
-          </Flex>
-
-          <Button
-            onPress={handleSubmit(onSubmit)}
-            className="mb-10 mt-4 h-14 w-full rounded-lg bg-primary-700 "
-            disabled={isPending}>
-            <Text bold className="text-white">
-              {isPending ? 'Submitting…' : 'Submit Review'}
+          <Button onPress={handleBackToEvent} className="h-12 w-full rounded-full bg-white">
+            <Text className="text-[#6C3DF1]" bold>
+              Back to event
             </Text>
           </Button>
+        </View>
+      </LinearGradient>
+    );
+  }
+
+  return (
+    <Flex flex className="bg-background-dark">
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <Flex className="px-6 pb-2">
+          <Flex direction="row" justify="space-between" align="center">
+            <View></View>
+            <Text className="text-sm font-semibold text-white/70">
+              {step}/{TOTAL_STEPS}
+            </Text>
+          </Flex>
+          <Flex className="mt-2 h-2 w-full rounded-full bg-white/10">
+            <View
+              className=" h-2 rounded-full bg-primary"
+              style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
+            />
+          </Flex>
+        </Flex>
+
+      <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+        <Flex gap={8} className="px-5 pb-24 pt-6">
+          {step === 1 ? (
+            <Flex gap={8}>
+              <Flex gap={2}>
+                <Text bold size="xl" className="text-white">
+                  Event review
+                </Text>
+                <Text className="text-sm text-white/70">
+                  Thanks for completing the survey. Your feedback helps us improve future events.
+                </Text>
+              </Flex>
+
+              <Flex gap={3}>
+                <Text bold className="text-white">
+                  1. Overall experience
+                </Text>
+                <Controller
+                  control={control}
+                  name="overallRating"
+                  render={({ field: { onChange, value } }) => (
+                    <RatingRow value={value} onChange={onChange} />
+                  )}
+                />
+                {errors.overallRating && (
+                  <Text className="text-error-500">{errors.overallRating.message}</Text>
+                )}
+              </Flex>
+
+              <Flex gap={4}>
+                <Text bold className="text-white">
+                  2. Event quality
+                </Text>
+                <Flex gap={3}>
+                  <Text className="text-white/80">Venue</Text>
+                  <Controller
+                    control={control}
+                    name="venueRating"
+                    render={({ field: { onChange, value } }) => (
+                      <RatingRow value={value} onChange={onChange} />
+                    )}
+                  />
+                  {errors.venueRating && (
+                    <Text className="text-error-500">{errors.venueRating.message}</Text>
+                  )}
+                </Flex>
+                <Flex gap={3}>
+                  <Text className="text-white/80">Organization</Text>
+                  <Controller
+                    control={control}
+                    name="organizationRating"
+                    render={({ field: { onChange, value } }) => (
+                      <RatingRow value={value} onChange={onChange} />
+                    )}
+                  />
+                  {errors.organizationRating && (
+                    <Text className="text-error-500">{errors.organizationRating.message}</Text>
+                  )}
+                </Flex>
+                <Flex gap={3}>
+                  <Text className="text-white/80">Host</Text>
+                  <Controller
+                    control={control}
+                    name="hostRating"
+                    render={({ field: { onChange, value } }) => (
+                      <RatingRow value={value} onChange={onChange} />
+                    )}
+                  />
+                  {errors.hostRating && (
+                    <Text className="text-error-500">{errors.hostRating.message}</Text>
+                  )}
+                </Flex>
+                <Flex gap={3}>
+                  <Text className="text-white/80">Group size</Text>
+                  <Controller
+                    control={control}
+                    name="groupVibeRating"
+                    render={({ field: { onChange, value } }) => (
+                      <RatingRow value={value} onChange={onChange} />
+                    )}
+                  />
+                  {errors.groupVibeRating && (
+                    <Text className="text-error-500">{errors.groupVibeRating.message}</Text>
+                  )}
+                </Flex>
+              </Flex>
+
+              <Flex gap={4}>
+                <Text bold className="text-white">
+                  3. Social experience
+                </Text>
+                <Controller
+                  control={control}
+                  name="socialExpectation"
+                  render={({ field: { onChange, value } }) => (
+                    <SingleSelectRow
+                      value={value}
+                      onChange={onChange}
+                      options={SOCIAL_EXPECTATION_OPTIONS}
+                    />
+                  )}
+                />
+                {errors.socialExpectation && (
+                  <Text className="text-error-500">{errors.socialExpectation.message}</Text>
+                )}
+                <Controller
+                  control={control}
+                  name="socialComment"
+                  render={({ field: { onChange, value } }) => (
+                    <TextInput
+                      className="min-h-[96px] rounded-2xl border border-white/20 bg-white/5 p-4 text-sm text-white"
+                      placeholder="Tell us more (optional)"
+                      placeholderTextColor="#A3A3A3"
+                      value={value}
+                      onChangeText={onChange}
+                      multiline
+                      style={{ textAlignVertical: 'top' }}
+                    />
+                  )}
+                />
+              </Flex>
+
+              <Flex gap={4}>
+                <Text bold className="text-white">
+                  4. Would you attend again?
+                </Text>
+                <Controller
+                  control={control}
+                  name="attendAgain"
+                  render={({ field: { onChange, value } }) => (
+                    <SingleSelectRow
+                      value={value}
+                      onChange={onChange}
+                      options={ATTEND_AGAIN_OPTIONS}
+                    />
+                  )}
+                />
+                {errors.attendAgain && (
+                  <Text className="text-error-500">{errors.attendAgain.message}</Text>
+                )}
+              </Flex>
+
+              <Flex gap={4}>
+                <Text bold className="text-white">
+                  5. Recommend to others?
+                </Text>
+                <Controller
+                  control={control}
+                  name="npsScore"
+                  render={({ field: { onChange, value } }) => (
+                    <ScoreRow value={value} onChange={onChange} />
+                  )}
+                />
+                {errors.npsScore && (
+                  <Text className="text-error-500">{errors.npsScore.message}</Text>
+                )}
+              </Flex>
+
+              <Flex gap={4}>
+                <Text bold className="text-white">
+                  6. Additional feedback
+                </Text>
+                <Controller
+                  control={control}
+                  name="additionalFeedback"
+                  render={({ field: { onChange, value } }) => (
+                    <TextInput
+                      className="min-h-[96px] rounded-2xl border border-white/20 bg-white/5 p-4 text-sm text-white"
+                      placeholder="Anything else you want to share?"
+                      placeholderTextColor="#A3A3A3"
+                      value={value}
+                      onChangeText={onChange}
+                      multiline
+                      style={{ textAlignVertical: 'top' }}
+                    />
+                  )}
+                />
+              </Flex>
+            </Flex>
+          ) : null}
+
+          {step === 2 ? (
+            <Flex gap={8}>
+              <Text bold className="text-white">
+              How would you describe the overall vibe of this event?
+              </Text>
+              <Controller
+                control={control}
+                name="eventVibes"
+                render={({ field: { onChange, value } }) => (
+                  <MultiSelectVibes
+                    selected={value ?? []}
+                    onToggle={(tag) => {
+                      const next = value?.includes(tag)
+                        ? value.filter((item) => item !== tag)
+                        : [...(value ?? []), tag];
+                      onChange(next);
+                    }}
+                  />
+                )}
+              />
+            </Flex>
+          ) : null}
+
+          {step === 3 ? (
+            <Flex gap={8}>
+              <Text bold size="xl" className="text-white">
+                Attendee vibes
+              </Text>
+              {event?.check_ins?.length ? (
+                <Flex gap={8}>
+                  {event.check_ins.map((att, i) => {
+                    const imgUri =
+                      !eventCheckInUserAvatarLoading && eventCheckInUserAvatar[i]
+                        ? eventCheckInUserAvatar[i]
+                        : undefined;
+                    const fieldName = `attendeeVibes.${att.user_id}` as const;
+
+                    return (
+                      <Flex
+                        key={att.user_id}
+                        gap={4}
+                        className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                        <Flex direction="row" align="center" gap={10}>
+                          {imgUri ? (
+                            <Image
+                              alt="attendee picture"
+                              source={{ uri: imgUri }}
+                              rounded="full"
+                              size="xl"
+                            />
+                          ) : (
+                            <Box className="h-24 w-24 rounded-full bg-gray-200" />
+                          )}
+                          <Text size="lg" bold className="text-white">
+                            {att.first_name + ' ' + att.last_name}
+                          </Text>
+                        </Flex>
+
+                        <Controller
+                          control={control}
+                          name={fieldName}
+                          render={({ field: { value, onChange } }) => (
+                            <VibeChips current={value as VibeSlug | undefined} onPick={onChange} />
+                          )}
+                        />
+                      </Flex>
+                    );
+                  })}
+                </Flex>
+              ) : (
+                <Text className="text-white/70">No check-ins to vote on.</Text>
+              )}
+            </Flex>
+          ) : null}
         </Flex>
       </ScrollView>
-    </View>
+
+        <View className="px-5 pb-6 pt-3">
+          <Flex direction="row" gap={3}>
+          <Button
+            onPress={handleBack}
+            className="h-12 flex-1 rounded-full bg-white/10"
+            disabled={step === 1}>
+            <Text className="text-white" bold>
+              Back
+            </Text>
+          </Button>
+          <Button
+            onPress={step < TOTAL_STEPS ? handleNext : handleSubmit(onSubmit)}
+            className="h-12 flex-1 rounded-full bg-primary"
+            disabled={isPending || (step < TOTAL_STEPS ? !isRequiredComplete : !isRequiredComplete)}>
+            <Text className="text-white" bold>
+              {step < TOTAL_STEPS ? 'Next' : isPending ? 'Submitting...' : 'Finish'}
+            </Text>
+          </Button>
+          </Flex>
+        </View>
+      </KeyboardAvoidingView>
+    </Flex>
   );
 }

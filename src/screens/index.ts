@@ -12,6 +12,7 @@ export { ViewEventScreen } from './view-event-screen';
 export { ViewUserEventsScreen } from './view-user-events-screen';
 export { ReviewCreateEventScreen } from './review-create-event-screen';
 export { EventReviewScreen } from './event-review-screen';
+export { EventChatScreen } from './event-chat-screen';
 export { WalletScreen } from './wallet-screen';
 export { HostScannerScreen } from './host-scanner-screen';
 export { OnboardingStartScreen } from './onboarding-start-screen';

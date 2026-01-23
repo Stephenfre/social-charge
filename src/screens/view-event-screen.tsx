@@ -1,5 +1,5 @@
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
-import { useNavigation } from '@react-navigation/native';
+import { CommonActions, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import dayjs from 'dayjs';
 import { ArrowLeft, Calendar, Clock, MapPin, TicketX } from 'lucide-react-native';
@@ -78,6 +78,24 @@ export function ViewEventScreen() {
     if (isConfirmingRsvp) return;
     setShowRsvpModal(false);
     setRsvpError(null);
+  };
+
+  const handleSafeBack = () => {
+    const destination = params.fromReview ? 'Profile' : 'Home';
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'Tabs',
+            state: {
+              index: 0,
+              routes: [{ name: destination }],
+            },
+          },
+        ],
+      })
+    );
   };
 
   const handleConfirmRsvp = async () => {
@@ -161,7 +179,7 @@ export function ViewEventScreen() {
       <View className="h-full bg-background-dark">
         <Flex align="center" className="m-auto" gap={4}>
           <Text size="xl">Event not found.</Text>
-          <Button onPress={() => navigation.goBack()}>
+          <Button onPress={handleSafeBack}>
             <Text bold>Go Back</Text>
           </Button>
         </Flex>
@@ -215,7 +233,7 @@ export function ViewEventScreen() {
         <Pressable
           className="absolute left-4 top-20 z-10"
           hitSlop={16}
-          onPress={() => navigation.goBack()}>
+          onPress={handleSafeBack}>
           <ArrowLeft size={28} color="#fff" />
         </Pressable>
         <EventCard
@@ -632,7 +650,7 @@ export function CancelRsvpButton({
           ? `${tokenCost} credits have been refunded.`
           : 'No credits were refunded because the grace period has passed.'
       );
-      navigation.goBack();
+      handleSafeBack();
     } catch (err) {
       const message = (err as { message?: string })?.message ?? 'Something went wrong.';
       Alert.alert('Failed to cancel RSVP', message);
