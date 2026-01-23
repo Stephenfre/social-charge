@@ -186,7 +186,12 @@ export function HomeScreen() {
                               showToken={false}
                             />
                             <Flex>
-                              <Text size="md" weight="600" className="w-40">
+                              <Text
+                                size="md"
+                                weight="600"
+                                className="w-40"
+                                numberOfLines={1}
+                                ellipsizeMode="tail">
                                 {event?.title}
                               </Text>
                               <Flex direction="row">
@@ -275,7 +280,12 @@ export function HomeScreen() {
                                 />
                                 <Flex>
                                   <Flex direction="row" gap={2}>
-                                    <Text size="md" weight="600">
+                                    <Text
+                                      size="md"
+                                      weight="600"
+                                      className="w-40"
+                                      numberOfLines={1}
+                                      ellipsizeMode="tail">
                                       {event?.title}
                                     </Text>
                                     <Button className="h-6 w-8 rounded-md bg-green-500 p-0">

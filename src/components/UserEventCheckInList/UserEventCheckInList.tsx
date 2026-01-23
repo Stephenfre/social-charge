@@ -1,15 +1,15 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import dayjs from 'dayjs';
 import { Dimensions, FlatList, StyleSheet, View } from 'react-native';
-import { Button, Flex, Image, Pressable, Text } from '~/components/ui';
+import {  Button, Flex, Image, Pressable, Text } from '~/components/ui';
 import { Spinner } from '~/components/ui/spinner';
-import { useUserEvents } from '~/hooks';
+import { useUserEventCheckIns, useUserEvents } from '~/hooks';
 import type { UserEventCardRow } from '~/types/event.types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '../ui/icon';
-import { Calendar, Clock, MapPin, TicketX } from 'lucide-react-native';
+import { Calendar, CheckCircle2, Clock, MapPin, TicketX } from 'lucide-react-native';
 import { UserCheckInQr } from '../UserCheckInQr/UserCheckInQr';
 import { RootStackParamList } from '~/types/navigation.types';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,6 +21,17 @@ const SIDE_SPACER = Math.max(0, Math.round((SCREEN_W - CARD_W) / 2));
 
 export function UserEventCheckInList() {
   const { data: events, isLoading: eventsLoading } = useUserEvents(6);
+  const eventIds = useMemo(
+    () => (events ?? []).map((event) => event.id).filter(Boolean) as string[],
+    [events]
+  );
+  const { data: checkedInEvents } = useUserEventCheckIns(eventIds);
+
+  const checkedInEventIds = useMemo(
+    () => new Set((checkedInEvents ?? []).map((row) => row.event_id)),
+    [checkedInEvents]
+  );
+
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'CheckInIndex'>>();
 
   const keyExtractor = useCallback(
@@ -40,6 +51,7 @@ export function UserEventCheckInList() {
       const hasEventEnded =
         item.event_status === 'past' ||
         (item.ends_at ? dayjs().isAfter(dayjs(item.ends_at)) : false);
+      const isCheckedIn = !!item.id && checkedInEventIds.has(item.id);
 
       return (
         <Pressable
@@ -69,9 +81,11 @@ export function UserEventCheckInList() {
           </View>
 
           <Flex className="px-4">
-            <Text size="5xl" bold>
-              {item.title}
-            </Text>
+            <Flex direction="row" align="center" justify="space-between">
+              <Text size="5xl" bold className="flex-1">
+                {item.title}
+              </Text>
+            </Flex>
 
             <Flex direction="row" gap={4}>
               <Flex direction="row" align="center" gap={2}>
@@ -89,13 +103,30 @@ export function UserEventCheckInList() {
             </Flex>
 
             <Flex align="center" className="mt-10">
-              {!hasEventEnded && <UserCheckInQr eventId={item.id!} size={160} />}
+              {!hasEventEnded &&
+                (isCheckedIn ? (
+                  <Flex align="center" gap={2}>
+                    <Icon as={CheckCircle2} size={'4xl'} className="text-green-500" />
+                    <Text size="xl" className="text-green-500">
+                      Checked in
+                    </Text>
+                  </Flex>
+                ) : (
+                  <UserCheckInQr eventId={item.id!} size={160} />
+                ))}
             </Flex>
           </Flex>
+          {hasEventEnded && (
+            <View className="absolute inset-0 items-center justify-center rounded-2xl bg-black/60">
+              <Text size="xl" bold className="text-white">
+                Event has ended
+              </Text>
+            </View>
+          )}
         </Pressable>
       );
     },
-    [navigation]
+    [checkedInEventIds, navigation]
   );
 
   if (eventsLoading) {

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { UseQueryResult, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { supabase } from '~/lib/supabase';
 import { uploadEventCoverImage } from '~/lib/uploadImage';
@@ -90,6 +90,34 @@ export function useUserCheckedInEvent(eventId: string | null) {
         .maybeSingle<EventCheckIn>();
       if (error) throw error;
       return data;
+    },
+  });
+}
+
+export type UserEventCheckInRow = {
+  event_id: string;
+};
+
+export function useUserEventCheckIns(
+  eventIds: string[] | null
+): UseQueryResult<UserEventCheckInRow[]> {
+  const { userId } = useAuth();
+  const normalizedIds = (eventIds ?? []).filter(Boolean) as string[];
+
+  return useQuery<UserEventCheckInRow[]>({
+    queryKey: ['events', 'checkIns', 'byUser', userId, normalizedIds.join(',')],
+    enabled: !!userId && normalizedIds.length > 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('check_ins')
+        .select('event_id')
+        .eq('user_id', userId!)
+        .in('event_id', normalizedIds);
+      if (error) throw error;
+      return data ?? [];
     },
   });
 }
