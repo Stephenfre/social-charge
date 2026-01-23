@@ -48,7 +48,7 @@ export type RootStackParamList = {
   CheckInIndex: { eventId: string };
   CreateEvent: { eventId?: string };
   'Review Event': undefined;
-  EventReview: { eventId?: string };
+  EventReview: { eventId?: string; source?: 'home' | 'profile' };
   WalletIndex: undefined;
   ScanQrModal:
     | {

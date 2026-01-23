@@ -21,6 +21,7 @@ import {
 import { useEventVibes } from '~/hooks/useEvents';
 import { useCreateRsvp, useRemoveRsvp, useRsvps } from '~/hooks/useRsvps';
 import { useAuth } from '~/providers/AuthProvider';
+import { EventReviewContent } from './event-review-screen';
 
 import { cn } from '~/utils/cn';
 import { RootStackParamList, useRouteStack } from '~/types/navigation.types';
@@ -59,6 +60,7 @@ export function ViewEventScreen() {
   const [showRsvpModal, setShowRsvpModal] = useState(false);
   const [isConfirmingRsvp, setIsConfirmingRsvp] = useState(false);
   const [rsvpError, setRsvpError] = useState<string | null>(null);
+  const [isReviewVisible, setIsReviewVisible] = useState(false);
 
   const tokenCost = event?.token_cost ?? 0;
   const currentBalance = tokenBalance ?? 0;
@@ -81,21 +83,7 @@ export function ViewEventScreen() {
   };
 
   const handleSafeBack = () => {
-    const destination = params.fromReview ? 'Profile' : 'Home';
-    navigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [
-          {
-            name: 'Tabs',
-            state: {
-              index: 0,
-              routes: [{ name: destination }],
-            },
-          },
-        ],
-      })
-    );
+    navigation.goBack()
   };
 
   const handleConfirmRsvp = async () => {
@@ -224,7 +212,7 @@ export function ViewEventScreen() {
       : null;
   const handleReviewPress = () => {
     if (!event?.id) return;
-    navigation.navigate('EventReview', { eventId: event.id });
+    setIsReviewVisible(true);
   };
 
   return (
@@ -453,6 +441,15 @@ export function ViewEventScreen() {
         balanceLoading={tokenBalanceLoading}
         errorMessage={rsvpError}
       />
+      {event?.id && (
+        <Modal
+          animationType="slide"
+          presentationStyle="fullScreen"
+          visible={isReviewVisible}
+          onRequestClose={() => setIsReviewVisible(false)}>
+          <EventReviewContent eventId={event.id} onClose={() => setIsReviewVisible(false)} />
+        </Modal>
+      )}
     </Flex>
   );
 }
@@ -621,7 +618,6 @@ export function CancelRsvpButton({
   className?: string;
   canEdit?: boolean;
 }) {
-  const navigation = useNavigation();
   const { mutateAsync: removeRsvpAsync, isPending } = useRemoveRsvp();
   const { mutateAsync: refundTokensAsync } = useRefundTokens();
   const label = isPending ? <Spinner /> : 'Cancel Rsvp';
@@ -650,7 +646,6 @@ export function CancelRsvpButton({
           ? `${tokenCost} credits have been refunded.`
           : 'No credits were refunded because the grace period has passed.'
       );
-      handleSafeBack();
     } catch (err) {
       const message = (err as { message?: string })?.message ?? 'Something went wrong.';
       Alert.alert('Failed to cancel RSVP', message);

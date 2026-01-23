@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
+import { CommonActions, useNavigation } from '@react-navigation/native';
 import { Box, Button, Flex, Image, Pressable, Text } from '~/components/ui';
 import { useEventById, useEventReview, useStorageImages, useSubmitEventReview } from '~/hooks';
 import { RootStackParamList, useRouteStack } from '~/types/navigation.types';
@@ -12,6 +11,7 @@ import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { VibeSlug } from '~/hooks/useEvents';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export const VIBE_CATEGORIES = {
   personality: [
@@ -97,25 +97,39 @@ const reviewSchema = z.object({
 });
 type ReviewFormValues = z.infer<typeof reviewSchema>;
 type ReviewNav = NativeStackNavigationProp<RootStackParamList>;
+type EventReviewContentProps = {
+  eventId: string;
+  onClose: () => void;
+};
 
 const RatingRow = ({ value, onChange }: { value?: number; onChange: (n: number) => void }) => (
-  <Flex direction="row" gap={3} wrap="wrap">
-    {[1, 2, 3, 4, 5].map((num) => {
-      const selected = value === num;
-      return (
-        <Pressable
-          key={num}
-          onPress={() => onChange(num)}
-          accessibilityRole="button"
-          className={`h-10 w-10 items-center justify-center rounded-full border ${
-            selected ? 'border-primary bg-primary' : 'border-white/30 bg-transparent'
-          }`}>
-          <Text className="text-white" bold={selected}>
-            {num}
-          </Text>
-        </Pressable>
-      );
-    })}
+  <Flex gap={2}>
+    <Flex direction="row" gap={2}>
+      {[1, 2, 3, 4, 5].map((num) => {
+        const selected = value === num;
+        return (
+          <Pressable
+            key={num}
+            onPress={() => onChange(num)}
+            accessibilityRole="button"
+            className={`h-10 w-10 flex-1 items-center justify-center rounded-full border ${
+              selected ? 'border-primary bg-primary' : 'border-white/30 bg-transparent'
+            }`}>
+            <Text className="text-white" bold={selected}>
+              {num}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </Flex>
+    <Flex direction="row" justify="space-between">
+      <Text size="xs" className="text-white/70">
+        Very bad
+      </Text>
+      <Text size="xs" className="text-white/70">
+        Great
+      </Text>
+    </Flex>
   </Flex>
 );
 
@@ -149,7 +163,7 @@ const SingleSelectRow = <T extends string>({
   onChange: (next: T) => void;
   options: readonly T[];
 }) => (
-  <Flex gap={2}>
+  <Flex direction="row" gap={3}>
     {options.map((option) => {
       const selected = value === option;
       return (
@@ -158,14 +172,10 @@ const SingleSelectRow = <T extends string>({
           onPress={() => onChange(option)}
           accessibilityRole="radio"
           accessibilityState={{ selected }}
-          className="flex-row items-center gap-3 py-1">
-          <View
-            className={`h-5 w-5 items-center justify-center rounded-full border ${
-              selected ? 'border-primary' : 'border-white/30'
-            }`}>
-            {selected ? <View className="h-2.5 w-2.5 rounded-full bg-primary" /> : null}
-          </View>
-          <Text size="sm" className="text-white">
+          className={`h-10 flex-1 items-center justify-center rounded-full border ${
+            selected ? 'border-primary bg-primary' : 'border-white/30 bg-transparent'
+          }`}>
+          <Text className="text-white" bold={selected}>
             {formatTagLabel(option)}
           </Text>
         </Pressable>
@@ -239,11 +249,9 @@ const VibeChips = ({
   </Flex>
 );
 
-export function EventReviewScreen() {
-  const navigation = useNavigation<ReviewNav>();
-  const { params } = useRouteStack<'EventReview'>();
-  const { data: event } = useEventById(params.eventId!);
-  const { data: existingReview } = useEventReview(params.eventId ?? null);
+export function EventReviewContent({ eventId, onClose }: EventReviewContentProps) {
+  const { data: event } = useEventById(eventId);
+  const { data: existingReview } = useEventReview(eventId ?? null);
   const hasPrefilled = useRef(false);
   const [step, setStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -286,7 +294,7 @@ export function EventReviewScreen() {
 
   useEffect(() => {
     hasPrefilled.current = false;
-  }, [params.eventId]);
+  }, [eventId]);
 
   useEffect(() => {
     if (!existingReview || hasPrefilled.current) return;
@@ -385,20 +393,12 @@ export function EventReviewScreen() {
   };
 
   const handleBackToEvent = () => {
-    navigation.reset({
-      index: 0,
-      routes: [
-        {
-          name: 'ViewEvent',
-          params: { eventId: params.eventId, fromReview: true },
-        } as never,
-      ],
-    });
+    onClose();
   };
 
   const handleBack = () => {
     if (step === 1) {
-      navigation.goBack();
+      onClose();
       return;
     }
     setStep((prev) => Math.max(1, prev - 1));
@@ -438,7 +438,7 @@ export function EventReviewScreen() {
 
   if (isSubmitted) {
     return (
-      <LinearGradient colors={['#7B4CFF', '#5A2FD6']} style={{ flex: 1 }}>
+      <LinearGradient colors={['#007BFF', '#0056b3']} style={{ flex: 1 }}>
         <View className="flex-1 px-6 py-10">
           <View className="absolute inset-0">
             <View className="absolute left-6 top-10 h-8 w-8 rounded-full bg-white/20" />
@@ -452,7 +452,7 @@ export function EventReviewScreen() {
           <View className="flex-1 items-center justify-center gap-8">
             <View className="h-32 w-32 items-center justify-center rounded-full bg-white/20">
               <View className="h-24 w-24 items-center justify-center rounded-full bg-white">
-                <Text className="text-5xl text-[#6C3DF1]">✓</Text>
+                <Text className="text-5xl text-primary">✓</Text>
               </View>
             </View>
             <Text className="text-center text-3xl font-semibold text-white">
@@ -461,7 +461,7 @@ export function EventReviewScreen() {
           </View>
 
           <Button onPress={handleBackToEvent} className="h-12 w-full rounded-full bg-white">
-            <Text className="text-[#6C3DF1]" bold>
+            <Text className="text-primary" bold>
               Back to event
             </Text>
           </Button>
@@ -471,11 +471,13 @@ export function EventReviewScreen() {
   }
 
   return (
-    <Flex flex className="bg-background-dark">
+    <SafeAreaView className="flex flex-1 bg-background-dark">
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <Flex className="px-6 pb-2">
+
+      <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+      <Flex className="px-6 pb-2">
           <Flex direction="row" justify="space-between" align="center">
             <View></View>
             <Text className="text-sm font-semibold text-white/70">
@@ -489,8 +491,6 @@ export function EventReviewScreen() {
             />
           </Flex>
         </Flex>
-
-      <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
         <Flex gap={8} className="px-5 pb-24 pt-6">
           {step === 1 ? (
             <Flex gap={8}>
@@ -769,6 +769,45 @@ export function EventReviewScreen() {
           </Flex>
         </View>
       </KeyboardAvoidingView>
-    </Flex>
+    </SafeAreaView>
   );
+}
+
+export function EventReviewScreen() {
+  const navigation = useNavigation<ReviewNav>();
+  const { params } = useRouteStack<'EventReview'>();
+  const eventId = params.eventId;
+
+  const handleClose = () => {
+    if (!eventId) {
+      navigation.goBack();
+      return;
+    }
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'ViewEvent',
+            params: { eventId, fromReview: true, source: params.source },
+          } as never,
+        ],
+      })
+    );
+  };
+
+  if (!eventId) {
+    return (
+      <Flex flex className="bg-background-dark">
+        <Flex align="center" className="m-auto" gap={4}>
+          <Text size="xl">Event not found.</Text>
+          <Button onPress={handleClose}>
+            <Text bold>Go Back</Text>
+          </Button>
+        </Flex>
+      </Flex>
+    );
+  }
+
+  return <EventReviewContent eventId={eventId} onClose={handleClose} />;
 }
