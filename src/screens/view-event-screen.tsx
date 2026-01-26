@@ -83,7 +83,7 @@ export function ViewEventScreen() {
   };
 
   const handleSafeBack = () => {
-    navigation.goBack()
+    navigation.goBack();
   };
 
   const handleConfirmRsvp = async () => {
@@ -215,13 +215,12 @@ export function ViewEventScreen() {
     setIsReviewVisible(true);
   };
 
+  console.log(eventVibes);
+
   return (
     <Flex flex className="bg-background-dark">
       <Flex className="relative">
-        <Pressable
-          className="absolute left-4 top-20 z-10"
-          hitSlop={16}
-          onPress={handleSafeBack}>
+        <Pressable className="absolute left-4 top-20 z-10" hitSlop={16} onPress={handleSafeBack}>
           <ArrowLeft size={28} color="#fff" />
         </Pressable>
         <EventCard

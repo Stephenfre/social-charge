@@ -7,7 +7,6 @@ import { Icon } from '~/components/ui/icon';
 import { Home as HomeIcon, User } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 
-import { useAuth } from '~/providers/AuthProvider';
 import { useTheme } from '~/providers/ThemeProvider';
 
 import {
@@ -19,13 +18,11 @@ import {
   HomeScreen,
   ProfileScreen,
   ProfileSettingsScreen,
-  ReviewCreateEventScreen,
   UpdateProfileScreen,
   ViewEventScreen,
   ViewUserEventsScreen,
   WalletScreen,
 } from '~/screens';
-import CreateEventScreen from '~/screens/create-event-screen';
 import { EventCheckInList } from '~/components';
 import { cn } from '~/utils/cn';
 
@@ -172,9 +169,6 @@ function WalletStackNavigator() {
 /** ----------------------------------
  * Tabs
  * ---------------------------------- */
-function EmptyScreen() {
-  return null;
-}
 
 function TicketTabIcon({ focused }: { focused: boolean }) {
   const color = focused ? '#F4F4F5' : '#A1A1AA';
@@ -307,12 +301,6 @@ export function MainTabNavigator() {
         name="ViewEvent"
         component={ViewEventScreen}
         options={{ headerShown: false }}
-      />
-
-      <RootStackNav.Screen
-        name="Review Event"
-        component={ReviewCreateEventScreen}
-        options={headerCommon}
       />
 
       <RootStackNav.Screen

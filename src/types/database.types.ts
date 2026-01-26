@@ -17,19 +17,19 @@ export type Database = {
       check_ins: {
         Row: {
           created_at: string | null
-          event_id: string | null
+          event_id: string
           id: string
           user_id: string | null
         }
         Insert: {
           created_at?: string | null
-          event_id?: string | null
+          event_id: string
           id?: string
           user_id?: string | null
         }
         Update: {
           created_at?: string | null
-          event_id?: string | null
+          event_id?: string
           id?: string
           user_id?: string | null
         }
@@ -1712,6 +1712,79 @@ export type Database = {
           {
             foreignKeyName: "events_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_event_user_vibes: {
+        Row: {
+          event_id: string | null
+          rsvp_at: string | null
+          user_id: string | null
+          vibe_slug: Database["public"]["Enums"]["vibe_slug"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rsvp_user_fk"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_counts"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_with_host_rsvp_checkin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_for_current_user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "view_weekend_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvps_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]

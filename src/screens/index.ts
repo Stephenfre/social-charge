@@ -10,7 +10,6 @@ export { EventCheckInScreen } from './event-check-in-screen';
 export { AllEventsScreen } from './all-events-screen';
 export { ViewEventScreen } from './view-event-screen';
 export { ViewUserEventsScreen } from './view-user-events-screen';
-export { ReviewCreateEventScreen } from './review-create-event-screen';
 export { EventReviewScreen } from './event-review-screen';
 export { EventChatScreen } from './event-chat-screen';
 export { WalletScreen } from './wallet-screen';
