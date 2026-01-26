@@ -21,3 +21,4 @@ export { OnboardingVibeScreen } from './onboarding-vibe-screen';
 export { TermsAndConditionsScreen } from './terms-and-conditions-screen';
 export { PrivacyPolicyScreen } from './privacy-policy-screen';
 export { UpdateProfileScreen } from './update-profile-screen';
+export { NewUsersScreen } from './new-users-screen';

@@ -39,6 +39,7 @@ export type RootStackParamList = {
   HomeIndex: undefined;
   ProfileIndex: undefined;
   'Profile Settings': undefined;
+  'New Users': undefined;
   'Update Profile': undefined;
   ViewEvent: { eventId: string; fromReview?: boolean };
   EventChat: { eventId: string };

@@ -29,3 +29,17 @@ export function useUserInterests(userId: string | null) {
     },
   });
 }
+
+export function useNewUsers() {
+  return useQuery<UsersRow[]>({
+    queryKey: ['user', 'new'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as UsersRow[];
+    },
+  });
+}

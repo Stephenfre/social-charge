@@ -16,6 +16,7 @@ import {
   EventReviewScreen,
   HostScannerScreen,
   HomeScreen,
+  NewUsersScreen,
   ProfileScreen,
   ProfileSettingsScreen,
   UpdateProfileScreen,
@@ -40,6 +41,7 @@ type ProfileStackParams = {
   ProfileIndex: undefined;
   'Event History': { filter?: 'all' | 'upcoming' | 'history' } | undefined;
   'Profile Settings': undefined;
+  'New Users': undefined;
   'Update Profile': undefined;
 };
 type CheckInStackParams = { EventCheckInIndex: undefined; CheckInIndex: { eventId: string } };
@@ -105,6 +107,18 @@ function ProfileStackNavigator() {
           headerTintColor: '#fff',
           headerTitleStyle: { color: '#fff' },
           title: 'Settings',
+        }}
+      />
+      <ProfileStack.Screen
+        name="New Users"
+        component={NewUsersScreen}
+        options={{
+          headerShown: true,
+          headerBackButtonDisplayMode: 'minimal',
+          headerStyle: { backgroundColor: '#0F1012' },
+          headerTintColor: '#fff',
+          headerTitleStyle: { color: '#fff' },
+          title: 'New Users',
         }}
       />
       <ProfileStack.Screen

@@ -5,7 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Sentry from '@sentry/react-native';
 import { Box, Button, Flex, Pressable, Text } from '~/components/ui';
 import { Icon } from '~/components/ui/icon';
-import { FileText, Gem, ScrollText, Sparkles, User } from 'lucide-react-native';
+import { FileText, Gem, ScrollText, Sparkles, User, Users } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { RootStackParamList } from '~/types/navigation.types';
 import { supabase } from '~/lib/supabase';
@@ -53,6 +53,14 @@ const ACCOUNT_BASE_ITEMS: SettingsSection['items'] = [
     icon: User,
     accentBg: '#EFE7FF',
     accentColor: '#6C3FB6',
+  },
+  {
+    id: 'new-users',
+    label: 'New Users',
+    description: 'See recent signups',
+    icon: Users,
+    accentBg: '#E8F5E9',
+    accentColor: '#2E7D32',
   },
   {
     id: 'onboarding',
@@ -113,6 +121,9 @@ export function ProfileSettingsScreen() {
           break;
         case 'onboarding':
           navigation.navigate('OnboardingStart', { editMode: true, returnToSettings: true });
+          break;
+        case 'new-users':
+          navigation.navigate('New Users');
           break;
         case 'terms':
           navigation.navigate('Terms');
