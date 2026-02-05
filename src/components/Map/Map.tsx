@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { Platform } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 
 interface MapScreenProps {
@@ -12,6 +13,7 @@ export function Map({ location, height, rounded }: MapScreenProps) {
 
   const fallback = { latitude: 33.4571, longitude: -112.0697 };
   const deltas = { latitudeDelta: 0.02, longitudeDelta: 0.02 };
+  const provider = Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined;
 
   // derive target coords
   const lat = location?.latitude ?? fallback.latitude;
@@ -29,7 +31,7 @@ export function Map({ location, height, rounded }: MapScreenProps) {
     <MapView
       ref={mapRef}
       style={{ height: height ?? 500, width: '100%', borderRadius: rounded ? 15 : 0 }}
-      provider={PROVIDER_GOOGLE}
+      provider={provider}
       showsUserLocation
       showsMyLocationButton={false}
       initialRegion={targetRegion}>

@@ -44,7 +44,7 @@ type ProfileStackParams = {
   'New Users': undefined;
   'Update Profile': undefined;
 };
-type CheckInStackParams = { EventCheckInIndex: undefined; CheckInIndex: { eventId: string } };
+type CheckInStackParams = { EventCheckInIndex: undefined };
 type WalletStackParams = { WalletIndex: undefined };
 
 const HomeStack = createNativeStackNavigator<HomeStackParams>();
@@ -141,14 +141,6 @@ function CheckInEventStackNavigator() {
       <CheckInStack.Screen
         name="EventCheckInIndex"
         component={EventCheckInList}
-        options={{
-          headerShown: false,
-          headerStyle: { backgroundColor: '#0F1012' },
-        }}
-      />
-      <CheckInStack.Screen
-        name="CheckInIndex"
-        component={EventCheckInScreen}
         options={{
           headerShown: false,
           headerStyle: { backgroundColor: '#0F1012' },
@@ -297,8 +289,6 @@ function Tabs() {
  * (ONLY place "Main" exists to avoid nested name collisions)
  * ---------------------------------- */
 export function MainTabNavigator() {
-  const { palette } = useTheme();
-
   const headerCommon = {
     headerShown: true,
     headerBackButtonDisplayMode: 'minimal' as const,
@@ -314,6 +304,12 @@ export function MainTabNavigator() {
       <RootStackNav.Screen
         name="ViewEvent"
         component={ViewEventScreen}
+        options={{ headerShown: false }}
+      />
+
+      <RootStackNav.Screen
+        name="CheckInIndex"
+        component={EventCheckInScreen}
         options={{ headerShown: false }}
       />
 

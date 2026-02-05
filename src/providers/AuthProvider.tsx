@@ -3,6 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '~/lib/supabase';
 import { UsersRow } from '~/types/user.type';
+import { signInWithGoogle, signOut } from '~/auth/google';
 
 type AuthCtx = {
   session: Session | null;
@@ -11,6 +12,8 @@ type AuthCtx = {
   initializing: boolean;
   refreshUser: () => Promise<UsersRow | null>;
   setUserState: React.Dispatch<React.SetStateAction<UsersRow | null>>;
+  signInWithGoogle: () => Promise<{ cancelled: true } | { cancelled: false; session: Session }>;
+  signOut: () => Promise<void>;
 
   // 👇 NEW
   justCompletedOnboarding: boolean;
@@ -24,6 +27,8 @@ const AuthContext = createContext<AuthCtx>({
   initializing: true,
   refreshUser: async () => null,
   setUserState: () => {},
+  signInWithGoogle: async () => ({ cancelled: true }),
+  signOut: async () => {},
   justCompletedOnboarding: false,
   setJustCompletedOnboarding: () => {},
 });
@@ -81,6 +86,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       initializing,
       refreshUser,
       setUserState: setUser,
+      signInWithGoogle,
+      signOut,
 
       justCompletedOnboarding,
       setJustCompletedOnboarding,
