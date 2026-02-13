@@ -58,16 +58,15 @@ export function RegisterScreen() {
               floatingLabelActiveTextClassName="text-primary-500"
             />
 
-            <Flex direction="row" align="center" className="my-6 w-full">
+            {/* <Flex direction="row" align="center" className="my-6 w-full">
               <Divider className="flex-1" />
               <Text className="px-4 text-typography-light">Or, Sign up with</Text>
               <Divider className="flex-1" />
             </Flex>
 
             <Flex gap={4}>
-              {/* <AppleOauth /> */}
               <GoogleSignInButton />
-            </Flex>
+            </Flex> */}
           </Flex>
 
           <Flex align="center" className="pb-4">

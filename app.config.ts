@@ -59,6 +59,12 @@ const config: ExpoConfig = {
       },
     },
   },
+  updates: {
+    url: 'https://u.expo.dev/d23885a9-5980-4fdb-a5ca-6f7921bc883b',
+  },
+  runtimeVersion: {
+    policy: 'appVersion',
+  },
   newArchEnabled: true,
   extra: {
     revenuecat: {
