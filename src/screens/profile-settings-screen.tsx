@@ -74,23 +74,23 @@ const ACCOUNT_BASE_ITEMS: SettingsSection['items'] = [
 
 export function ProfileSettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  // const { isPro, presentPaywall, presentCustomerCenter, customerCenterEnabled } = useRevenueCat();
+  const { isPro, presentPaywall, presentCustomerCenter, customerCenterEnabled } = useRevenueCat();
 
   const sections = useMemo<SettingsSection[]>(() => {
     const accountItems = [...ACCOUNT_BASE_ITEMS];
 
-    // if (isPro) {
-    //   accountItems.unshift({
-    //     id: 'manage-subscription',
-    //     label: 'Manage Subscription',
-    //     description: customerCenterEnabled
-    //       ? 'Change or cancel your plan at any time'
-    //       : 'Switch plans or renew your access',
-    //     icon: Gem,
-    //     accentBg: '#FFF0EB',
-    //     accentColor: '#F97316',
-    //   });
-    // }
+    if (isPro) {
+      accountItems.unshift({
+        id: 'manage-subscription',
+        label: 'Manage Subscription',
+        description: customerCenterEnabled
+          ? 'Change or cancel your plan at any time'
+          : 'Switch plans or renew your access',
+        icon: Gem,
+        accentBg: '#FFF0EB',
+        accentColor: '#F97316',
+      });
+    }
 
     return [
       {
@@ -101,21 +101,21 @@ export function ProfileSettingsScreen() {
     ];
   }, [,]);
 
-  // const handleManageSubscription = useCallback(async () => {
-  //   if (customerCenterEnabled) {
-  //     await presentCustomerCenter();
-  //     return;
-  //   }
+  const handleManageSubscription = useCallback(async () => {
+    if (customerCenterEnabled) {
+      await presentCustomerCenter();
+      return;
+    }
 
-  //   await presentPaywall();
-  // }, [customerCenterEnabled, presentCustomerCenter, presentPaywall]);
+    await presentPaywall();
+  }, [customerCenterEnabled, presentCustomerCenter, presentPaywall]);
 
   const handleItemPress = useCallback(
     async (id: string) => {
       switch (id) {
-        // case 'manage-subscription':
-        //   await handleManageSubscription();
-        //   break;
+        case 'manage-subscription':
+          await handleManageSubscription();
+          break;
         case 'profile':
           navigation.navigate('Update Profile');
           break;

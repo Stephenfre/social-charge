@@ -11,6 +11,7 @@ import { useStorageImages, useTokenBalance, useUserEvents, useUserInterests } fr
 import { useAuth } from '~/providers/AuthProvider';
 import { RootStackParamList } from '~/types/navigation.types';
 import { interestEmojis } from '~/utils/const';
+import { useRevenueCat } from '~/providers/RevenueCatProvider';
 
 type ProfileNav = NativeStackNavigationProp<
   RootStackParamList,
@@ -26,7 +27,7 @@ export function ProfileScreen() {
   const navigation = useNavigation<ProfileNav>();
 
   const { user } = useAuth();
-  // const { isPro, presentPaywall, loadingOfferings } = useRevenueCat();
+  const { isPro, presentPaywall, loadingOfferings } = useRevenueCat();
   const { data: events, isLoading: eventsLoading } = useUserEvents(6);
   const { data: interests, isLoading: interestsLoading } = useUserInterests(user?.id!);
   const { data: tokens } = useTokenBalance();
@@ -34,7 +35,7 @@ export function ProfileScreen() {
     bucket: 'avatars',
     paths: [user?.profile_picture],
   });
-  // const [isOpeningPaywall, setIsOpeningPaywall] = useState(false);
+  const [isOpeningPaywall, setIsOpeningPaywall] = useState(false);
 
   const handleViewAllPress = () => {
     navigation.navigate('Event History', { filter: 'history' });
@@ -48,14 +49,14 @@ export function ProfileScreen() {
     navigation.navigate('Profile Settings');
   };
 
-  // const handleUpgradePress = async () => {
-  //   setIsOpeningPaywall(true);
-  //   try {
-  //     await presentPaywall();
-  //   } finally {
-  //     setIsOpeningPaywall(false);
-  //   }
-  // };
+  const handleUpgradePress = async () => {
+    setIsOpeningPaywall(true);
+    try {
+      await presentPaywall();
+    } finally {
+      setIsOpeningPaywall(false);
+    }
+  };
 
   const upcomingEvents = (events ?? []).filter((event) => event.event_status === 'upcoming');
   const pastEvents = (events ?? []).filter((event) => event.event_status !== 'upcoming');
@@ -93,43 +94,13 @@ export function ProfileScreen() {
                 {formatVibeLabel(user?.preferred_vibe_slug)}
               </Text>
             </Badge>
-            {/* <Text size="sm">Joined in {dayjs(user?.created_at).format('YYYY')}</Text> */}
           </Flex>
-          {/* <Flex direction="row" align="center" gap={1}>
-            <Pressable className="w-1/3 rounded-lg">
-              <Flex align="center" className="p-6">
-                <Text size="2xl" bold>
-                  {pastEvents.length ? pastEvents.length : '--'}
-                </Text>
-                <Text size="sm">Events</Text>
-              </Flex>
-            </Pressable>
-
-            <Pressable className="w-1/3 rounded-lg">
-              <Flex align="center" className="p-6">
-                <Text size="2xl" bold>
-                  34
-                </Text>
-                <Text size="sm">Friends</Text>
-              </Flex>
-            </Pressable>
-            <Pressable className="w-1/3 rounded-lg">
-              <Flex align="center" className="p-6">
-                <Text size="2xl" bold>
-                  {tokens ? tokens : '--'}
-                </Text>
-                <Text size="sm">Credits</Text>
-              </Flex>
-            </Pressable>
-          </Flex> */}
-          {/* {!isPro && (
-            <Button
-              className="rounded-xl bg-primary-500"
-              disabled={isOpeningPaywall || loadingOfferings}
-              onPress={handleUpgradePress}>
-              <Text bold>Go Premium</Text>
-            </Button>
-          )} */}
+          <Button
+            className="rounded-xl bg-primary-500"
+            disabled={isOpeningPaywall || loadingOfferings}
+            onPress={handleUpgradePress}>
+            <Text bold>Go Premium</Text>
+          </Button>
           <Flex>
             <Text size="2xl" bold className="mb-2">
               Interests

@@ -1,4 +1,4 @@
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import {
   PropsWithChildren,
   createContext,
@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import Purchases, {
@@ -46,6 +47,7 @@ const RevenueCatContext = createContext<RevenueCatContextValue | undefined>(unde
 
 export function RevenueCatProvider({ children }: PropsWithChildren) {
   const { user } = useAuth();
+  const initialAppUserIdRef = useRef<string | undefined>(user?.id ?? undefined);
   const [initialized, setInitialized] = useState(false);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
   const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
@@ -104,10 +106,21 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
     setLoadingOfferings(true);
     try {
       const fetchedOfferings = await Purchases.getOfferings();
+      console.log('[RevenueCat] offerings', fetchedOfferings);
+      console.log('[RevenueCat] offerings summary', {
+        configuredOfferingIdentifier: revenueCatConfig.offeringIdentifier ?? null,
+        currentOfferingIdentifier: fetchedOfferings.current?.identifier ?? null,
+        availableOfferingIdentifiers: Object.keys(fetchedOfferings.all ?? {}),
+        hasConfiguredOffering: Boolean(
+          revenueCatConfig.offeringIdentifier &&
+            fetchedOfferings.all?.[revenueCatConfig.offeringIdentifier]
+        ),
+      });
       setOfferings(fetchedOfferings);
       setError(null);
       return fetchedOfferings;
     } catch (err) {
+      console.error('[RevenueCat] getOfferings failed raw', err);
       handlePurchasesError(err, { showAlert: false });
       return null;
     } finally {
@@ -117,11 +130,35 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     let isMounted = true;
+    let listenerRegistered = false;
+    const listener = (info: CustomerInfo) => {
+      setCustomerInfo(info);
+    };
 
     const configurePurchases = async () => {
+      let configured = false;
       try {
+        if (Platform.OS === 'web') {
+          return;
+        }
+
+        console.log('[RevenueCat] config', {
+          platform: Platform.OS,
+          useTestStore: revenueCatConfig.useTestStore,
+          offeringId: revenueCatConfig.offeringIdentifier,
+          entitlementId: revenueCatConfig.entitlementIdentifier,
+          products: revenueCatConfig.products,
+        });
         Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.WARN);
-        await Purchases.configure({ apiKey: REVENUECAT_API_KEY });
+        await Purchases.configure({
+          apiKey: REVENUECAT_API_KEY,
+          appUserID: initialAppUserIdRef.current,
+        });
+        configured = true;
+
+        Purchases.addCustomerInfoUpdateListener(listener);
+        listenerRegistered = true;
+
         if (!isMounted) {
           return;
         }
@@ -130,22 +167,18 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
         handlePurchasesError(err);
       } finally {
         if (isMounted) {
-          setInitialized(true);
+          setInitialized(configured);
         }
       }
     };
 
     configurePurchases();
 
-    const listener = (info: CustomerInfo) => {
-      setCustomerInfo(info);
-    };
-
-    Purchases.addCustomerInfoUpdateListener(listener);
-
     return () => {
       isMounted = false;
-      Purchases.removeCustomerInfoUpdateListener(listener);
+      if (listenerRegistered) {
+        Purchases.removeCustomerInfoUpdateListener(listener);
+      }
     };
   }, [handlePurchasesError, loadCustomerInfo, loadOfferings]);
 
@@ -156,20 +189,29 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
 
     const syncUser = async () => {
       try {
+        if (Platform.OS === 'web') {
+          return;
+        }
+
         if (user?.id) {
           await Purchases.logIn(user.id);
         } else {
           await Purchases.logOut();
         }
+        await Promise.all([loadCustomerInfo(), loadOfferings()]);
       } catch (err) {
         handlePurchasesError(err, { showAlert: false });
       }
     };
 
     syncUser();
-  }, [handlePurchasesError, initialized, user?.id]);
+  }, [handlePurchasesError, initialized, loadCustomerInfo, loadOfferings, user?.id]);
 
   const restorePurchases = useCallback(async () => {
+    if (!initialized) {
+      return null;
+    }
+
     try {
       const info = await Purchases.restorePurchases();
       setCustomerInfo(info);
@@ -179,7 +221,7 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
       handlePurchasesError(err);
       return null;
     }
-  }, [handlePurchasesError]);
+  }, [handlePurchasesError, initialized]);
 
   const getPackageForProduct = useCallback(
     (productIdentifier: string): PurchasesPackage | null => {
@@ -208,6 +250,10 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
 
   const purchasePackage = useCallback(
     async (productKey: RevenueCatProductKey) => {
+      if (!initialized) {
+        return null;
+      }
+
       try {
         const targetProductId = revenueCatConfig.products[productKey];
         const availableOfferings = offerings ?? (await loadOfferings());
@@ -230,38 +276,55 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
         return null;
       }
     },
-    [getPackageForProduct, handlePurchasesError, loadOfferings, offerings]
+    [getPackageForProduct, handlePurchasesError, initialized, loadOfferings, offerings]
   );
 
   const presentPaywall = useCallback(
     async (offeringIdentifier?: string) => {
+      if (!initialized) {
+        return null;
+      }
+
       try {
         const availableOfferings = offerings ?? (await loadOfferings());
+        const allOfferingKeys = Object.keys(availableOfferings?.all ?? {});
+        const configuredOfferingId = revenueCatConfig.offeringIdentifier;
+
+        console.log('[RevenueCat] paywall selection input', {
+          requestedOfferingIdentifier: offeringIdentifier ?? null,
+          configuredOfferingIdentifier: configuredOfferingId ?? null,
+          currentOfferingIdentifier: availableOfferings?.current?.identifier ?? null,
+          availableOfferingIdentifiers: allOfferingKeys,
+        });
+
         let selectedOffering =
           offeringIdentifier && availableOfferings?.all
             ? availableOfferings.all[offeringIdentifier] ?? availableOfferings.current
             : availableOfferings?.current;
 
-        if (!selectedOffering && availableOfferings?.all && revenueCatConfig.offeringIdentifier) {
-          selectedOffering =
-            availableOfferings.all[revenueCatConfig.offeringIdentifier] ?? selectedOffering;
+        if (!selectedOffering && availableOfferings?.all && configuredOfferingId) {
+          selectedOffering = availableOfferings.all[configuredOfferingId] ?? selectedOffering;
         }
 
-        const presentDirectly = () =>
-          RevenueCatUI.presentPaywall({ offering: selectedOffering ?? undefined });
+        if (!selectedOffering) {
+          console.warn('[RevenueCat] no offering selected for paywall', {
+            requestedOfferingIdentifier: offeringIdentifier ?? null,
+            configuredOfferingIdentifier: configuredOfferingId ?? null,
+            availableOfferingIdentifiers: allOfferingKeys,
+          });
+        } else {
+          console.log('[RevenueCat] paywall selected offering', {
+            selectedOfferingIdentifier: selectedOffering.identifier,
+            packageIdentifiers: selectedOffering.availablePackages.map((pkg) => pkg.identifier),
+            productIdentifiers: selectedOffering.availablePackages.map(
+              (pkg) => pkg.product.identifier
+            ),
+          });
+        }
 
-        let result = await RevenueCatUI.presentPaywallIfNeeded({
-          requiredEntitlementIdentifier: REVENUECAT_ENTITLEMENT,
+        const result = await RevenueCatUI.presentPaywall({
           offering: selectedOffering ?? undefined,
         });
-
-        const hasActiveEntitlement = Boolean(
-          customerInfo?.entitlements.active[REVENUECAT_ENTITLEMENT]
-        );
-
-        if (!hasActiveEntitlement && result === PAYWALL_RESULT.NOT_PRESENTED) {
-          result = await presentDirectly();
-        }
 
         if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
           await Promise.all([loadCustomerInfo(), loadOfferings()]);
@@ -273,7 +336,7 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
         return null;
       }
     },
-    [customerInfo, handlePurchasesError, loadCustomerInfo, loadOfferings, offerings]
+    [handlePurchasesError, initialized, loadCustomerInfo, loadOfferings, offerings]
   );
 
   const presentCustomerCenter = useCallback(async () => {

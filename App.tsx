@@ -21,7 +21,7 @@ import {
   WelcomeScreen,
 } from '~/screens';
 import { AuthProvider, useAuth } from '~/providers/AuthProvider';
-// import { RevenueCatProvider } from '~/providers/RevenueCatProvider';
+import { RevenueCatProvider } from '~/providers/RevenueCatProvider';
 import { ThemeProvider } from '~/providers/ThemeProvider';
 import { RootStack, type RootStackParamList } from '~/types/navigation.types';
 import { SplashScreen } from '~/components';
@@ -96,14 +96,15 @@ export default Sentry.wrap(function App() {
     <Sentry.ErrorBoundary fallback={(errorProps) => <RootErrorFallback {...errorProps} />}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <AuthProvider>
-          {/* RevenueCatProvider temporarily disabled */}
-          <QueryClientProvider client={queryClient}>
-            <BottomSheetModalProvider>
-              <ThemeProvider>
-                <AppNavigation />
-              </ThemeProvider>
-            </BottomSheetModalProvider>
-          </QueryClientProvider>
+          <RevenueCatProvider>
+            <QueryClientProvider client={queryClient}>
+              <BottomSheetModalProvider>
+                <ThemeProvider>
+                  <AppNavigation />
+                </ThemeProvider>
+              </BottomSheetModalProvider>
+            </QueryClientProvider>
+          </RevenueCatProvider>
         </AuthProvider>
       </GestureHandlerRootView>
     </Sentry.ErrorBoundary>
