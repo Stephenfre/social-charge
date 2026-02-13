@@ -17,10 +17,10 @@
       "autoIncrement": true,
       "channel": "production",
       "ios": {
-        "buildType": "app-bundle"
+        "buildType": "store"
       },
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "store"
       },
       "env": {
         "SENTRY_DISABLE_AUTO_UPLOAD": "true",

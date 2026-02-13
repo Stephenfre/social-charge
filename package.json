@@ -12,6 +12,7 @@
     "format": "eslint \"**/*.{js,jsx,ts,tsx}\" --fix && prettier \"**/*.{js,jsx,ts,tsx,json}\" --write",
     "web": "DARK_MODE=class expo start --web",
     "db:types": "supabase gen types typescript --project-id qdyrtjzvauhrvyszydnu --schema public > src/types/database.types.ts",
+    "eas:prod": "eas build --platform ios --profile production && eas build --platform android --profile production",
     "eas:ios:dev": "eas build --platform ios --profile development",
     "eas:ios:prod": "eas build --platform ios --profile production",
     "eas:ios:staging": "eas build --platform ios --profile staging",
