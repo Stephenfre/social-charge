@@ -17,7 +17,9 @@
     "eas:ios:staging": "eas build --platform ios --profile staging",
     "eas:ios:preview": "eas build --platform ios --profile preview",
     "eas:ios:submit": "eas submit --platform ios",
-    "eas:ios:update": "eas update --platform ios --channel staging"
+    "eas:ios:update": "eas update --platform ios --channel staging",
+    "eas:android:dev": "eas build --platform android --profile development",
+    "eas:android:prod": "eas build --platform android --profile production"
   },
   "dependencies": {
     "@expo/html-elements": "^0.13.7",
@@ -42,6 +44,7 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
     "@react-native-community/slider": "5.0.1",
+    "@react-native-google-signin/google-signin": "^16.1.1",
     "@react-native-picker/picker": "2.11.1",
     "@react-navigation/bottom-tabs": "^7.3.3",
     "@react-navigation/native": "^7.0.19",
@@ -55,6 +58,7 @@
     "dayjs": "^1.11.13",
     "expo": "~54.0.26",
     "expo-apple-authentication": "~8.0.7",
+    "expo-auth-session": "~7.0.10",
     "expo-camera": "~17.0.9",
     "expo-crypto": "~15.0.7",
     "expo-dev-client": "~6.0.19",
@@ -65,6 +69,8 @@
     "expo-location": "~19.0.7",
     "expo-maps": "~0.12.8",
     "expo-status-bar": "~3.0.8",
+    "expo-updates": "~29.0.16",
+    "expo-web-browser": "~15.0.10",
     "libphonenumber-js": "^1.12.13",
     "lodash": "^4.17.21",
     "lucide-react-native": "^0.485.0",

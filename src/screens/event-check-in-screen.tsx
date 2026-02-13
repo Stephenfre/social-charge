@@ -239,11 +239,13 @@ export function EventCheckInScreen() {
           accessibilityRole="button"
           accessibilityLabel="Open event chat"
           onPress={handleOpenChat}>
-<Flex align='center'>
+          <Flex align="center">
             <MessageCircle size={24} color="#fff" fill="#fff" />
 
-              <Text size='sm' bold>Chat</Text>
-            </Flex>
+            <Text size="sm" bold>
+              Chat
+            </Text>
+          </Flex>
         </Pressable>
         <EventCard
           event={event}
@@ -413,11 +415,7 @@ export function EventCheckInScreen() {
           </Flex>
         </BottomSheetScrollView>
       </BottomSheet>
-      <View
-        className="absolute bottom-0 left-0 right-0 border-t bg-background-dark px-14 pt-3"
-        style={{
-          paddingBottom: insets.bottom - 20,
-        }}>
+      <View className="absolute bottom-0 left-0 right-0 border-t bg-background-dark px-14 py-6">
         {user?.role === 'user' ? renderUserActions() : renderHostAction()}
       </View>
       <Modal

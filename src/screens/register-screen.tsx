@@ -1,6 +1,7 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { KeyboardAvoidingView, Platform } from 'react-native';
 import { AppleOauth, AuthForm } from '~/components';
+import { GoogleSignInButton } from '~/components/GoogleSignInButton';
 import { Divider, Flex, Pressable, Text } from '~/components/ui';
 import { useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '~/types/navigation';
@@ -19,11 +20,6 @@ export function RegisterScreen() {
   const floatingLabelTextClass = 'pointer-events-none bg-background-dark px-1 text-xs';
   const inputFieldClassName =
     'text-typography-light placeholder:text-typography-light/60 bg-background-dark text-base placeholder:text-base pb-1';
-
-  const socialButtons = [
-    { id: 'google', label: 'Google', accent: '#EA4335' },
-    { id: 'facebook', label: 'Facebook', accent: '#1877F2' },
-  ];
 
   // TODO: Reset form after signin
 
@@ -69,21 +65,7 @@ export function RegisterScreen() {
             </Flex>
 
             <Flex gap={4}>
-              <AppleOauth />
-              {socialButtons.map((provider) => (
-                <Pressable
-                  key={provider.id}
-                  className="w-full flex-row items-center justify-center rounded-xl border border-background-100 bg-white py-4"
-                  onPress={() => Alert.alert(provider.label, 'Coming soon')}>
-                  <Text bold className="mr-2 text-lg" style={{ color: provider.accent }}>
-                    {provider.label.charAt(0)}
-                  </Text>
-
-                  <Text bold className="text-base text-typography-dark">
-                    {provider.label}
-                  </Text>
-                </Pressable>
-              ))}
+              <GoogleSignInButton />
             </Flex> */}
           </Flex>
 

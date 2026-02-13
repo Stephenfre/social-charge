@@ -665,7 +665,10 @@ export function CancelRsvpButton({
     <Button
       size="xl"
       variant="primary"
-      className={cn(className ? className : 'w-full rounded-lg', canEdit && 'w-[48%]')}
+      className={cn(
+        className ? className : 'w-full whitespace-nowrap rounded-lg',
+        canEdit && 'w-[48%]'
+      )}
       onPress={confirmCancellation}
       disabled={isPending}>
       <Text bold size="lg">
