@@ -91,14 +91,15 @@ export function HostEventCheckInList() {
             <Icon as={MapPin} size={'lg'} className="text-typography-light" />
             <Text size="lg">{item.location_text}</Text>
           </Flex>
-          <Map
+          {/* <Map
             height={150}
             rounded
+            liteMode
             location={{
               latitude: item.latitude ?? undefined,
               longitude: item.longitude ?? undefined,
             }}
-          />
+          /> */}
 
           <Button
             size="lg"
