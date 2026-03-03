@@ -4,6 +4,7 @@ import type { Session } from '@supabase/supabase-js';
 import { supabase } from '~/lib/supabase';
 import { UsersRow } from '~/types/user.type';
 import { signInWithGoogle, signOut } from '~/auth/google';
+import { signInWithApple } from '~/auth/apple';
 
 type AuthCtx = {
   session: Session | null;
@@ -13,6 +14,7 @@ type AuthCtx = {
   refreshUser: () => Promise<UsersRow | null>;
   setUserState: React.Dispatch<React.SetStateAction<UsersRow | null>>;
   signInWithGoogle: () => Promise<{ cancelled: true } | { cancelled: false; session: Session }>;
+  signInWithApple: () => Promise<{ cancelled: true } | { cancelled: false; session: Session }>;
   signOut: () => Promise<void>;
 
   // 👇 NEW
@@ -28,6 +30,7 @@ const AuthContext = createContext<AuthCtx>({
   refreshUser: async () => null,
   setUserState: () => {},
   signInWithGoogle: async () => ({ cancelled: true }),
+  signInWithApple: async () => ({ cancelled: true }),
   signOut: async () => {},
   justCompletedOnboarding: false,
   setJustCompletedOnboarding: () => {},
@@ -87,6 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshUser,
       setUserState: setUser,
       signInWithGoogle,
+      signInWithApple,
       signOut,
 
       justCompletedOnboarding,

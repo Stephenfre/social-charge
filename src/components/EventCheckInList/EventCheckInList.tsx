@@ -1,11 +1,20 @@
+import React from 'react';
+import { View } from 'react-native';
 import { useAuth } from '~/providers/AuthProvider';
 import { UserEventCheckInList } from '../UserEventCheckInList/UserEventCheckInList';
 import { HostEventCheckInList } from '../HostEventCheckInList/HostEventCheckInList';
 
-export function EventCheckInList() {
+export const EventCheckInList = React.forwardRef<React.ComponentRef<typeof View>>(function EventCheckInList(
+  _props,
+  ref
+) {
   const { user } = useAuth();
 
-  console.log(user?.role);
+  return (
+    <View ref={ref} style={{ flex: 1 }}>
+      {user?.role === 'user' ? <UserEventCheckInList /> : <HostEventCheckInList />}
+    </View>
+  );
+});
 
-  return <>{user?.role === 'user' ? <UserEventCheckInList /> : <HostEventCheckInList />}</>;
-}
+EventCheckInList.displayName = 'EventCheckInList';

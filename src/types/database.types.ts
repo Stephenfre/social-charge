@@ -2072,6 +2072,10 @@ export type Database = {
         Returns: unknown
       }
       _st_within: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      accept_friend_request: {
+        Args: { p_from_user_id: string }
+        Returns: undefined
+      }
       addauth: { Args: { "": string }; Returns: boolean }
       addgeometrycolumn:
         | {
@@ -2111,6 +2115,10 @@ export type Database = {
             Returns: string
           }
       check_in: { Args: { event_id: string }; Returns: undefined }
+      decline_friend_request: {
+        Args: { p_from_user_id: string }
+        Returns: undefined
+      }
       disablelongtransactions: { Args: never; Returns: string }
       dropgeometrycolumn:
         | {
@@ -2295,6 +2303,10 @@ export type Database = {
       refund_tokens: {
         Args: { p_amount: number; p_event_id: string; p_meta?: Json }
         Returns: Json
+      }
+      send_friend_request: {
+        Args: { p_message?: string; p_to_user_id: string }
+        Returns: undefined
       }
       set_self_vibe: {
         Args: { p_vibe: Database["public"]["Enums"]["vibe_slug"] }
@@ -2888,38 +2900,17 @@ export type Database = {
       submit_full_review:
         | {
             Args: {
-              p_attendee_vibes: Json
-              p_event_comment: string
-              p_event_id: string
-              p_event_meta: Json
-              p_event_rating: number
-              p_host_reviews: Json
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_attendee_vibes: Json
-              p_event_comment: string
-              p_event_id: string
-              p_event_rating: number
-              p_host_reviews: Json
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
               p_attend_again: string
-              p_attendee_vibes: Json
+              p_attendee_vibes: Database["public"]["Enums"]["vibe_slug"][]
               p_event_comment: string
               p_event_id: string
               p_event_rating: number
-              p_event_vibes: Database["public"]["Enums"]["vibe_slug"][]
               p_group_vibe_rating: number
               p_host_rating: number
               p_host_reviews: Json
               p_nps_score: number
               p_organization_rating: number
+              p_quick_vibe_tags: Json
               p_social_comment: string
               p_social_expectation: string
               p_venue_rating: number
@@ -2960,8 +2951,8 @@ export type Database = {
       vote_user_vibe: {
         Args: {
           p_event_id: string
+          p_user_id: string
           p_vibe: Database["public"]["Enums"]["vibe_slug"]
-          p_vibe_user_id: string
         }
         Returns: undefined
       }
@@ -3016,37 +3007,7 @@ export type Database = {
         | "splurge_big_events"
       time_bucket: "morning" | "afternoon" | "evening" | "late_night"
       user_role: "user" | "host" | "admin" | "super_admin"
-      vibe_slug:
-        | "explorer"
-        | "chill"
-        | "nightlife"
-        | "culture"
-        | "wildcard"
-        | "deep_connector"
-        | "fun_maker"
-        | "connector"
-        | "observer"
-        | "hype_starter"
-        | "early_riser"
-        | "night_owl"
-        | "planner"
-        | "spontaneous"
-        | "homebody"
-        | "karaoke_star"
-        | "late_night_foodie"
-        | "trailblazer"
-        | "music_lover"
-        | "spontaneous_traveler"
-        | "style_icon"
-        | "chill_gamer"
-        | "dog_person"
-        | "zen"
-        | "social_butterfly"
-        | "summer_energy"
-        | "holiday_spirit"
-        | "mvp"
-        | "vibe_validator"
-        | "mystery"
+      vibe_slug: "social" | "explorer" | "connector" | "chill" | "wildcard"
       vibe_source: "self" | "peer"
     }
     CompositeTypes: {
@@ -3256,38 +3217,7 @@ export const Constants = {
       ],
       time_bucket: ["morning", "afternoon", "evening", "late_night"],
       user_role: ["user", "host", "admin", "super_admin"],
-      vibe_slug: [
-        "explorer",
-        "chill",
-        "nightlife",
-        "culture",
-        "wildcard",
-        "deep_connector",
-        "fun_maker",
-        "connector",
-        "observer",
-        "hype_starter",
-        "early_riser",
-        "night_owl",
-        "planner",
-        "spontaneous",
-        "homebody",
-        "karaoke_star",
-        "late_night_foodie",
-        "trailblazer",
-        "music_lover",
-        "spontaneous_traveler",
-        "style_icon",
-        "chill_gamer",
-        "dog_person",
-        "zen",
-        "social_butterfly",
-        "summer_energy",
-        "holiday_spirit",
-        "mvp",
-        "vibe_validator",
-        "mystery",
-      ],
+      vibe_slug: ["social", "explorer", "connector", "chill", "wildcard"],
       vibe_source: ["self", "peer"],
     },
   },

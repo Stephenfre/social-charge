@@ -16,11 +16,8 @@
     "production": {
       "autoIncrement": true,
       "channel": "production",
-      "ios": {
-        "buildType": "store"
-      },
       "android": {
-        "buildType": "store"
+        "buildType": "app-bundle"
       },
       "env": {
         "SENTRY_DISABLE_AUTO_UPLOAD": "true",

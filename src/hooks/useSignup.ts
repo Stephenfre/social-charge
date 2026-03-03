@@ -10,10 +10,11 @@ const isInterest = (x: string): x is InterestEnum =>
   (Constants.public.Enums.interest as readonly string[]).includes(x);
 
 export type SignUpArgs = {
-  email: string;
-  password: string;
+  email?: string;
+  password?: string;
   firstName: string;
   lastName: string;
+  gender: string;
   city?: string | null;
   state?: string | null;
   country?: string | null;
@@ -32,6 +33,7 @@ export function useSignUp() {
         password,
         firstName,
         lastName,
+        gender,
         city,
         state,
         country,
@@ -42,16 +44,28 @@ export function useSignUp() {
         skipInterests,
       } = args;
 
-      // 1) Auth sign up
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { display_name: `${firstName} ${lastName}` } },
-      });
-      if (signUpError) throw signUpError;
+      const {
+        data: { user: existingAuthUser },
+      } = await supabase.auth.getUser();
 
-      // 2) If we already have a session/user, finish profile now
-      const userId = signUpData.user?.id ?? signUpData.session?.user.id ?? null;
+      let userId = existingAuthUser?.id ?? null;
+      let effectiveEmail = existingAuthUser?.email ?? email ?? null;
+
+      if (!userId) {
+        if (!email || !password) {
+          throw new Error('Email and password are required to create your account.');
+        }
+
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { display_name: `${firstName} ${lastName}` } },
+        });
+        if (signUpError) throw signUpError;
+
+        userId = signUpData.user?.id ?? signUpData.session?.user.id ?? null;
+        effectiveEmail = signUpData.user?.email ?? signUpData.session?.user.email ?? email;
+      }
 
       if (userId) {
         // 2a) Create/Upsert profile
@@ -59,7 +73,8 @@ export function useSignUp() {
           id: userId,
           first_name: firstName,
           last_name: lastName,
-          email,
+          gender: gender as UserInsert['gender'],
+          email: effectiveEmail,
           city: city ?? null,
           state: state ?? null,
           country: country ?? null,

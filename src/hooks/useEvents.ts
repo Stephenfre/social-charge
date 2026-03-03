@@ -434,7 +434,7 @@ export function useSubmitEventReview() {
         p_social_comment: socialComment ?? '',
         p_attend_again: attendAgain,
         p_nps_score: npsScore,
-        p_event_vibes: eventVibes ?? [],
+        p_quick_vibe_tags: eventVibes ?? [],
         p_host_reviews: hostReviews.length ? hostReviews : null,
         p_attendee_vibes: attendeeReviewPayload.length ? attendeeReviewPayload : null,
       });

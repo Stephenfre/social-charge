@@ -1,8 +1,9 @@
 import dayjs from 'dayjs';
 import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { Button, ButtonText, Flex, Pressable, Skeleton, Text } from '~/components/ui';
+import { Button, ButtonText, Flex, Pressable, Text } from '~/components/ui';
 import { FontAwesome } from '@expo/vector-icons';
+import ReanimatedSkeleton from 'react-native-reanimated-skeleton';
 
 import { useAuth } from '~/providers/AuthProvider';
 import {
@@ -21,10 +22,87 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 type HomeNav = NativeStackNavigationProp<RootStackParamList, 'HomeIndex'>;
 
+const BONE_COLOR = '#3F3F46';
+const HIGHLIGHT_COLOR = '#52525B';
+
+function HomeFeaturedSkeleton() {
+  return (
+    <ReanimatedSkeleton
+      isLoading
+      boneColor={BONE_COLOR}
+      highlightColor={HIGHLIGHT_COLOR}
+      containerStyle={{ width: '100%', height: 256 }}
+      layout={[{ key: 'featured', width: '100%', height: 256, borderRadius: 12 }]}
+    />
+  );
+}
+
+function HomeWideCardSkeleton() {
+  return (
+    <Flex gap={2} className="w-96">
+      <ReanimatedSkeleton
+        isLoading
+        boneColor={BONE_COLOR}
+        highlightColor={HIGHLIGHT_COLOR}
+        containerStyle={{ width: 368, height: 256 }}
+        layout={[{ key: 'image', width: 368, height: 256, borderRadius: 12 }]}
+      />
+    </Flex>
+  );
+}
+
+function HomeForYouSkeleton() {
+  return (
+    <Flex gap={2}>
+      <ReanimatedSkeleton
+        isLoading
+        boneColor={BONE_COLOR}
+        highlightColor={HIGHLIGHT_COLOR}
+        containerStyle={{ width: 176, height: 128 }}
+        layout={[{ key: 'image', width: 176, height: 128, borderRadius: 12 }]}
+      />
+      <ReanimatedSkeleton
+        isLoading
+        boneColor={BONE_COLOR}
+        highlightColor={HIGHLIGHT_COLOR}
+        containerStyle={{ width: 160, height: 40 }}
+        layout={[
+          { key: 'title', width: 140, height: 16, borderRadius: 6 },
+          { key: 'meta', width: 160, height: 14, marginTop: 10, borderRadius: 6 },
+        ]}
+      />
+    </Flex>
+  );
+}
+
+function HomeUpcomingRowSkeleton() {
+  return (
+    <Flex gap={2} direction="row" className="w-80 pr-2">
+      <ReanimatedSkeleton
+        isLoading
+        boneColor={BONE_COLOR}
+        highlightColor={HIGHLIGHT_COLOR}
+        containerStyle={{ width: 64, height: 64 }}
+        layout={[{ key: 'image', width: 56, height: 56, borderRadius: 12 }]}
+      />
+      <ReanimatedSkeleton
+        isLoading
+        boneColor={BONE_COLOR}
+        highlightColor={HIGHLIGHT_COLOR}
+        containerStyle={{ width: 224, height: 64 }}
+        layout={[
+          { key: 'title', width: 120, height: 12, borderRadius: 6 },
+          { key: 'token', width: 32, height: 24, marginLeft: 148, marginTop: -12, borderRadius: 6 },
+          { key: 'location', width: 100, height: 10, marginTop: 4, borderRadius: 6 },
+          { key: 'date', width: 96, height: 10, marginTop: 8, borderRadius: 6 },
+        ]}
+      />
+    </Flex>
+  );
+}
+
 export function HomeScreen() {
   const navigation = useNavigation<HomeNav>();
-  const { session } = useAuth();
-
 
   const { userId, justCompletedOnboarding, setJustCompletedOnboarding } = useAuth();
   const [completionVisible, setCompletionVisible] = useState(false);
@@ -70,14 +148,14 @@ export function HomeScreen() {
     <SafeAreaView className="flex flex-1 bg-background-dark" edges={['top']}>
       <ScrollView className="my-2">
         <Flex gap={4}>
-          {upcomingEvents.length ? (
+          {upcomingEventsLoading || upcomingEvents.length ? (
             <View className="mx-4">
               {upcomingEventsLoading ? (
-                <Flex>{/* <Skeleton className="h-64 w-full" /> */}</Flex>
+                <HomeFeaturedSkeleton />
               ) : (
                 <EventCard
                   onPress={() => handlePressNavigateToViewEvent(upcomingEvents[3]?.id)}
-                  event={upcomingEvents[3]}
+                  event={upcomingEvents[0]}
                   featured
                   imageSize="cover"
                 />
@@ -87,7 +165,7 @@ export function HomeScreen() {
 
           {/* fix to remove ongoing events */}
 
-          {thisWeekendEvents.length ? (
+          {thisWeekendEventsLoading || thisWeekendEvents.length ? (
             <Flex gap={4}>
               <Flex direction="row" justify="space-between" align="center" className="mx-4">
                 <Text size="xl" bold>
@@ -107,11 +185,7 @@ export function HomeScreen() {
                 {thisWeekendEventsLoading ? (
                   <>
                     {Array.from({ length: 5 }).map((_, i) => {
-                      return (
-                        <Flex key={i} className="mr-2 w-96">
-                          {/* <Skeleton className="h-64 w-full" /> */}
-                        </Flex>
-                      );
+                      return <HomeWideCardSkeleton key={i} />;
                     })}
                   </>
                 ) : (
@@ -135,7 +209,7 @@ export function HomeScreen() {
             </Flex>
           ) : null}
 
-          {forYouEvents.length ? (
+          {forYouEventsLoading || forYouEvents.length ? (
             <Flex gap={4}>
               <Flex direction="row" justify="space-between" align="center" className="mx-4">
                 <Text size="xl" bold>
@@ -155,15 +229,7 @@ export function HomeScreen() {
                 {forYouEventsLoading ? (
                   <>
                     {Array.from({ length: 5 }).map((_, i) => {
-                      return (
-                        <Flex gap={2} key={i}>
-                          {/* <Skeleton className="mr-2 h-32 w-44" /> */}
-                          <Flex gap={2}>
-                            {/* <Skeleton className="h-5 w-24" /> */}
-                            <Flex direction="row">{/* <Skeleton className="h-5 w-40" /> */}</Flex>
-                          </Flex>
-                        </Flex>
-                      );
+                      return <HomeForYouSkeleton key={i} />;
                     })}
                   </>
                 ) : (
@@ -214,7 +280,7 @@ export function HomeScreen() {
             </Flex>
           ) : null}
 
-          {upcomingEvents.length ? (
+          {upcomingEventsLoading || upcomingEvents.length ? (
             <Flex gap={4}>
               <Flex direction="row" justify="space-between" align="center" className="mx-4">
                 <Text size="xl" bold>
@@ -234,29 +300,13 @@ export function HomeScreen() {
                 <Flex direction="column" gap={2}>
                   {upcomingEventsLoading ? (
                     <>
-                      {
-                        !upcomingEventRowSkeletons.map((row, rowIndex) => (
-                          <Flex key={rowIndex} direction="row" gap={2}>
-                            {row.map((_, i) => (
-                              <Flex
-                                gap={2}
-                                direction="row"
-                                justify="space-between"
-                                className="w-80 pr-2"
-                                key={i}>
-                                <Flex direction="row" gap={4}>
-                                  {/* <Skeleton className="h-16 w-16" /> */}
-                                  <Flex gap={4}>
-                                    {/* <Skeleton className="h-4 w-36" /> */}
-                                    {/* <Skeleton className="h-4 w-20" /> */}
-                                  </Flex>
-                                </Flex>
-                                {/* <Skeleton className="w-16 rounded-xl bg-gray-300 p-2" /> */}
-                              </Flex>
-                            ))}
-                          </Flex>
-                        ))
-                      }
+                      {upcomingEventRowSkeletons.map((row, rowIndex) => (
+                        <Flex key={rowIndex} direction="row" gap={2} className="mb-2">
+                          {row.map((_, i) => (
+                            <HomeUpcomingRowSkeleton key={`${rowIndex}-${i}`} />
+                          ))}
+                        </Flex>
+                      ))}
                     </>
                   ) : (
                     <>
@@ -315,7 +365,7 @@ export function HomeScreen() {
             </Flex>
           ) : null}
 
-          {lowTokenEvents.length ? (
+          {lowTokenEventsLoading || lowTokenEvents.length ? (
             <Flex gap={4}>
               <Flex direction="row" justify="space-between" align="center" className="mx-4">
                 <Text size="xl" bold>
@@ -335,11 +385,7 @@ export function HomeScreen() {
                 {lowTokenEventsLoading ? (
                   <>
                     {Array.from({ length: 5 }).map((_, i) => {
-                      return (
-                        <Flex key={i} className="mr-2 w-96">
-                          {/* <Skeleton className="h-64 w-full" /> */}
-                        </Flex>
-                      );
+                      return <HomeWideCardSkeleton key={i} />;
                     })}
                   </>
                 ) : (

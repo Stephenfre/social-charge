@@ -25,14 +25,11 @@ export function ViewUserEventsScreen() {
 
   const renderSection = (title: string, data: typeof upcomingEvents, emptyText: string) => (
     <Flex gap={2} key={title}>
-      <Text size="2xl" bold>
-        {title}
-      </Text>
       {data.length ? (
         <EventsList events={data} loading={eventsLoading} />
       ) : (
         !eventsLoading && (
-          <Text size="sm" className="text-typography-500">
+          <Text size="sm" className="text-center">
             {emptyText}
           </Text>
         )

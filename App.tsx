@@ -135,6 +135,7 @@ function AppNavigation() {
       }}>
       <StatusBar barStyle="light-content" />
       {target === 'auth' && <AuthStack />}
+      {target === 'profileCompletion' && <ProfileCompletionStack />}
       {target === 'onboarding' && <OnboardingStack />}
       {target === 'app' && <AppStack />}
     </NavigationContainer>
@@ -149,6 +150,14 @@ const AuthStack = () => (
     <RootStack.Screen name="Register" component={RegisterScreen} />
     <RootStack.Screen name="RegisterUserName" component={RegisterUserNameScreen} />
     <RootStack.Screen name="SignIn" component={SignInScreen} />
+    <RootStack.Screen name="Terms" component={TermsAndConditionsScreen} />
+    <RootStack.Screen name="Privacy" component={PrivacyPolicyScreen} />
+  </RootStack.Navigator>
+);
+
+const ProfileCompletionStack = () => (
+  <RootStack.Navigator screenOptions={{ headerShown: false }}>
+    <RootStack.Screen name="RegisterUserName" component={RegisterUserNameScreen} />
     <RootStack.Screen name="Terms" component={TermsAndConditionsScreen} />
     <RootStack.Screen name="Privacy" component={PrivacyPolicyScreen} />
   </RootStack.Navigator>

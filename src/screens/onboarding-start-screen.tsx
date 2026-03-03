@@ -94,7 +94,6 @@ export function OnboardingStartScreen() {
 
   const handleContinue = useCallback(async () => {
     if (!selectedReason || !userId || saving) return;
-    const reason = REASONS.find((item) => item.id === selectedReason);
     const mappedGoal = GOAL_MAP[selectedReason];
     setSaving(true);
     try {
@@ -102,8 +101,7 @@ export function OnboardingStartScreen() {
         await supabase.from('user_event_goals').delete().eq('user_id', userId);
         await supabase.from('user_event_goals').insert({ user_id: userId, goal: mappedGoal });
       }
-      navigation.navigate('OnboardingNight', {
-        entryReason: reason?.title,
+      navigation.navigate('OnboardingVibe', {
         editMode,
         returnToSettings,
       });

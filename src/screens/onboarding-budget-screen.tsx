@@ -130,7 +130,7 @@ export function OnboardingBudgetScreen() {
         { onConflict: 'user_id' }
       );
       const nextParams = editMode || returnToSettings ? { editMode, returnToSettings } : undefined;
-      navigation.navigate('OnboardingVibe', nextParams);
+      navigation.navigate('OnboardingNight', nextParams);
     } catch (error) {
       Alert.alert('Something went wrong', 'Please try again.');
       console.error('Failed to save budget preferences', error);

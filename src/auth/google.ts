@@ -1,58 +1,76 @@
-// import { Platform } from 'react-native';
-// import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-// import { supabase } from '~/lib/supabase';
+import { Platform } from 'react-native';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import type { Session } from '@supabase/supabase-js';
+import { supabase } from '~/lib/supabase';
 
-// const configureGoogleSignin = () => {
-//   GoogleSignin.configure({
-//     webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID!,
-//     iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-//     offlineAccess: false,
-//   });
-// };
+let isConfigured = false;
 
-// export const signInWithGoogle = async () => {
-//   configureGoogleSignin();
+const getGoogleConfig = () => {
+  const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+  const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
 
-//   try {
-//     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-//     const userInfo = await GoogleSignin.signIn();
-//     const idToken = userInfo.idToken;
+  if (!webClientId) {
+    throw new Error('Missing EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID for Google Sign In.');
+  }
 
-//     if (!idToken) {
-//       throw new Error('Missing Google idToken.');
-//     }
+  return {
+    webClientId,
+    iosClientId,
+  };
+};
 
-//     const { data, error } = await supabase.auth.signInWithIdToken({
-//       provider: 'google',
-//       token: idToken,
-//     });
+const configureGoogleSignin = () => {
+  if (isConfigured) return;
 
-//     if (error) throw error;
-//     if (!data?.session) throw new Error('Missing session after Google sign-in.');
+  const { webClientId, iosClientId } = getGoogleConfig();
 
-//     return { cancelled: false, session: data.session } as const;
-//   } catch (err: unknown) {
-//     if (
-//       err &&
-//       typeof err === 'object' &&
-//       'code' in err &&
-//       (err as { code?: string }).code === statusCodes.SIGN_IN_CANCELLED
-//     ) {
-//       return { cancelled: true } as const;
-//     }
+  GoogleSignin.configure({
+    webClientId,
+    iosClientId,
+    offlineAccess: false,
+  });
 
-//     throw err;
-//   }
-// };
+  isConfigured = true;
+};
 
-// export const signOut = async () => {
-//   try {
-//     await GoogleSignin.signOut();
-//   } catch {
-//     // ignore native sign-out errors
-//   }
-//   const { error } = await supabase.auth.signOut();
-//   if (error) throw error;
-// };
+export const signInWithGoogle = async (): Promise<
+  { cancelled: true } | { cancelled: false; session: Session }
+> => {
+  configureGoogleSignin();
 
-// export const isWeb = Platform.OS === 'web';
+  if (Platform.OS === 'android') {
+    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+  }
+
+  const response = await GoogleSignin.signIn();
+  if (response.type === 'cancelled') {
+    return { cancelled: true };
+  }
+
+  const idToken = response.data.idToken ?? (await GoogleSignin.getTokens()).idToken;
+  if (!idToken) {
+    throw new Error('Google Sign In did not return an ID token.');
+  }
+
+  const { data, error } = await supabase.auth.signInWithIdToken({
+    provider: 'google',
+    token: idToken,
+  });
+
+  if (error) throw error;
+  if (!data.session) throw new Error('Missing session after Google sign-in.');
+
+  return { cancelled: false, session: data.session };
+};
+
+export const signOut = async () => {
+  try {
+    configureGoogleSignin();
+    await GoogleSignin.signOut();
+  } catch {
+    // ignore native sign-out failures and always clear Supabase session
+  }
+
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+};

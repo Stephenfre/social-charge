@@ -1,19 +1,46 @@
 // hooks/useRsvps.ts
-import { Tables, TablesInsert } from '@/database.types';
+import { Tables, TablesInsert } from '~/types/database.types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '~/lib/supabase';
-import { EventRow, UserEventCardRow } from '~/types/event.types';
+import { UserEventCardRow, VEventWithFullDetails } from '~/types/event.types';
 import { EVENT_KEYS } from './useEvents';
 import { TOKEN_QUERY_KEYS } from './useTokens';
 import { useAuth } from '~/providers/AuthProvider';
 
 const RSVP_KEYS = {
   userEvents: ['events', 'userEvents'] as const,
-  eventById: (id: string) => ['events', 'eventById', id] as const,
   rsvps: (id: string) => ['rsvps', id] as const,
   checkIn: ['events', 'checkInEvent'] as const,
   eventVibes: ['events', 'eventVibes'] as const,
 };
+
+const mapDetailToUserEventCard = (
+  detail: VEventWithFullDetails,
+  userId: string,
+  eventStatus: 'upcoming' | 'past'
+): UserEventCardRow => ({
+  age_limit: detail.age_limit,
+  capacity: detail.capacity,
+  category: detail.category,
+  cover_img: detail.cover_img,
+  created_at: detail.created_at,
+  created_by: detail.created_by,
+  deleted_at: detail.deleted_at,
+  description: detail.description,
+  ends_at: detail.ends_at,
+  event_status: eventStatus,
+  formatted_address: detail.formatted_address,
+  id: detail.id,
+  latitude: detail.latitude,
+  location_text: detail.location_text,
+  longitude: detail.longitude,
+  place_id: detail.place_id,
+  provider: detail.provider,
+  starts_at: detail.starts_at,
+  title: detail.title,
+  token_cost: detail.token_cost,
+  user_id: userId,
+});
 
 export type RsvpRow = Tables<'rsvps'>;
 export type RsvpInsert = TablesInsert<'rsvps'>;
@@ -97,20 +124,12 @@ export function useCreateRsvp() {
         qc.setQueryData<RsvpRow[]>(rsvpKey, [optimistic, ...prevRsvps]);
 
         // try to add to userEvents from cached event detail
-        const detail = qc.getQueryData<EventRow>(RSVP_KEYS.eventById(eventId));
-        if (detail) {
+        const detail = qc.getQueryData<VEventWithFullDetails>(EVENT_KEYS.eventById(eventId));
+        if (detail?.id && detail.starts_at) {
           const status: 'upcoming' | 'past' =
             new Date(detail.starts_at) >= new Date() ? 'upcoming' : 'past';
 
-          const card: UserEventCardRow = {
-            id: detail.id,
-            title: detail.title,
-            cover_img: detail.cover_img,
-            starts_at: detail.starts_at,
-            ends_at: detail.ends_at,
-            created_at: detail.created_at,
-            event_status: status,
-          };
+          const card = mapDetailToUserEventCard(detail, userId, status);
 
           qc.setQueriesData<UserEventCardRow[]>({ queryKey: RSVP_KEYS.userEvents }, (prev) => {
             const arr = prev ?? [];
@@ -132,7 +151,7 @@ export function useCreateRsvp() {
 
     onSettled: (_res, _err, { eventId }) => {
       qc.invalidateQueries({ queryKey: RSVP_KEYS.rsvps(eventId) });
-      qc.invalidateQueries({ queryKey: RSVP_KEYS.eventById(eventId) });
+      qc.invalidateQueries({ queryKey: EVENT_KEYS.eventById(eventId) });
       qc.invalidateQueries({ queryKey: RSVP_KEYS.userEvents });
       qc.invalidateQueries({ queryKey: RSVP_KEYS.checkIn });
       qc.invalidateQueries({ queryKey: RSVP_KEYS.eventVibes });
@@ -207,7 +226,7 @@ export function useRemoveRsvp() {
     onSettled: (_res, _err, { eventId }) => {
       qc.invalidateQueries({ queryKey: RSVP_KEYS.userEvents });
       qc.invalidateQueries({ queryKey: RSVP_KEYS.checkIn });
-      qc.invalidateQueries({ queryKey: RSVP_KEYS.eventById(eventId) });
+      qc.invalidateQueries({ queryKey: EVENT_KEYS.eventById(eventId) });
       qc.invalidateQueries({ queryKey: RSVP_KEYS.rsvps(eventId) });
       qc.invalidateQueries({ queryKey: RSVP_KEYS.eventVibes });
       qc.invalidateQueries({ queryKey: EVENT_KEYS.checkIn(userId) });

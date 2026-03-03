@@ -178,7 +178,7 @@ export function ProfileScreen() {
             {pastEvents.length ? (
               <EventsList events={pastEvents} loading={eventsLoading} />
             ) : (
-              <Text>No upcoming events</Text>
+              <Text>No events history</Text>
             )}
           </Flex>
         </Flex>

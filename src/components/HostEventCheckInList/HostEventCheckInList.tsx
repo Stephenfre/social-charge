@@ -4,7 +4,6 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import dayjs from 'dayjs';
 import { Dimensions, FlatList, StyleSheet, View } from 'react-native';
 import { Button, Flex, Image, Pressable, Text } from '~/components/ui';
-import { Spinner } from '~/components/ui/spinner';
 import { useHostEvents } from '~/hooks';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '../ui/icon';
@@ -12,11 +11,14 @@ import { Calendar, Clock, MapPin, QrCode } from 'lucide-react-native';
 import { Map } from '../Map/Map';
 import { RootStackParamList } from '~/types/navigation.types';
 import { EventRow } from '~/types/event.types';
+import ReanimatedSkeleton from 'react-native-reanimated-skeleton';
 
 const SCREEN_W = Dimensions.get('window').width;
 const CARD_W = Math.min(400, Math.round(SCREEN_W * 0.9));
 const GAP = 14;
 const SIDE_SPACER = Math.max(0, Math.round((SCREEN_W - CARD_W) / 2));
+const SKELETON_ITEMS = Array.from({ length: 3 }, (_, index) => `host-skeleton-${index}`);
+const CARD_INNER_W = CARD_W - 32;
 
 type HostNav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -119,11 +121,115 @@ export function HostEventCheckInList() {
     [handleOpenScanner, navigation]
   );
 
+  const renderSkeletonItem = useCallback(() => {
+    return (
+      <View
+        className="mr-8 mt-16 flex h-[90%] rounded-2xl bg-background-900"
+        style={{
+          width: CARD_W,
+          marginRight: GAP,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.6,
+          shadowRadius: 10,
+          elevation: 6,
+          overflow: 'hidden',
+        }}>
+        <View style={{ borderRadius: 16, overflow: 'hidden' }}>
+          <ReanimatedSkeleton
+            isLoading
+            boneColor="#3F3F46"
+            highlightColor="#52525B"
+            containerStyle={{ width: '100%', height: 224 }}
+            layout={[{ key: 'image', width: CARD_W, height: 224 }]}
+          />
+          <LinearGradient colors={['transparent', '#18191f']} style={styles.gradient} />
+        </View>
+
+        <Flex className="px-4">
+          <ReanimatedSkeleton
+            isLoading
+            boneColor="#3F3F46"
+            highlightColor="#52525B"
+            containerStyle={{ width: CARD_INNER_W, height: 170, marginTop: 8 }}
+            layout={[
+              { key: 'title', width: CARD_INNER_W * 0.75, height: 40, borderRadius: 6 },
+              { key: 'cal-icon', width: 20, height: 20, marginTop: 12, borderRadius: 10 },
+              {
+                key: 'cal-text',
+                width: 112,
+                height: 20,
+                marginTop: -20,
+                marginLeft: 28,
+                borderRadius: 6,
+              },
+              {
+                key: 'clock-icon',
+                width: 20,
+                height: 20,
+                marginTop: -20,
+                marginLeft: 156,
+                borderRadius: 10,
+              },
+              {
+                key: 'clock-text',
+                width: 160,
+                height: 20,
+                marginTop: -20,
+                marginLeft: 184,
+                borderRadius: 6,
+              },
+              { key: 'pin-icon', width: 20, height: 20, marginTop: 10, borderRadius: 10 },
+              {
+                key: 'pin-text',
+                width: CARD_INNER_W * 0.66,
+                height: 20,
+                marginTop: -20,
+                marginLeft: 28,
+                borderRadius: 6,
+              },
+              {
+                key: 'cta',
+                width: CARD_INNER_W,
+                height: 48,
+                marginTop: 24,
+                borderRadius: 12,
+              },
+            ]}
+          />
+        </Flex>
+      </View>
+    );
+  }, []);
+
   if (eventsLoading) {
     return (
-      <View className="h-56 items-center justify-center">
-        <Spinner />
-      </View>
+      <Flex flex className="bg-background-dark">
+        <FlatList
+          horizontal
+          data={SKELETON_ITEMS}
+          keyExtractor={(item) => item}
+          renderItem={renderSkeletonItem}
+          showsHorizontalScrollIndicator={false}
+          snapToInterval={CARD_W + GAP}
+          snapToAlignment="start"
+          decelerationRate="fast"
+          disableIntervalMomentum={false}
+          bounces={false}
+          alwaysBounceHorizontal={false}
+          overScrollMode="never"
+          contentContainerStyle={{
+            paddingLeft: SIDE_SPACER,
+            paddingRight: SIDE_SPACER,
+            paddingVertical: 16,
+          }}
+          getItemLayout={(_, index) => ({
+            length: CARD_W + GAP,
+            offset: (CARD_W + GAP) * index,
+            index,
+          })}
+        />
+      </Flex>
     );
   }
 

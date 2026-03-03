@@ -18,6 +18,7 @@ import { DatePickerInput } from '~/components';
 import { useSignUp } from '~/hooks';
 import { useAuth } from '~/providers/AuthProvider';
 import dayjs from 'dayjs';
+import { supabase } from '~/lib/supabase';
 
 interface FormData {
   firstName: string;
@@ -43,10 +44,40 @@ export function RegisterUserNameScreen() {
     state,
     country,
     setField,
-    reset,
+    reset: resetSignupWizard,
   } = useSignupWizard();
-  const { user, refreshUser } = useAuth();
+  const { session, refreshUser, setUserState } = useAuth();
   const signUp = useSignUp();
+
+  const deriveNameParts = () => {
+    const metadata = session?.user?.user_metadata ?? {};
+    const givenName = typeof metadata.given_name === 'string' ? metadata.given_name.trim() : '';
+    const familyName =
+      typeof metadata.family_name === 'string' ? metadata.family_name.trim() : '';
+
+    if (givenName || familyName) {
+      return { firstName: givenName, lastName: familyName };
+    }
+
+    const fullName =
+      typeof metadata.full_name === 'string'
+        ? metadata.full_name.trim()
+        : typeof metadata.name === 'string'
+          ? metadata.name.trim()
+          : '';
+
+    if (!fullName) {
+      return { firstName: '', lastName: '' };
+    }
+
+    const [derivedFirstName, ...rest] = fullName.split(/\s+/);
+    return {
+      firstName: derivedFirstName ?? '',
+      lastName: rest.join(' '),
+    };
+  };
+
+  const derivedNames = deriveNameParts();
 
   // helpers
   const nonEmpty = (label: string) =>
@@ -98,12 +129,13 @@ export function RegisterUserNameScreen() {
   const {
     control,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      firstName,
-      lastName,
+      firstName: firstName || derivedNames.firstName,
+      lastName: lastName || derivedNames.lastName,
       nickName: nickName ?? '',
       gender: gender ?? '',
       birthDate,
@@ -181,7 +213,6 @@ export function RegisterUserNameScreen() {
 
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
 
   const captureLocation = async () => {
     try {
@@ -227,16 +258,16 @@ export function RegisterUserNameScreen() {
   };
 
   useEffect(() => {
-    if (!pendingUserId || !user || user.id !== pendingUserId) return;
-
-    if (user.onboarded === false) {
-      navigation.reset({ index: 0, routes: [{ name: 'OnboardingStart' }] });
-    } else {
-      navigation.reset({ index: 0, routes: [{ name: 'Root' }] });
+    if (!firstName && derivedNames.firstName) {
+      setField('firstName', derivedNames.firstName);
+      setValue('firstName', derivedNames.firstName);
     }
 
-    setPendingUserId(null);
-  }, [navigation, pendingUserId, user]);
+    if (!lastName && derivedNames.lastName) {
+      setField('lastName', derivedNames.lastName);
+      setValue('lastName', derivedNames.lastName);
+    }
+  }, [derivedNames.firstName, derivedNames.lastName, firstName, lastName, setField, setValue]);
 
   const onSubmit = handleSubmit(async (values) => {
     if (isSubmitting) return;
@@ -264,6 +295,7 @@ export function RegisterUserNameScreen() {
           password,
           firstName: values.firstName,
           lastName: values.lastName,
+          gender: values.gender,
           city: locationData?.city ?? city ?? '',
           state: locationData?.state ?? state ?? '',
           country: locationData?.country ?? country ?? '',
@@ -275,14 +307,32 @@ export function RegisterUserNameScreen() {
         },
         {
           onSuccess: async ({ needsEmailConfirm, userId }) => {
-            reset();
             if (needsEmailConfirm) {
+              resetSignupWizard();
               navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
               return;
             }
+
             if (userId) {
-              setPendingUserId(userId);
-              await refreshUser();
+              resetSignupWizard();
+              const { data: profile } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', userId)
+                .single();
+
+              if (profile) {
+                setUserState(profile);
+                return;
+              }
+
+              const refreshedUser = await refreshUser();
+              if (!refreshedUser) {
+                Alert.alert(
+                  'Profile setup',
+                  'Your account was created, but we could not load your profile yet. Please try again.'
+                );
+              }
             }
           },
           onError: async (err: any) => {

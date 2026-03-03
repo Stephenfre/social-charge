@@ -57,8 +57,7 @@ export function RegisterScreen() {
               floatingLabelTextClassName={floatingLabelTextClass}
               floatingLabelActiveTextClassName="text-primary-500"
             />
-
-            {/* <Flex direction="row" align="center" className="my-6 w-full">
+            <Flex direction="row" align="center" className="my-6 w-full">
               <Divider className="flex-1" />
               <Text className="px-4 text-typography-light">Or, Sign up with</Text>
               <Divider className="flex-1" />
@@ -66,7 +65,8 @@ export function RegisterScreen() {
 
             <Flex gap={4}>
               <GoogleSignInButton />
-            </Flex> */}
+              <AppleOauth />
+            </Flex>
           </Flex>
 
           <Flex align="center" className="pb-4">

@@ -1,5 +1,6 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AuthForm } from '~/components';
+import { AppleOauth, AuthForm } from '~/components';
+import { GoogleSignInButton } from '~/components/GoogleSignInButton';
 import { Divider, Flex, Pressable, Text } from '~/components/ui';
 import { KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
@@ -23,14 +24,6 @@ export function SignInScreen() {
     if (error) Alert.alert(error.message);
     if (!error) reset();
   };
-
-  const handleForgotPassword = () =>
-    Alert.alert('Forgot Password', 'Password reset will be available soon.');
-
-  const socialButtons = [
-    { id: 'google', label: 'Google', accent: '#EA4335' },
-    { id: 'facebook', label: 'Facebook', accent: '#1877F2' },
-  ];
 
   const inputClassName =
     'relative rounded-xl border border-background-500 bg-transparent px-2 py-1 data-[focus=true]:border-primary/50 overflow-visible';
@@ -71,17 +64,7 @@ export function SignInScreen() {
               floatingLabelWrapperClassName={floatingLabelWrapperClass}
               floatingLabelTextClassName={floatingLabelTextClass}
               floatingLabelActiveTextClassName="text-primary-500"
-              // afterFields={
-              //   <Flex className="w-full items-end">
-              //     <Pressable onPress={handleForgotPassword}>
-              //       <Text size="sm" bold className="text-primary-600">
-              //         Forgot Password?
-              //       </Text>
-              //     </Pressable>
-              //   </Flex>
-              // }
             />
-            {/* 
             <Flex direction="row" align="center" className="my-6 w-full">
               <Divider className="flex-1" />
               <Text className="px-4 text-typography-light">Or, Login with</Text>
@@ -89,20 +72,9 @@ export function SignInScreen() {
             </Flex>
 
             <Flex gap={4}>
-              {socialButtons.map((provider) => (
-                <Pressable
-                  key={provider.id}
-                  className="w-full flex-row items-center justify-center rounded-2xl border border-background-100 bg-white py-4"
-                  onPress={() => Alert.alert(provider.label, 'Coming soon')}>
-                  <Text bold className="mr-2 text-lg text-typography-dark">
-                    {provider.label.charAt(0)}
-                  </Text>
-                  <Text bold className="text-base text-typography-dark">
-                    {provider.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </Flex> */}
+              <GoogleSignInButton />
+              <AppleOauth />
+            </Flex>
           </Flex>
 
           <Flex align="center" className="pb-4">

@@ -1,5 +1,5 @@
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
-import { CommonActions, useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import dayjs from 'dayjs';
 import { ArrowLeft, Calendar, Clock, MapPin, TicketX } from 'lucide-react-native';
@@ -32,6 +32,7 @@ export function ViewEventScreen() {
   const { params } = useRouteStack<'ViewEvent'>();
   const navigation = useNavigation<EventNav>();
   const insets = useSafeAreaInsets();
+  const snapPoints = useMemo(() => ['75%'], []);
 
   const { userId, user } = useAuth();
   const { data: event, isLoading } = useEventById(params.eventId);
@@ -237,10 +238,12 @@ export function ViewEventScreen() {
 
       {/* PERSISTENT BOTTOM SHEET ACTION BAR */}
       <BottomSheet
-        index={0}
-        snapPoints={['70%', '75%']}
+        index={1}
+        snapPoints={snapPoints}
         enablePanDownToClose={false}
         enableOverDrag={false}
+        enableHandlePanningGesture={false}
+        enableContentPanningGesture={false}
         handleIndicatorStyle={{ backgroundColor: 'transparent' }}
         backgroundStyle={{
           backgroundColor: '#0F1012',
@@ -370,7 +373,7 @@ export function ViewEventScreen() {
                   ))}
                 </Flex>
               ) : (
-                <Text>Rvsp to chage the vibe</Text>
+                <Text>RSVP to change the vibe</Text>
               )}
             </Flex>
             {/* 
@@ -524,7 +527,7 @@ function RsvpConfirmationModal({
         <Flex className="w-full max-w-md rounded-xl bg-background py-6" gap={4}>
           <Flex direction="row" justify="space-between" align="center" className=" px-4">
             <Text bold size="xl" className="text-white">
-              RSVP Detail
+              RSVP Details
             </Text>
             <Text className="text-primary-600" onPress={onCancel}>
               Cancel
@@ -619,7 +622,7 @@ export function CancelRsvpButton({
 }) {
   const { mutateAsync: removeRsvpAsync, isPending } = useRemoveRsvp();
   const { mutateAsync: refundTokensAsync } = useRefundTokens();
-  const label = isPending ? <Spinner /> : 'Cancel Rsvp';
+  const label = isPending ? <Spinner /> : 'Cancel RSVP';
   const startsAt = eventStartsAt ? dayjs(eventStartsAt) : null;
   const hoursUntilStart = startsAt ? startsAt.diff(dayjs(), 'hour', true) : Infinity;
   const isWithinGracePeriod = hoursUntilStart >= 2;

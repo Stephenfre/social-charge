@@ -3,6 +3,15 @@ import type { ExpoConfig } from 'expo/config';
 const isDev = process.env.APP_ENV === 'development' || process.env.NODE_ENV === 'development';
 const googleMapsApiKey =
   process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY ?? 'AIzaSyBCcCKvxUWXnP_qg9N2zoJclTIe4K_Cz8A';
+const googleIosUrlScheme = process.env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME;
+const googleSignInPlugin: [string, any] | null = googleIosUrlScheme
+  ? [
+      '@react-native-google-signin/google-signin',
+      {
+        iosUrlScheme: googleIosUrlScheme,
+      },
+    ]
+  : null;
 
 const config: ExpoConfig = {
   name: isDev ? 'Social Charge Dev' : 'Social Charge (Beta)',
@@ -18,6 +27,8 @@ const config: ExpoConfig = {
   plugins: [
     'expo-font',
     'expo-maps',
+    'expo-apple-authentication',
+    ...(googleSignInPlugin ? [googleSignInPlugin] : []),
     [
       '@sentry/react-native/expo',
       {
@@ -39,6 +50,7 @@ const config: ExpoConfig = {
   assetBundlePatterns: ['**/*'],
   ios: {
     supportsTablet: true,
+    usesAppleSignIn: true,
     bundleIdentifier: isDev ? 'dev.socialcharge.app' : 'com.socialcharge.app',
     config: {
       googleMapsApiKey,

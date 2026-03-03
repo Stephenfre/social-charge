@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Flex, Pressable, Text } from '~/components/ui';
 import { Calendar, Moon, Sun, Sunset, Users } from 'lucide-react-native';
 import { cn } from '~/utils/cn';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { CommonActions, useNavigation, useRoute } from '@react-navigation/native';
 import type { NavigationProp } from '~/types/navigation';
 import { RootRoute } from '~/types/navigation.types';
 import { useAuth } from '~/providers/AuthProvider';
@@ -14,32 +14,45 @@ import { supabase } from '~/lib/supabase';
 import { Enums, TablesInsert } from '~/types/database.types';
 import { OnboardingProgress } from '~/components/OnboardingProgress';
 
-const VIBE_CATEGORIES = {
-  personality: [
-    'chill',
-    'wildcard',
-    'observer',
-    'deep_connector',
-    'fun_maker',
-    'connector',
-    'mystery',
-  ],
-  social_energy: ['nightlife', 'hype_starter', 'social_butterfly', 'karaoke_star'],
-  lifestyle: ['homebody', 'early_riser', 'night_owl', 'planner', 'spontaneous', 'zen'],
-  interests: [
-    'culture',
-    'music_lover',
-    'style_icon',
-    'chill_gamer',
-    'dog_person',
-    'late_night_foodie',
-  ],
-  adventure: ['explorer', 'trailblazer', 'spontaneous_traveler', 'summer_energy'],
-  seasonal: ['holiday_spirit'],
-  reputation: ['mvp', 'vibe_validator'],
-} as const satisfies Record<string, readonly Enums<'vibe_slug'>[]>;
-const VIBE_OPTIONS = Object.values(VIBE_CATEGORIES).flat();
-type VibeOption = (typeof VIBE_OPTIONS)[number];
+type VibeOption = Enums<'vibe_slug'>;
+
+const VIBE_OPTIONS: {
+  slug: VibeOption;
+  emoji: string;
+  title: string;
+  description: string;
+}[] = [
+  {
+    slug: 'social',
+    emoji: '🎉',
+    title: 'Social',
+    description: 'Big energy. Group events. Nightlife.',
+  },
+  {
+    slug: 'explorer',
+    emoji: '🌎',
+    title: 'Explorer',
+    description: 'Adventures. Trips. Trying new things.',
+  },
+  {
+    slug: 'connector',
+    emoji: '🤝',
+    title: 'Connector',
+    description: 'Deep convos. Meaningful moments.',
+  },
+  {
+    slug: 'chill',
+    emoji: '😌',
+    title: 'Chill',
+    description: 'Low-key. Relaxed. Easygoing.',
+  },
+  {
+    slug: 'wildcard',
+    emoji: '⚡',
+    title: 'Wildcard',
+    description: 'Spontaneous. Down for anything.',
+  },
+];
 
 const TIME_OPTIONS = [
   { id: 'morning', label: 'Morning', Icon: Sun, value: 'morning' as Enums<'time_bucket'> },
@@ -75,66 +88,25 @@ const normalizeDayValue = (value?: string | null): DayId | null => {
 
 const GROUP_LABELS = ['Solo', 'Duo', 'Crew', 'Party', 'Large'];
 
-const ARCHETYPE_MAP: Partial<Record<VibeOption, Enums<'social_archetype'>>> = {
-  chill: 'chill',
-  wildcard: 'chill',
-  observer: 'chill',
-  deep_connector: 'chill',
-  fun_maker: 'social',
-  connector: 'social',
-  mystery: 'chill',
-  nightlife: 'social',
-  hype_starter: 'social',
-  social_butterfly: 'social',
-  karaoke_star: 'social',
-  homebody: 'chill',
-  early_riser: 'chill',
-  night_owl: 'social',
-  planner: 'chill',
-  spontaneous: 'adventurer',
-  zen: 'chill',
-  culture: 'chill',
-  music_lover: 'social',
-  style_icon: 'social',
-  chill_gamer: 'chill',
-  dog_person: 'chill',
-  late_night_foodie: 'social',
+const ARCHETYPE_MAP: Record<VibeOption, Enums<'social_archetype'>> = {
+  social: 'social',
   explorer: 'adventurer',
-  trailblazer: 'adventurer',
-  spontaneous_traveler: 'adventurer',
-  summer_energy: 'adventurer',
-  holiday_spirit: 'social',
-  mvp: 'social',
-  vibe_validator: 'chill',
+  connector: 'chill',
+  chill: 'chill',
+  wildcard: 'adventurer',
 };
-const ARCHETYPE_TO_OPTION = Object.entries(ARCHETYPE_MAP).reduce<Record<string, VibeOption>>(
-  (acc, [optionId, archetype]) => {
-    acc[archetype] = optionId as VibeOption;
-    return acc;
-  },
-  {}
-);
+const ARCHETYPE_TO_OPTION: Record<Enums<'social_archetype'>, VibeOption> = {
+  social: 'social',
+  adventurer: 'explorer',
+  chill: 'chill',
+};
 
 type NightRoute = RootRoute<'OnboardingNight'>;
-
-const formatLabel = (slug: VibeOption) => {
-  if (slug === 'mvp') return 'MVP';
-  return slug
-    .split(/[-_]/g)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-};
-
-const formatCategory = (key: keyof typeof VIBE_CATEGORIES) =>
-  key
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
 
 export function OnboardingNightScreen() {
   const navigation = useNavigation<NavigationProp<'OnboardingNight'>>();
   const route = useRoute<NightRoute>();
-  const { userId } = useAuth();
+  const { userId, refreshUser, setUserState, setJustCompletedOnboarding } = useAuth();
   const [selectedVibes, setSelectedVibes] = useState<VibeOption[]>(['chill']);
   const [groupSize, setGroupSize] = useState(3);
   const [selectedTimes, setSelectedTimes] = useState<Enums<'time_bucket'>[]>(['evening']);
@@ -210,9 +182,43 @@ export function OnboardingNightScreen() {
     setSelectedVibes,
   ]);
 
+  const handleReturnToSettings = useCallback(() => {
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'Root',
+            state: {
+              index: 0,
+              routes: [
+                {
+                  name: 'Tabs',
+                  state: {
+                    index: 0,
+                    routes: [
+                      {
+                        name: 'Profile',
+                        state: {
+                          index: 1,
+                          routes: [{ name: 'ProfileIndex' }, { name: 'Profile Settings' }],
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      })
+    );
+  }, [navigation]);
+
   const handleNext = useCallback(async () => {
-    console.log('pressed');
+    console.log('handleNext', userId, submitting);
     if (!userId) return;
+    if (submitting) return;
     setSubmitting(true);
     try {
       const primaryVibe = selectedVibes[0];
@@ -252,8 +258,25 @@ export function OnboardingNightScreen() {
         await supabase.from('user_day_prefs').insert(dayRows);
       }
 
-      const nextParams = editMode || returnToSettings ? { editMode, returnToSettings } : undefined;
-      navigation.navigate('Interest', nextParams);
+      await supabase.from('users').update({ onboarded: true }).eq('id', userId);
+      await supabase
+        .from('user_onboarding_profile')
+        .upsert(
+          { user_id: userId, completed: true, updated_at: new Date().toISOString() },
+          { onConflict: 'user_id' }
+        );
+
+      const refreshed = await refreshUser();
+      setUserState((prev) => {
+        const base = refreshed ?? prev;
+        if (!base) return base;
+        return { ...base, onboarded: true };
+      });
+      setJustCompletedOnboarding(true);
+
+      if (returnToSettings) {
+        handleReturnToSettings();
+      }
     } catch (error) {
       Alert.alert('Something went wrong', 'Please try again.');
       console.error('Failed to save night preferences', error);
@@ -264,10 +287,14 @@ export function OnboardingNightScreen() {
     editMode,
     groupSize,
     navigation,
+    handleReturnToSettings,
     returnToSettings,
+    refreshUser,
     selectedDays,
     selectedTimes,
     selectedVibes,
+    setJustCompletedOnboarding,
+    setUserState,
     submitting,
     userId,
   ]);
@@ -289,7 +316,7 @@ export function OnboardingNightScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         <Flex flex={1} direction="column" gap={8}>
           <Flex className="pt-4">
-            <OnboardingProgress currentStep={2} totalSteps={5} />
+            <OnboardingProgress currentStep={5} totalSteps={5} />
             <Flex>
               <Text size="2xl" bold className="mt-4">
                 What does a great hangout look like for you?
@@ -383,43 +410,37 @@ export function OnboardingNightScreen() {
           </Flex>
 
           <Flex gap={4}>
-            <SectionLabel title="Vibe" />
-            <Flex direction="row" gap={3} wrap="wrap">
-              {(
-                Object.entries(VIBE_CATEGORIES) as [
-                  keyof typeof VIBE_CATEGORIES,
-                  readonly VibeOption[],
-                ][]
-              ).map(([category, slugs]) => (
-                <Flex key={category} gap={2}>
-                  <Text bold>{formatCategory(category)}</Text>
-                  <Flex direction="row" gap={3} wrap="wrap">
-                    {slugs.map((slug) => {
-                      const selected = selectedVibes.includes(slug);
-                      return (
-                        <Pressable
-                          key={slug}
-                          onPress={() =>
-                            setSelectedVibes((prev) => {
-                              if (prev.length === 1 && prev.includes(slug)) {
-                                return prev;
-                              }
-                              return toggleItem(prev, slug);
-                            })
-                          }
-                          className={cn(
-                            'rounded-2xl border px-4 py-3',
-                            selected ? 'border-white/20 bg-white/10' : 'border-white/10'
-                          )}>
-                          <Text className={cn('text-base')} bold={selected}>
-                            {formatLabel(slug)}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </Flex>
-                </Flex>
-              ))}
+            <SectionLabel title="I'm Interested in events with these vibes:" />
+            <Flex gap={3}>
+              {VIBE_OPTIONS.map(({ slug, emoji, title, description }) => {
+                const selected = selectedVibes.includes(slug);
+                return (
+                  <Pressable
+                    key={slug}
+                    onPress={() =>
+                      setSelectedVibes((prev) => {
+                        if (prev.length === 1 && prev.includes(slug)) {
+                          return prev;
+                        }
+                        return toggleItem(prev, slug);
+                      })
+                    }
+                    className={cn(
+                      'rounded-2xl border px-4 py-3',
+                      selected ? 'border-white/20 bg-white/10' : 'border-white/10'
+                    )}>
+                    <Flex direction="row" align="center" gap={3}>
+                      <Text size="xl">{emoji}</Text>
+                      <Flex className="flex-1">
+                        <Text className="text-base" bold={selected}>
+                          {title}
+                        </Text>
+                        <Text className="text-sm text-gray-300">{description}</Text>
+                      </Flex>
+                    </Flex>
+                  </Pressable>
+                );
+              })}
             </Flex>
           </Flex>
 
@@ -432,7 +453,7 @@ export function OnboardingNightScreen() {
             disabled={disabledForm}
             onPress={handleNext}>
             <Text size="lg" weight="600" className="text-white">
-              Next
+              Finish
             </Text>
           </Button>
         </Flex>
