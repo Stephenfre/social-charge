@@ -1,9 +1,10 @@
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { ArrowLeft, Calendar, Clock, MapPin, TicketX } from 'lucide-react-native';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EventCard } from '~/components/EventCard/EventCard';
@@ -12,6 +13,7 @@ import { Badge, Box, Button, Divider, Flex, Image, Text } from '~/components/ui'
 import { Icon } from '~/components/ui/icon';
 import { Spinner } from '~/components/ui/spinner';
 import {
+  useCancelWaitlist,
   useEventById,
   useJoinWaitlist,
   useMyWaitlistEntry,
@@ -23,6 +25,9 @@ import {
 } from '~/hooks';
 import { useEventVibes } from '~/hooks/useEvents';
 import { useCreateRsvp, useRemoveRsvp, useRsvps } from '~/hooks/useRsvps';
+import { WAITLIST_KEYS } from '~/hooks/useWaitlist';
+import { EVENT_KEYS } from '~/hooks/useEvents';
+import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/providers/AuthProvider';
 import { EventReviewContent } from './event-review-screen';
 
@@ -30,10 +35,33 @@ import { cn } from '~/utils/cn';
 import { RootStackParamList, useRouteStack } from '~/types/navigation.types';
 
 type EventNav = NativeStackNavigationProp<RootStackParamList, 'CreateEvent', 'EventReview'>;
+type ConfirmationMode = 'rsvp' | 'waitlist';
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  if (error && typeof error === 'object') {
+    const code = 'code' in error && typeof error.code === 'string' ? error.code : null;
+    const message = 'message' in error && typeof error.message === 'string' ? error.message : null;
+    const detail = 'detail' in error && typeof error.detail === 'string' ? error.detail : null;
+    const hint = 'hint' in error && typeof error.hint === 'string' ? error.hint : null;
+
+    if (code === '23505') {
+      return "You're already on the waitlist for this event.";
+    }
+
+    return [message, detail, hint].filter(Boolean).join('\n') || fallback;
+  }
+
+  return fallback;
+}
 
 export function ViewEventScreen() {
   const { params } = useRouteStack<'ViewEvent'>();
   const navigation = useNavigation<EventNav>();
+  const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const snapPoints = useMemo(() => ['75%'], []);
 
@@ -45,6 +73,7 @@ export function ViewEventScreen() {
   const { mutateAsync: createRsvpAsync, isPending: creatingRsvp } = useCreateRsvp();
   const { mutateAsync: removeRsvpAsync } = useRemoveRsvp();
   const { mutateAsync: joinWaitlistAsync, isPending: joiningWaitlist } = useJoinWaitlist();
+  const { mutateAsync: cancelWaitlistAsync, isPending: leavingWaitlist } = useCancelWaitlist();
   const spendTokens = useSpendTokens();
   const refundTokens = useRefundTokens();
 
@@ -64,6 +93,7 @@ export function ViewEventScreen() {
 
   const [showRsvpModal, setShowRsvpModal] = useState(false);
   const [isConfirmingRsvp, setIsConfirmingRsvp] = useState(false);
+  const [confirmationMode, setConfirmationMode] = useState<ConfirmationMode>('rsvp');
   const [rsvpError, setRsvpError] = useState<string | null>(null);
   const [isReviewVisible, setIsReviewVisible] = useState(false);
 
@@ -86,7 +116,44 @@ export function ViewEventScreen() {
     return dayjs().isAfter(dayjs(event.ends_at));
   }, [event?.ends_at]);
 
-  const openRsvpModal = () => {
+  useEffect(() => {
+    const eventId = params.eventId;
+    if (!eventId) return;
+
+    const invalidateEventScreenData = () => {
+      queryClient.invalidateQueries({ queryKey: EVENT_KEYS.eventById(eventId) });
+      queryClient.invalidateQueries({ queryKey: ['rsvps', eventId] });
+      queryClient.invalidateQueries({ queryKey: ['events', 'eventVibes'] });
+      queryClient.invalidateQueries({ queryKey: WAITLIST_KEYS.mine(eventId, userId) });
+      queryClient.invalidateQueries({ queryKey: WAITLIST_KEYS.position(eventId, userId) });
+    };
+
+    const channel = supabase
+      .channel(`view-event:${eventId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'events', filter: `id=eq.${eventId}` },
+        invalidateEventScreenData
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'rsvps', filter: `event_id=eq.${eventId}` },
+        invalidateEventScreenData
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'event_waitlist', filter: `event_id=eq.${eventId}` },
+        invalidateEventScreenData
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [params.eventId, queryClient, userId]);
+
+  const openConfirmationModal = (mode: ConfirmationMode) => {
+    setConfirmationMode(mode);
     setRsvpError(null);
     setShowRsvpModal(true);
   };
@@ -105,16 +172,45 @@ export function ViewEventScreen() {
 
     try {
       await joinWaitlistAsync({ eventId: event.id });
+      setShowRsvpModal(false);
       Alert.alert('Waitlist joined', "You're on the waitlist for this event.");
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Something went wrong while joining the waitlist.';
+      const message = getErrorMessage(
+        error,
+        'Something went wrong while joining the waitlist.'
+      );
+      setRsvpError(message);
+    }
+  };
+
+  const handleLeaveWaitlist = async () => {
+    if (!event?.id) return;
+
+    try {
+      await cancelWaitlistAsync({ eventId: event.id });
+      Alert.alert('Waitlist updated', 'You have left the waitlist.');
+    } catch (error) {
+      const message = getErrorMessage(
+        error,
+        'Something went wrong while leaving the waitlist.'
+      );
       Alert.alert('Waitlist', message);
     }
   };
 
   const handleConfirmRsvp = async () => {
     if (!event || !userId || !event.id) return;
+
+    if (confirmationMode === 'waitlist') {
+      setIsConfirmingRsvp(true);
+      setRsvpError(null);
+      try {
+        await handleJoinWaitlist();
+      } finally {
+        setIsConfirmingRsvp(false);
+      }
+      return;
+    }
 
     // if (!tokenBalanceLoading && tokenCost > currentBalance) {
     //   setRsvpError('You do not have enough credits to RSVP for this event.');
@@ -452,13 +548,19 @@ export function ViewEventScreen() {
                       'h-14 w-full rounded-lg',
                       isOnWaitlist ? 'bg-background-700' : 'bg-primary-600'
                     )}
-                    onPress={handleJoinWaitlist}
-                    disabled={isOnWaitlist || joiningWaitlist}>
+                    onPress={
+                      isOnWaitlist
+                        ? handleLeaveWaitlist
+                        : () => openConfirmationModal('waitlist')
+                    }
+                    disabled={joiningWaitlist || leavingWaitlist}>
                     <Text bold size="lg" className="text-white">
-                      {joiningWaitlist
-                        ? 'Joining...'
-                        : isOnWaitlist
-                          ? 'On Waitlist'
+                      {isOnWaitlist
+                        ? leavingWaitlist
+                          ? 'Leaving...'
+                          : 'Leave Waitlist'
+                        : joiningWaitlist
+                          ? 'Joining...'
                           : 'Join Waitlist'}
                     </Text>
                   </Button>
@@ -469,7 +571,7 @@ export function ViewEventScreen() {
                   ) : null}
                 </>
               ) : (
-                <RsvpButton onPress={openRsvpModal} />
+                <RsvpButton onPress={() => openConfirmationModal('rsvp')} />
               )}
               {remainingSpots !== null && remainingSpots > 0 ? (
                 <Text
@@ -491,7 +593,8 @@ export function ViewEventScreen() {
         visible={showRsvpModal}
         onCancel={closeRsvpModal}
         onConfirm={handleConfirmRsvp}
-        isProcessing={creatingRsvp || isConfirmingRsvp}
+        mode={confirmationMode}
+        isProcessing={creatingRsvp || joiningWaitlist || isConfirmingRsvp}
         eventTitle={event.title ?? ''}
         eventDate={eventDateDisplay}
         eventTimeRange={eventTimeDisplay}
@@ -544,6 +647,7 @@ type ConfirmationProps = {
   visible: boolean;
   onCancel: () => void;
   onConfirm: () => void | Promise<void>;
+  mode: ConfirmationMode;
   isProcessing: boolean;
   eventTitle: string;
   eventDate: string;
@@ -561,6 +665,7 @@ function RsvpConfirmationModal({
   visible,
   onCancel,
   onConfirm,
+  mode,
   isProcessing,
   eventTitle,
   eventDate,
@@ -574,6 +679,7 @@ function RsvpConfirmationModal({
   errorMessage,
 }: ConfirmationProps) {
   const costLine = [{ label: 'Event', value: eventTitle }];
+  const isWaitlistMode = mode === 'waitlist';
 
   return (
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onCancel}>
@@ -587,7 +693,7 @@ function RsvpConfirmationModal({
         <Flex className="w-full max-w-md rounded-xl bg-background py-6" gap={4}>
           <Flex direction="row" justify="space-between" align="center" className=" px-4">
             <Text bold size="xl" className="text-white">
-              RSVP Details
+              {isWaitlistMode ? 'Waitlist Details' : 'RSVP Details'}
             </Text>
             <Text className="text-primary-600" onPress={onCancel}>
               Cancel
@@ -610,42 +716,51 @@ function RsvpConfirmationModal({
             <Divider className="bg-background-800/20" />
           </View>
           <Flex gap={4} className="rounded-2xl p-4">
-            <Flex gap={2}>
-              <Flex direction="row" justify="space-between">
-                <Text className="text-white">Tokens Required</Text>
-                <Text bold className="text-white">
-                  {tokenCost}
-                </Text>
-              </Flex>
-              <Flex direction="row" justify="space-between">
-                <Text className="text-white">Current Balance</Text>
-                <Text className="text-white">{balanceLoading ? 'Loading…' : tokenBalance}</Text>
-              </Flex>
-              <Flex direction="row" justify="space-between" align="center">
-                <Text className="text-white">Balance After RSVP</Text>
+            {isWaitlistMode ? (
+              <Text className="text-center text-white">
+                You will be charged {tokenCost} {tokenCost === 1 ? 'token' : 'tokens'} only if you
+                are promoted to RSVP.
+              </Text>
+            ) : (
+              <Flex gap={2}>
+                <Flex direction="row" justify="space-between">
+                  <Text className="text-white">Tokens Required</Text>
+                  <Text bold className="text-white">
+                    {tokenCost}
+                  </Text>
+                </Flex>
+                <Flex direction="row" justify="space-between">
+                  <Text className="text-white">Current Balance</Text>
+                  <Text className="text-white">{balanceLoading ? 'Loading…' : tokenBalance}</Text>
+                </Flex>
+                <Flex direction="row" justify="space-between" align="center">
+                  <Text className="text-white">Balance After RSVP</Text>
 
-                <Text className={cn(projectedBalance < 0 ? 'text-red-600' : 'text-green-600')}>
-                  {balanceLoading ? 'Loading…' : `${projectedBalance}`}
-                </Text>
+                  <Text className={cn(projectedBalance < 0 ? 'text-red-600' : 'text-green-600')}>
+                    {balanceLoading ? 'Loading…' : `${projectedBalance}`}
+                  </Text>
+                </Flex>
               </Flex>
-            </Flex>
+            )}
           </Flex>
 
           <Flex className="px-4">
             {errorMessage ? (
               <Text alert>{errorMessage}</Text>
-            ) : projectedBalance < 0 && !balanceLoading ? (
+            ) : !isWaitlistMode && projectedBalance < 0 && !balanceLoading ? (
               <Text alert>You do not have enough credits to complete this RSVP.</Text>
             ) : null}
             <Button
               className="h-14 rounded-lg bg-primary-600"
               onPress={onConfirm}
-              disabled={isProcessing || balanceLoading || projectedBalance < 0}>
+              disabled={
+                isProcessing || (!isWaitlistMode && (balanceLoading || projectedBalance < 0))
+              }>
               {isProcessing ? (
                 <Spinner />
               ) : (
                 <Text bold size="lg" className="text-white">
-                  Confirm RSVP
+                  {isWaitlistMode ? 'Confirm Join Waitlist' : 'Confirm RSVP'}
                 </Text>
               )}
             </Button>

@@ -62,3 +62,20 @@ export function useJoinWaitlist() {
     },
   });
 }
+
+export function useCancelWaitlist() {
+  const qc = useQueryClient();
+  const { userId } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ eventId }: { eventId: string }) => {
+      const { data, error } = await supabase.rpc('waitlist_cancel', { p_event_id: eventId });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_data, { eventId }) => {
+      qc.invalidateQueries({ queryKey: WAITLIST_KEYS.mine(eventId, userId) });
+      qc.invalidateQueries({ queryKey: WAITLIST_KEYS.position(eventId, userId) });
+    },
+  });
+}

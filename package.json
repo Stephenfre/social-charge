@@ -19,7 +19,7 @@
     "eas:ios:staging": "eas build --platform ios --profile staging",
     "eas:ios:preview": "eas build --platform ios --profile preview",
     "eas:ios:submit": "eas submit --platform ios",
-    "eas:ios:update": "eas update --platform ios --channel staging",
+    "eas:ios:update": "eas update --platform ios --channel production",
     "eas:android:dev": "eas build --platform android --profile development",
     "eas:android:prod": "eas build --platform android --profile production"
   },

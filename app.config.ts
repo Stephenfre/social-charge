@@ -14,7 +14,7 @@ const googleSignInPlugin: [string, any] | null = googleIosUrlScheme
   : null;
 
 const config: ExpoConfig = {
-  name: isDev ? 'Social Charge Dev' : 'Social Charge (Beta)',
+  name: 'Social Charge (Beta)',
   slug: 'social-charge',
   scheme: 'socialcharge',
   version: '1.0.0',
@@ -51,7 +51,7 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: true,
     usesAppleSignIn: true,
-    bundleIdentifier: isDev ? 'dev.socialcharge.app' : 'com.socialcharge.app',
+    bundleIdentifier: 'com.socialcharge.app',
     config: {
       googleMapsApiKey,
     },
@@ -64,7 +64,7 @@ const config: ExpoConfig = {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#ffffff',
     },
-    package: isDev ? 'dev.socialcharge.app' : 'com.socialcharge.app',
+    package: 'com.socialcharge.app',
     config: {
       googleMaps: {
         apiKey: googleMapsApiKey,
