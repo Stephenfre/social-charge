@@ -12,3 +12,4 @@ export * from './useUserCheckInQr';
 export * from './useEmailAvailability';
 export * from './useEventChat';
 export * from './useChatUserMetadata';
+export * from './useWaitlist';

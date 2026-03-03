@@ -3,7 +3,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import dayjs from 'dayjs';
 import { Dimensions, FlatList, StyleSheet, View } from 'react-native';
-import { Button, Flex, Image, Pressable, Skeleton, Text } from '~/components/ui';
+import { Button, Flex, Image, Pressable, Text } from '~/components/ui';
 import { useUserEventCheckIns, useUserEvents } from '~/hooks';
 import type { UserEventCardRow } from '~/types/event.types';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -144,39 +144,39 @@ export const UserEventCheckInList = React.forwardRef<React.ComponentRef<typeof V
             shadowRadius: 10,
             elevation: 6,
             overflow: 'hidden',
-          }}>
-          <View style={{ borderRadius: 16, overflow: 'hidden' }}>
-            <Skeleton className="h-56 w-full rounded-none bg-background-700" />
-            <LinearGradient colors={['transparent', '#18191f']} style={styles.gradient} />
-          </View>
+        }}>
+        <View style={{ borderRadius: 16, overflow: 'hidden' }}>
+          <View className="h-56 w-full rounded-none bg-background-700" />
+          <LinearGradient colors={['transparent', '#18191f']} style={styles.gradient} />
+        </View>
 
-          <Flex className="px-4">
-            <Flex direction="row" align="center" justify="space-between">
-              <Skeleton className="mt-2 h-10 w-3/4 rounded-md bg-background-700" />
+        <Flex className="px-4">
+          <Flex direction="row" align="center" justify="space-between">
+            <View className="mt-2 h-10 w-3/4 rounded-md bg-background-700" />
+          </Flex>
+
+          <Flex direction="row" gap={4} className="mt-3">
+            <Flex direction="row" align="center" gap={2}>
+              <View className="h-5 w-5 rounded-full bg-background-700" />
+              <View className="h-5 w-28 rounded-md bg-background-700" />
             </Flex>
-
-            <Flex direction="row" gap={4} className="mt-3">
-              <Flex direction="row" align="center" gap={2}>
-                <Skeleton className="h-5 w-5 rounded-full bg-background-700" />
-                <Skeleton className="h-5 w-28 rounded-md bg-background-700" />
-              </Flex>
-              <Flex direction="row" align="center" gap={2}>
-                <Skeleton className="h-5 w-5 rounded-full bg-background-700" />
-                <Skeleton className="h-5 w-20 rounded-md bg-background-700" />
-              </Flex>
-            </Flex>
-
-            <Flex direction="row" align="center" gap={2} className="mt-2">
-              <Skeleton className="h-5 w-5 rounded-full bg-background-700" />
-              <Skeleton className="h-5 w-2/3 rounded-md bg-background-700" />
-            </Flex>
-
-            <Flex align="center" className="mt-10">
-              <Skeleton className="h-40 w-40 rounded-xl bg-background-700" />
-              <Skeleton className="mt-3 h-4 w-24 rounded-md bg-background-700" />
+            <Flex direction="row" align="center" gap={2}>
+              <View className="h-5 w-5 rounded-full bg-background-700" />
+              <View className="h-5 w-20 rounded-md bg-background-700" />
             </Flex>
           </Flex>
-        </View>
+
+          <Flex direction="row" align="center" gap={2} className="mt-2">
+            <View className="h-5 w-5 rounded-full bg-background-700" />
+            <View className="h-5 w-2/3 rounded-md bg-background-700" />
+          </Flex>
+
+          <Flex align="center" className="mt-10">
+            <View className="h-40 w-40 rounded-xl bg-background-700" />
+            <View className="mt-3 h-4 w-24 rounded-md bg-background-700" />
+          </Flex>
+        </Flex>
+      </View>
       );
     }, []);
 

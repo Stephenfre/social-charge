@@ -462,6 +462,103 @@ export type Database = {
           },
         ]
       }
+      event_waitlist: {
+        Row: {
+          canceled_at: string | null
+          event_id: string
+          id: string
+          promoted_at: string | null
+          promoted_by: string | null
+          requested_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          canceled_at?: string | null
+          event_id: string
+          id?: string
+          promoted_at?: string | null
+          promoted_by?: string | null
+          requested_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          canceled_at?: string | null
+          event_id?: string
+          id?: string
+          promoted_at?: string | null
+          promoted_by?: string | null
+          requested_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_waitlist_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_waitlist_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_counts"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_waitlist_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_waitlist_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_event_with_host_rsvp_checkin"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_waitlist_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_events_for_current_user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_waitlist_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_waitlist_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "view_weekend_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_waitlist_promoted_by_fkey"
+            columns: ["promoted_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_waitlist_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           age_limit: number
@@ -2155,6 +2252,10 @@ export type Database = {
       f_user_event_current_or_next: { Args: never; Returns: Json }
       f_user_event_today_or_next: { Args: never; Returns: Json }
       f_user_token_balance: { Args: never; Returns: number }
+      fill_event_from_waitlist: {
+        Args: { p_event_id: string }
+        Returns: undefined
+      }
       geometry: { Args: { "": string }; Returns: unknown }
       geometry_above: {
         Args: { geom1: unknown; geom2: unknown }
@@ -2956,6 +3057,28 @@ export type Database = {
         }
         Returns: undefined
       }
+      waitlist_cancel: { Args: { p_event_id: string }; Returns: boolean }
+      waitlist_join: {
+        Args: { p_event_id: string }
+        Returns: {
+          canceled_at: string | null
+          event_id: string
+          id: string
+          promoted_at: string | null
+          promoted_by: string | null
+          requested_at: string
+          status: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "event_waitlist"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      waitlist_position: { Args: { p_event_id: string }; Returns: number }
+      waitlist_promote_next: { Args: { p_event_id: string }; Returns: Json }
     }
     Enums: {
       attend_status: "yes" | "no" | "can"

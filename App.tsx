@@ -2,8 +2,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import { Pressable, StatusBar, Text } from 'react-native';
+import { AppState, Pressable, StatusBar, Text, View } from 'react-native';
 import { useEffect, useState } from 'react';
+import * as Updates from 'expo-updates';
 
 import './global.css';
 import { MainTabNavigator } from '~/navigation/MainTabNavigator';
@@ -113,11 +114,58 @@ export default Sentry.wrap(function App() {
 function AppNavigation() {
   const { session, user, initializing } = useAuth();
   const [showSplash, setShowSplash] = useState(true);
+  const [showUpdateToast, setShowUpdateToast] = useState(false);
+  const [isApplyingUpdate, setIsApplyingUpdate] = useState(false);
 
   useEffect(() => {
     const timeout = setTimeout(() => setShowSplash(false), 1500);
     return () => clearTimeout(timeout);
   }, []);
+
+  useEffect(() => {
+    if (__DEV__ || !Updates.isEnabled) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const checkForUpdates = async () => {
+      try {
+        const result = await Updates.checkForUpdateAsync();
+        if (isMounted && result.isAvailable) {
+          setShowUpdateToast(true);
+        }
+      } catch {
+        // ignore update check failures
+      }
+    };
+
+    void checkForUpdates();
+
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        void checkForUpdates();
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.remove();
+    };
+  }, []);
+
+  const handleApplyUpdate = async () => {
+    if (isApplyingUpdate) return;
+
+    setIsApplyingUpdate(true);
+
+    try {
+      await Updates.fetchUpdateAsync();
+      await Updates.reloadAsync();
+    } catch {
+      setIsApplyingUpdate(false);
+    }
+  };
 
   if (showSplash || initializing) {
     return <SplashScreen />;
@@ -138,6 +186,48 @@ function AppNavigation() {
       {target === 'profileCompletion' && <ProfileCompletionStack />}
       {target === 'onboarding' && <OnboardingStack />}
       {target === 'app' && <AppStack />}
+      {showUpdateToast ? (
+        <View
+          pointerEvents="box-none"
+          style={{
+            position: 'absolute',
+            left: 16,
+            right: 16,
+            bottom: 24,
+          }}>
+          <View
+            style={{
+              backgroundColor: '#18181B',
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: '#27272A',
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.35,
+              shadowRadius: 12,
+              elevation: 12,
+            }}>
+            <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600', marginBottom: 6 }}>
+              Update available
+            </Text>
+            <Text style={{ color: '#D4D4D8', fontSize: 14, marginBottom: 12 }}>
+              A newer version of the app is ready to install.
+            </Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12 }}>
+              <Pressable onPress={() => setShowUpdateToast(false)} disabled={isApplyingUpdate}>
+                <Text style={{ color: '#A1A1AA', fontSize: 14, fontWeight: '600' }}>Later</Text>
+              </Pressable>
+              <Pressable onPress={handleApplyUpdate} disabled={isApplyingUpdate}>
+                <Text style={{ color: '#3B82F6', fontSize: 14, fontWeight: '700' }}>
+                  {isApplyingUpdate ? 'Updating...' : 'Update'}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      ) : null}
     </NavigationContainer>
   );
 }

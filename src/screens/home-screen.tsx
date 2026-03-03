@@ -154,7 +154,7 @@ export function HomeScreen() {
                 <HomeFeaturedSkeleton />
               ) : (
                 <EventCard
-                  onPress={() => handlePressNavigateToViewEvent(upcomingEvents[3]?.id)}
+                  onPress={() => handlePressNavigateToViewEvent(upcomingEvents[0]?.id)}
                   event={upcomingEvents[0]}
                   featured
                   imageSize="cover"

@@ -13,10 +13,13 @@ import { Icon } from '~/components/ui/icon';
 import { Spinner } from '~/components/ui/spinner';
 import {
   useEventById,
+  useJoinWaitlist,
+  useMyWaitlistEntry,
   useRefundTokens,
   useSpendTokens,
   useStorageImages,
   useTokenBalance,
+  useWaitlistPosition,
 } from '~/hooks';
 import { useEventVibes } from '~/hooks/useEvents';
 import { useCreateRsvp, useRemoveRsvp, useRsvps } from '~/hooks/useRsvps';
@@ -41,6 +44,7 @@ export function ViewEventScreen() {
   const { data: tokenBalance, isLoading: tokenBalanceLoading } = useTokenBalance();
   const { mutateAsync: createRsvpAsync, isPending: creatingRsvp } = useCreateRsvp();
   const { mutateAsync: removeRsvpAsync } = useRemoveRsvp();
+  const { mutateAsync: joinWaitlistAsync, isPending: joiningWaitlist } = useJoinWaitlist();
   const spendTokens = useSpendTokens();
   const refundTokens = useRefundTokens();
 
@@ -66,8 +70,17 @@ export function ViewEventScreen() {
   const tokenCost = event?.token_cost ?? 0;
   const currentBalance = tokenBalance ?? 0;
   const projectedBalance = useMemo(() => currentBalance - tokenCost, [currentBalance, tokenCost]);
+  const currentRsvpCount = event?.rsvps?.length ?? rsvps.length;
+  const remainingSpots = useMemo(() => {
+    if (event?.capacity == null) return null;
+    return Math.max(event.capacity - currentRsvpCount, 0);
+  }, [event?.capacity, currentRsvpCount]);
 
   const isRsvped = useMemo(() => rsvps.some((r) => r.user_id === userId), [rsvps, userId]);
+  const isSoldOut = remainingSpots !== null && remainingSpots <= 0;
+  const { data: waitlistEntry } = useMyWaitlistEntry(event?.id ?? '');
+  const { data: waitlistPosition } = useWaitlistPosition(event?.id ?? '', Boolean(waitlistEntry));
+  const isOnWaitlist = waitlistEntry?.status === 'waiting';
   const hasEventEnded = useMemo(() => {
     if (!event?.ends_at) return false;
     return dayjs().isAfter(dayjs(event.ends_at));
@@ -85,6 +98,19 @@ export function ViewEventScreen() {
 
   const handleSafeBack = () => {
     navigation.goBack();
+  };
+
+  const handleJoinWaitlist = async () => {
+    if (!event?.id) return;
+
+    try {
+      await joinWaitlistAsync({ eventId: event.id });
+      Alert.alert('Waitlist joined', "You're on the waitlist for this event.");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Something went wrong while joining the waitlist.';
+      Alert.alert('Waitlist', message);
+    }
   };
 
   const handleConfirmRsvp = async () => {
@@ -410,7 +436,7 @@ export function ViewEventScreen() {
                 {event.token_cost ?? 0}
               </Text>
             </Flex>
-            <Flex className="w-1/2">
+            <Flex className="w-1/2" gap={2}>
               {isRsvped && event.id ? (
                 <CancelRsvpButton
                   eventId={event.id}
@@ -418,9 +444,43 @@ export function ViewEventScreen() {
                   eventTitle={event.title ?? ''}
                   eventStartsAt={event.starts_at ?? null}
                 />
+              ) : isSoldOut ? (
+                <>
+                  <Button
+                    variant="primary"
+                    className={cn(
+                      'h-14 w-full rounded-lg',
+                      isOnWaitlist ? 'bg-background-700' : 'bg-primary-600'
+                    )}
+                    onPress={handleJoinWaitlist}
+                    disabled={isOnWaitlist || joiningWaitlist}>
+                    <Text bold size="lg" className="text-white">
+                      {joiningWaitlist
+                        ? 'Joining...'
+                        : isOnWaitlist
+                          ? 'On Waitlist'
+                          : 'Join Waitlist'}
+                    </Text>
+                  </Button>
+                  {isOnWaitlist && waitlistPosition ? (
+                    <Text size="sm" className="text-center text-white">
+                      {`You're #${waitlistPosition} on the waitlist`}
+                    </Text>
+                  ) : null}
+                </>
               ) : (
                 <RsvpButton onPress={openRsvpModal} />
               )}
+              {remainingSpots !== null && remainingSpots > 0 ? (
+                <Text
+                  size="sm"
+                  className={cn(
+                    'text-center',
+                    remainingSpots <= 10 ? 'text-error-500' : 'text-white'
+                  )}>
+                  {remainingSpots} {remainingSpots === 1 ? 'spot' : 'spots'} left
+                </Text>
+              ) : null}
             </Flex>
           </Flex>
         )}
