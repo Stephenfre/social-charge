@@ -1,6 +1,10 @@
 import type { ExpoConfig } from 'expo/config';
 
-const isDev = process.env.APP_ENV === 'development' || process.env.NODE_ENV === 'development';
+const appEnv =
+  process.env.APP_ENV ??
+  (process.env.EAS_BUILD_PROFILE === 'production' ? 'production' : 'development');
+const isDev = appEnv !== 'production';
+const appName = isDev ? 'Social Charge (Beta)' : 'Social Charge';
 const googleMapsApiKey =
   process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY ?? 'AIzaSyBCcCKvxUWXnP_qg9N2zoJclTIe4K_Cz8A';
 const googleIosUrlScheme = process.env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME;
@@ -14,7 +18,7 @@ const googleSignInPlugin: [string, any] | null = googleIosUrlScheme
   : null;
 
 const config: ExpoConfig = {
-  name: 'Social Charge (Beta)',
+  name: appName,
   slug: 'social-charge',
   scheme: 'socialcharge',
   version: '1.0.0',
@@ -57,6 +61,7 @@ const config: ExpoConfig = {
     },
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
+      CFBundleDisplayName: appName,
     },
   },
   android: {
