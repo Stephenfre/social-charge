@@ -5,6 +5,7 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { AppState, Pressable, StatusBar, Text, View } from 'react-native';
 import { useEffect, useState } from 'react';
 import * as Updates from 'expo-updates';
+import * as ExpoSplashScreen from 'expo-splash-screen';
 
 import './global.css';
 import { MainTabNavigator } from '~/navigation/MainTabNavigator';
@@ -25,9 +26,10 @@ import { AuthProvider, useAuth } from '~/providers/AuthProvider';
 // import { RevenueCatProvider } from '~/providers/RevenueCatProvider';
 import { ThemeProvider } from '~/providers/ThemeProvider';
 import { RootStack, type RootStackParamList } from '~/types/navigation.types';
-import { SplashScreen } from '~/components';
 import { resolveRootStackTarget } from '~/utils/resolveRootStackTarget';
 import * as Sentry from '@sentry/react-native';
+
+void ExpoSplashScreen.preventAutoHideAsync();
 
 const routingInstrumentation = Sentry.reactNavigationIntegration();
 const navigationRef = createNavigationContainerRef<RootStackParamList>();
@@ -113,14 +115,22 @@ export default Sentry.wrap(function App() {
 
 function AppNavigation() {
   const { session, user, initializing } = useAuth();
-  const [showSplash, setShowSplash] = useState(true);
   const [showUpdateToast, setShowUpdateToast] = useState(false);
   const [isApplyingUpdate, setIsApplyingUpdate] = useState(false);
 
   useEffect(() => {
-    const timeout = setTimeout(() => setShowSplash(false), 1500);
-    return () => clearTimeout(timeout);
-  }, []);
+    if (initializing) return;
+
+    const hideSplash = async () => {
+      try {
+        await ExpoSplashScreen.hideAsync();
+      } catch {
+        // Ignore splash hide errors.
+      }
+    };
+
+    void hideSplash();
+  }, [initializing]);
 
   useEffect(() => {
     if (__DEV__ || !Updates.isEnabled) {
@@ -167,8 +177,8 @@ function AppNavigation() {
     }
   };
 
-  if (showSplash || initializing) {
-    return <SplashScreen />;
+  if (initializing) {
+    return null;
   }
 
   const target = resolveRootStackTarget(session, user);

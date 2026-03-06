@@ -5,6 +5,7 @@ const appEnv =
   (process.env.EAS_BUILD_PROFILE === 'production' ? 'production' : 'development');
 const isDev = appEnv !== 'production';
 const appName = isDev ? 'Social Charge (Beta)' : 'Social Charge';
+const appBundleIdentifier = isDev ? 'dev.socialcharge.app' : 'com.socialcharge.app';
 const googleMapsApiKey =
   process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY ?? 'AIzaSyBCcCKvxUWXnP_qg9N2zoJclTIe4K_Cz8A';
 const googleIosUrlScheme = process.env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME;
@@ -29,6 +30,14 @@ const config: ExpoConfig = {
     tsconfigPaths: true,
   },
   plugins: [
+    [
+      'expo-splash-screen',
+      {
+        image: './assets/splash.png',
+        resizeMode: 'contain',
+        backgroundColor: '#ffffff',
+      },
+    ],
     'expo-font',
     'expo-maps',
     'expo-apple-authentication',
@@ -55,7 +64,7 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: true,
     usesAppleSignIn: true,
-    bundleIdentifier: 'com.socialcharge.app',
+    bundleIdentifier: appBundleIdentifier,
     config: {
       googleMapsApiKey,
     },
@@ -69,7 +78,7 @@ const config: ExpoConfig = {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#ffffff',
     },
-    package: 'com.socialcharge.app',
+    package: appBundleIdentifier,
     config: {
       googleMaps: {
         apiKey: googleMapsApiKey,
