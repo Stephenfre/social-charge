@@ -1,7 +1,16 @@
 import type { ExpoConfig } from 'expo/config';
 
+const appEnv =
+  process.env.APP_ENV ??
+  (process.env.EAS_BUILD_PROFILE === 'production' ? 'production' : 'development');
+const isDev = appEnv !== 'production';
+const appName = isDev ? 'Social Charge (Dev)' : 'Social Charge';
+const appBundleIdentifier = isDev ? 'dev.socialcharge.app' : 'com.socialcharge.app';
+const googleMapsApiKey =
+  process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY ?? 'AIzaSyBCcCKvxUWXnP_qg9N2zoJclTIe4K_Cz8A';
+
 const config: ExpoConfig = {
-  name: 'social charge',
+  name: appName,
   slug: 'social-charge',
   version: '1.0.0',
   web: {
@@ -33,12 +42,13 @@ const config: ExpoConfig = {
   assetBundlePatterns: ['**/*'],
   ios: {
     supportsTablet: true,
-    bundleIdentifier: 'com.socialcharge.app',
+    bundleIdentifier: appBundleIdentifier,
     config: {
-      googleMapsApiKey: 'AIzaSyBCcCKvxUWXnP_qg9N2zoJclTIe4K_Cz8A',
+      googleMapsApiKey,
     },
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
+      CFBundleDisplayName: appName,
     },
   },
   android: {
@@ -46,14 +56,16 @@ const config: ExpoConfig = {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#ffffff',
     },
-    package: 'com.socialcharge.app',
+    package: appBundleIdentifier,
   },
   newArchEnabled: true,
   extra: {
     revenuecat: {
-      apiKeyIos: 'appl_LKWuNKaYXNigYoCREEMMMSZjzVh',
-      testApiKeyIos: 'test_gReKYJMgdINDFUNLBtAWZBHxyoR',
-      entitlementIdentifier: 'Social Charge Pro',
+      apiKeyIos: process.env.EXPO_PUBLIC_RC_API_KEY_IOS,
+      apiKeyAndroid: process.env.EXPO_PUBLIC_RC_API_KEY_ANDROID,
+      testApiKeyIos: process.env.EXPO_PUBLIC_RC_TEST_API_KEY_IOS,
+      testApiKeyAndroid: process.env.EXPO_PUBLIC_RC_TEST_API_KEY_ANDROID,
+      entitlementIdentifier: 'pro',
       offeringIdentifier: 'sale',
       products: {
         monthly: 'monthly_subscription',
