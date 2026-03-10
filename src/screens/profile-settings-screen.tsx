@@ -1,14 +1,15 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { Alert, ScrollView } from 'react-native';
+import React, { useCallback, useMemo } from 'react';
+import { ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Sentry from '@sentry/react-native';
 import { Box, Button, Flex, Pressable, Text } from '~/components/ui';
 import { Icon } from '~/components/ui/icon';
-import { FileText, ScrollText, Sparkles, Trash2, User, Users } from 'lucide-react-native';
+import { FileText, Gem, ScrollText, Sparkles, User, Users } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { RootStackParamList } from '~/types/navigation.types';
 import { supabase } from '~/lib/supabase';
+import { useRevenueCat } from '~/providers/RevenueCatProvider';
 
 type SettingsSection = {
   title: string;
@@ -73,24 +74,23 @@ const ACCOUNT_BASE_ITEMS: SettingsSection['items'] = [
 
 export function ProfileSettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [deletingAccount, setDeletingAccount] = useState(false);
-  // const { isPro, presentPaywall, presentCustomerCenter, customerCenterEnabled } = useRevenueCat();
+  const { isPro, presentPaywall, presentCustomerCenter, customerCenterEnabled } = useRevenueCat();
 
   const sections = useMemo<SettingsSection[]>(() => {
     const accountItems = [...ACCOUNT_BASE_ITEMS];
 
-    // if (isPro) {
-    //   accountItems.unshift({
-    //     id: 'manage-subscription',
-    //     label: 'Manage Subscription',
-    //     description: customerCenterEnabled
-    //       ? 'Change or cancel your plan at any time'
-    //       : 'Switch plans or renew your access',
-    //     icon: Gem,
-    //     accentBg: '#FFF0EB',
-    //     accentColor: '#F97316',
-    //   });
-    // }
+    if (isPro) {
+      accountItems.unshift({
+        id: 'manage-subscription',
+        label: 'Manage Subscription',
+        description: customerCenterEnabled
+          ? 'Change or cancel your plan at any time'
+          : 'Switch plans or renew your access',
+        icon: Gem,
+        accentBg: '#FFF0EB',
+        accentColor: '#F97316',
+      });
+    }
 
     return [
       {
@@ -101,21 +101,21 @@ export function ProfileSettingsScreen() {
     ];
   }, [,]);
 
-  // const handleManageSubscription = useCallback(async () => {
-  //   if (customerCenterEnabled) {
-  //     await presentCustomerCenter();
-  //     return;
-  //   }
+  const handleManageSubscription = useCallback(async () => {
+    if (customerCenterEnabled) {
+      await presentCustomerCenter();
+      return;
+    }
 
-  //   await presentPaywall();
-  // }, [customerCenterEnabled, presentCustomerCenter, presentPaywall]);
+    await presentPaywall();
+  }, [customerCenterEnabled, presentCustomerCenter, presentPaywall]);
 
   const handleItemPress = useCallback(
     async (id: string) => {
       switch (id) {
-        // case 'manage-subscription':
-        //   await handleManageSubscription();
-        //   break;
+        case 'manage-subscription':
+          await handleManageSubscription();
+          break;
         case 'profile':
           navigation.navigate('Update Profile');
           break;
@@ -141,72 +141,6 @@ export function ProfileSettingsScreen() {
   const logout = async () => {
     await supabase.auth.signOut();
   };
-
-  const performSoftDelete = useCallback(async () => {
-    const userId = (await supabase.auth.getUser()).data.user?.id;
-    if (!userId) {
-      Alert.alert('Delete account', 'Could not find your account. Please log in again.');
-      return;
-    }
-
-    setDeletingAccount(true);
-    try {
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({
-          first_name: null,
-          last_name: null,
-          email: null,
-          phone_number: null,
-          city: null,
-          state: null,
-          country: null,
-          profile_picture: null,
-          preferred_vibe_slug: null,
-          onboarded: false,
-          token_count: 0,
-          membership: 'basic',
-          role: 'user',
-        })
-        .eq('id', userId);
-
-      if (updateError) {
-        throw updateError;
-      }
-
-      const { error: signOutError } = await supabase.auth.signOut();
-      if (signOutError) {
-        throw signOutError;
-      }
-    } catch (error) {
-      Sentry.captureException(error, {
-        tags: {
-          feature: 'account-soft-delete',
-          screen: 'profile-settings',
-        },
-      });
-      Alert.alert('Delete account', 'We could not delete your account right now. Please try again.');
-    } finally {
-      setDeletingAccount(false);
-    }
-  }, []);
-
-  const handleDeleteAccount = useCallback(() => {
-    Alert.alert(
-      'Delete account',
-      'This will remove your profile details and sign you out. This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            void performSoftDelete();
-          },
-        },
-      ]
-    );
-  }, [performSoftDelete]);
 
   return (
     <Flex flex className="bg-background-dark">
@@ -244,28 +178,13 @@ export function ProfileSettingsScreen() {
               </Box>
             ))}
           </Flex>
-          <Flex gap={3}>
-            <Button
-              className="rounded-lg border-2 border-error-500 bg-background-dark"
-              onPress={logout}
-              isDisabled={deletingAccount}>
-              <Text className="text-error-500" bold>
-                Logout
-              </Text>
-            </Button>
-            <Button
-              variant="outline"
-              className="rounded-lg border-2 border-error-500"
-              onPress={handleDeleteAccount}
-              isDisabled={deletingAccount}>
-              <Flex direction="row" align="center" className="gap-2">
-                <Icon as={Trash2} size="sm" className="text-error-500" />
-                <Text className="text-error-500" bold>
-                  {deletingAccount ? 'Deleting Account...' : 'Delete Account'}
-                </Text>
-              </Flex>
-            </Button>
-          </Flex>
+          <Button
+            className="rounded-lg border-2 border-error-500 bg-background-dark"
+            onPress={logout}>
+            <Text className="text-error-500" bold>
+              Logout
+            </Text>
+          </Button>
         </Flex>
       </ScrollView>
     </Flex>

@@ -11,6 +11,7 @@ import {
 import Purchases, {
   CustomerInfo,
   LOG_LEVEL,
+  PurchasesOffering,
   PurchasesError,
   PurchasesOfferings,
   PurchasesPackage,
@@ -38,11 +39,43 @@ type RevenueCatContextValue = {
   restorePurchases: () => Promise<CustomerInfo | null>;
   purchasePackage: (productKey: RevenueCatProductKey) => Promise<CustomerInfo | null>;
   presentPaywall: (offeringIdentifier?: string) => Promise<PAYWALL_RESULT | null>;
+  presentOfferingPaywall: (offeringIdentifier?: string) => Promise<PAYWALL_RESULT | null>;
+  presentPlacementPaywall: (placementIdentifier: string) => Promise<PAYWALL_RESULT | null>;
   presentCustomerCenter: () => Promise<void>;
   customerCenterEnabled: boolean;
 };
 
 const RevenueCatContext = createContext<RevenueCatContextValue | undefined>(undefined);
+
+const resolveOffering = (
+  availableOfferings: PurchasesOfferings | null,
+  offeringIdentifier: string
+): PurchasesOffering | null => {
+  if (!availableOfferings) {
+    return null;
+  }
+
+  const directMatch = availableOfferings.all?.[offeringIdentifier];
+  if (directMatch) {
+    return directMatch;
+  }
+
+  return (
+    Object.values(availableOfferings.all ?? {}).find((offering) => {
+      const candidate = offering as PurchasesOffering & {
+        id?: string;
+        identifier?: string;
+        offeringIdentifier?: string;
+      };
+
+      return (
+        candidate.identifier === offeringIdentifier ||
+        candidate.id === offeringIdentifier ||
+        candidate.offeringIdentifier === offeringIdentifier
+      );
+    }) ?? null
+  );
+};
 
 export function RevenueCatProvider({ children }: PropsWithChildren) {
   const { user } = useAuth();
@@ -90,7 +123,6 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
   const loadCustomerInfo = useCallback(async () => {
     try {
       const info = await Purchases.getCustomerInfo();
-      console.log('customerInfo', customerInfo)
       setCustomerInfo(info);
       setError(null);
       return info;
@@ -120,6 +152,12 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
 
     const configurePurchases = async () => {
       try {
+        if (!REVENUECAT_API_KEY) {
+          throw new Error(
+            'RevenueCat API key is missing. Set EXPO_PUBLIC_RC_API_KEY_IOS or EXPO_PUBLIC_RC_TEST_API_KEY_IOS for iOS builds.'
+          );
+        }
+
         Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.WARN);
         await Purchases.configure({ apiKey: REVENUECAT_API_KEY });
         if (!isMounted) {
@@ -276,6 +314,101 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
     [customerInfo, handlePurchasesError, loadCustomerInfo, loadOfferings, offerings]
   );
 
+  const presentOfferingPaywall = useCallback(
+    async (offeringIdentifier?: string) => {
+      try {
+        const availableOfferings = offerings ?? (await loadOfferings());
+        if (!offeringIdentifier) {
+          throw new Error('A RevenueCat offering identifier is required to present this paywall.');
+        }
+
+        const selectedOffering = resolveOffering(availableOfferings, offeringIdentifier);
+        if (!selectedOffering) {
+          const availableIds = Object.keys(availableOfferings?.all ?? {});
+          throw new Error(
+            `RevenueCat offering "${offeringIdentifier}" was not found. Available offerings: ${
+              availableIds.length ? availableIds.join(', ') : 'none'
+            }.`
+          );
+        }
+
+        const result = await RevenueCatUI.presentPaywall({
+          offering: selectedOffering,
+        });
+
+        if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
+          await Promise.all([loadCustomerInfo(), loadOfferings()]);
+        }
+
+        return result;
+      } catch (err) {
+        handlePurchasesError(err);
+        return null;
+      }
+    },
+    [handlePurchasesError, loadCustomerInfo, loadOfferings, offerings]
+  );
+
+  const presentPlacementPaywall = useCallback(
+    async (placementIdentifier: string) => {
+      try {
+        const purchasesWithPlacements = Purchases as typeof Purchases & {
+          getCurrentOfferingForPlacement?: (
+            placementIdentifier: string
+          ) => Promise<PurchasesOffering | null>;
+          setAttributes?: (attributes: Record<string, string>) => Promise<void>;
+          syncAttributesAndOfferingsIfNeeded?: () => Promise<PurchasesOfferings>;
+        };
+
+        if (!placementIdentifier) {
+          throw new Error('A RevenueCat placement identifier is required to present this paywall.');
+        }
+
+        if (!purchasesWithPlacements.getCurrentOfferingForPlacement) {
+          throw new Error(
+            'This RevenueCat SDK version does not support placements. Upgrade react-native-purchases to use placement-based targeting.'
+          );
+        }
+
+        await purchasesWithPlacements.setAttributes?.({
+          purchase_batteries: 'true',
+        });
+        const syncedOfferings = await purchasesWithPlacements.syncAttributesAndOfferingsIfNeeded?.();
+
+        console.log('[RevenueCat] synced offerings', {
+          currentOfferingIdentifier: syncedOfferings?.current?.identifier ?? null,
+          offeringIdentifiers: Object.keys(syncedOfferings?.all ?? {}),
+        });
+
+        const selectedOffering =
+          await purchasesWithPlacements.getCurrentOfferingForPlacement(placementIdentifier);
+
+        console.log('[RevenueCat] placement offering', {
+          placementIdentifier,
+          offeringIdentifier: selectedOffering?.identifier ?? null,
+        });
+
+        if (!selectedOffering) {
+          throw new Error(`No offering was returned for placement "${placementIdentifier}".`);
+        }
+
+        const result = await RevenueCatUI.presentPaywall({
+          offering: selectedOffering,
+        });
+
+        if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
+          await Promise.all([loadCustomerInfo(), loadOfferings()]);
+        }
+
+        return result;
+      } catch (err) {
+        handlePurchasesError(err);
+        return null;
+      }
+    },
+    [handlePurchasesError, loadCustomerInfo, loadOfferings]
+  );
+
   const presentCustomerCenter = useCallback(async () => {
     if (!revenueCatConfig.customerCenter.enabled) {
       await presentPaywall();
@@ -320,6 +453,8 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
       restorePurchases,
       purchasePackage,
       presentPaywall,
+      presentOfferingPaywall,
+      presentPlacementPaywall,
       presentCustomerCenter,
       customerCenterEnabled: revenueCatConfig.customerCenter.enabled,
     }),
@@ -332,6 +467,8 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
       loadingOfferings,
       offerings,
       presentCustomerCenter,
+      presentOfferingPaywall,
+      presentPlacementPaywall,
       presentPaywall,
       purchasePackage,
       loadCustomerInfo,

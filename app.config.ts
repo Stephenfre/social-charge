@@ -9,6 +9,10 @@ const appBundleIdentifier = isDev ? 'dev.socialcharge.app' : 'com.socialcharge.a
 const googleMapsApiKey =
   process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY ?? 'AIzaSyBCcCKvxUWXnP_qg9N2zoJclTIe4K_Cz8A';
 const googleIosUrlScheme = process.env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME;
+const revenueCatIosApiKey = process.env.EXPO_PUBLIC_RC_API_KEY_IOS;
+const revenueCatIosTestApiKey = process.env.EXPO_PUBLIC_RC_TEST_API_KEY_IOS;
+const revenueCatAndroidApiKey = process.env.EXPO_PUBLIC_RC_API_KEY_ANDROID;
+const revenueCatUseTestStore = process.env.EXPO_PUBLIC_RC_USE_TEST_STORE === 'true';
 const googleSignInPlugin: [string, any] | null = googleIosUrlScheme
   ? [
       '@react-native-google-signin/google-signin',
@@ -94,7 +98,10 @@ const config: ExpoConfig = {
   newArchEnabled: true,
   extra: {
     revenuecat: {
-      apiKey: 'appl_vPEKVcWjqyMLZtOtsCItPFFXDud',
+      iosApiKey: revenueCatIosApiKey,
+      iosTestApiKey: revenueCatIosTestApiKey,
+      androidApiKey: revenueCatAndroidApiKey,
+      useTestStore: revenueCatUseTestStore,
       entitlementIdentifier: 'Social Charge Pro',
       offeringIdentifier: 'default',
       products: {

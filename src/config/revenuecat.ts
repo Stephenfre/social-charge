@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 type RevenueCatProductsConfig = {
   monthly: string;
 };
@@ -13,7 +15,10 @@ type RevenueCatExtra = {
 };
 
 export type RevenueCatConfig = {
-  apiKey: string;
+  iosApiKey?: string;
+  iosTestApiKey?: string;
+  androidApiKey?: string;
+  useTestStore: boolean;
   entitlementIdentifier: string;
   offeringIdentifier?: string;
   products: RevenueCatProductsConfig;
@@ -22,16 +27,15 @@ export type RevenueCatConfig = {
   };
 };
 
-
-
-
-
 const defaultProducts: RevenueCatProductsConfig = {
   monthly: 'monthly',
 };
 
 export const revenueCatConfig: RevenueCatConfig = {
-  apiKey: 'appl_vPEKVcWjqyMLZtOtsCItPFFXDud',
+  iosApiKey: process.env.EXPO_PUBLIC_RC_API_KEY_IOS,
+  iosTestApiKey: process.env.EXPO_PUBLIC_RC_TEST_API_KEY_IOS,
+  androidApiKey: process.env.EXPO_PUBLIC_RC_API_KEY_ANDROID,
+  useTestStore: process.env.EXPO_PUBLIC_RC_USE_TEST_STORE === 'true',
   entitlementIdentifier: 'Social Charge Pro',
   offeringIdentifier: 'default',
   products: {
@@ -45,4 +49,9 @@ export const revenueCatConfig: RevenueCatConfig = {
 export type RevenueCatProductKey = keyof RevenueCatProductsConfig;
 
 export const REVENUECAT_ENTITLEMENT = revenueCatConfig.entitlementIdentifier;
-export const REVENUECAT_API_KEY = revenueCatConfig.apiKey;
+export const REVENUECAT_API_KEY =
+  Platform.OS === 'ios'
+    ? revenueCatConfig.useTestStore
+      ? revenueCatConfig.iosTestApiKey ?? revenueCatConfig.iosApiKey
+      : revenueCatConfig.iosApiKey
+    : revenueCatConfig.androidApiKey;
