@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo } from 'react';
-import { ScrollView } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { Alert, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Sentry from '@sentry/react-native';
@@ -9,6 +9,7 @@ import { FileText, Gem, ScrollText, Sparkles, User, Users } from 'lucide-react-n
 import type { LucideIcon } from 'lucide-react-native';
 import { RootStackParamList } from '~/types/navigation.types';
 import { supabase } from '~/lib/supabase';
+import { useAuth } from '~/providers/AuthProvider';
 import { useRevenueCat } from '~/providers/RevenueCatProvider';
 
 type SettingsSection = {
@@ -74,7 +75,9 @@ const ACCOUNT_BASE_ITEMS: SettingsSection['items'] = [
 
 export function ProfileSettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { session } = useAuth();
   const { isPro, presentPaywall, presentCustomerCenter, customerCenterEnabled } = useRevenueCat();
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   const sections = useMemo<SettingsSection[]>(() => {
     const accountItems = [...ACCOUNT_BASE_ITEMS];
@@ -142,6 +145,50 @@ export function ProfileSettingsScreen() {
     await supabase.auth.signOut();
   };
 
+  const handleDeleteAccount = useCallback(async () => {
+    const accessToken = session?.access_token;
+    if (!accessToken) {
+      Alert.alert('Delete account', 'You must be signed in to delete your account.');
+      return;
+    }
+
+    try {
+      setIsDeletingAccount(true);
+      const { data, error } = await supabase.functions.invoke('delete-account', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.status !== 'deleted') {
+        throw new Error('Unable to delete your account.');
+      }
+
+      await supabase.auth.signOut();
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Something went wrong while deleting your account.';
+      Alert.alert('Delete account failed', message);
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  }, [session?.access_token]);
+
+  const confirmDeleteAccount = useCallback(() => {
+    if (isDeletingAccount) {
+      return;
+    }
+
+    Alert.alert('Delete account', 'This permanently deletes your account and cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => void handleDeleteAccount() },
+    ]);
+  }, [handleDeleteAccount, isDeletingAccount]);
+
   return (
     <Flex flex className="bg-background-dark">
       <ScrollView className="px-4 py-6" contentContainerStyle={{ flex: 1, paddingBottom: 32 }}>
@@ -178,13 +225,23 @@ export function ProfileSettingsScreen() {
               </Box>
             ))}
           </Flex>
-          <Button
-            className="rounded-lg border-2 border-error-500 bg-background-dark"
-            onPress={logout}>
-            <Text className="text-error-500" bold>
-              Logout
-            </Text>
-          </Button>
+          <Flex>
+            <Button
+              className="rounded-lg border-2 border-error-500 bg-background-dark"
+              onPress={logout}>
+              <Text className="text-error-500" bold>
+                Logout
+              </Text>
+            </Button>
+            <Button
+              className="mt-3 rounded-lg bg-error-600"
+              onPress={confirmDeleteAccount}
+              disabled={isDeletingAccount}>
+              <Text className="text-white" bold>
+                {isDeletingAccount ? 'Deleting Account...' : 'Delete Account'}
+              </Text>
+            </Button>
+          </Flex>
         </Flex>
       </ScrollView>
     </Flex>

@@ -25,6 +25,7 @@ import {
   RevenueCatProductKey,
   revenueCatConfig,
 } from '~/config/revenuecat';
+import { supabase } from '~/lib/supabase';
 import { useAuth } from './AuthProvider';
 
 type RevenueCatContextValue = {
@@ -77,8 +78,33 @@ const resolveOffering = (
   );
 };
 
+const resolveDefaultPaywallOffering = (
+  availableOfferings: PurchasesOfferings | null
+): PurchasesOffering | null => {
+  if (!availableOfferings) {
+    return null;
+  }
+
+  if (availableOfferings.current) {
+    return availableOfferings.current;
+  }
+
+  if (revenueCatConfig.offeringIdentifier) {
+    const configuredOffering = resolveOffering(
+      availableOfferings,
+      revenueCatConfig.offeringIdentifier
+    );
+    if (configuredOffering) {
+      return configuredOffering;
+    }
+  }
+
+  const allOfferings = Object.values(availableOfferings.all ?? {});
+  return allOfferings[0] ?? null;
+};
+
 export function RevenueCatProvider({ children }: PropsWithChildren) {
-  const { user } = useAuth();
+  const { setUserState, user } = useAuth();
   const [initialized, setInitialized] = useState(false);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
   const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
@@ -207,6 +233,52 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
     syncUser();
   }, [handlePurchasesError, initialized, user?.id]);
 
+  useEffect(() => {
+    if (!initialized || !user?.id || !customerInfo) {
+      return;
+    }
+
+    if (user.membership === 'admin' || user.membership === 'superadmin') {
+      return;
+    }
+
+    const nextMembership = customerInfo.entitlements.active[REVENUECAT_ENTITLEMENT]
+      ? 'premium'
+      : 'basic';
+
+    if (user.membership === nextMembership) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const syncMembership = async () => {
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ membership: nextMembership })
+        .eq('id', user.id);
+
+      if (updateError) {
+        handlePurchasesError(updateError, { showAlert: false });
+        return;
+      }
+
+      if (cancelled) {
+        return;
+      }
+
+      setUserState((current) =>
+        current ? { ...current, membership: nextMembership } : current
+      );
+    };
+
+    syncMembership();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [customerInfo, handlePurchasesError, initialized, setUserState, user]);
+
   const restorePurchases = useCallback(async () => {
     try {
       const info = await Purchases.restorePurchases();
@@ -275,22 +347,26 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
     async (offeringIdentifier?: string) => {
       try {
         const availableOfferings = offerings ?? (await loadOfferings());
-        let selectedOffering =
-          offeringIdentifier && availableOfferings?.all
-            ? availableOfferings.all[offeringIdentifier] ?? availableOfferings.current
-            : availableOfferings?.current;
+        const selectedOffering = offeringIdentifier
+          ? resolveOffering(availableOfferings, offeringIdentifier) ??
+            resolveDefaultPaywallOffering(availableOfferings)
+          : resolveDefaultPaywallOffering(availableOfferings);
 
-        if (!selectedOffering && availableOfferings?.all && revenueCatConfig.offeringIdentifier) {
-          selectedOffering =
-            availableOfferings.all[revenueCatConfig.offeringIdentifier] ?? selectedOffering;
+        if (!selectedOffering) {
+          const availableIds = Object.keys(availableOfferings?.all ?? {});
+          throw new Error(
+            `No RevenueCat paywall offering is available. Available offerings: ${
+              availableIds.length ? availableIds.join(', ') : 'none'
+            }.`
+          );
         }
 
         const presentDirectly = () =>
-          RevenueCatUI.presentPaywall({ offering: selectedOffering ?? undefined });
+          RevenueCatUI.presentPaywall({ offering: selectedOffering });
 
         let result = await RevenueCatUI.presentPaywallIfNeeded({
           requiredEntitlementIdentifier: REVENUECAT_ENTITLEMENT,
-          offering: selectedOffering ?? undefined,
+          offering: selectedOffering,
         });
 
         const hasActiveEntitlement = Boolean(
@@ -373,20 +449,10 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
         await purchasesWithPlacements.setAttributes?.({
           purchase_batteries: 'true',
         });
-        const syncedOfferings = await purchasesWithPlacements.syncAttributesAndOfferingsIfNeeded?.();
-
-        console.log('[RevenueCat] synced offerings', {
-          currentOfferingIdentifier: syncedOfferings?.current?.identifier ?? null,
-          offeringIdentifiers: Object.keys(syncedOfferings?.all ?? {}),
-        });
+        await purchasesWithPlacements.syncAttributesAndOfferingsIfNeeded?.();
 
         const selectedOffering =
           await purchasesWithPlacements.getCurrentOfferingForPlacement(placementIdentifier);
-
-        console.log('[RevenueCat] placement offering', {
-          placementIdentifier,
-          offeringIdentifier: selectedOffering?.identifier ?? null,
-        });
 
         if (!selectedOffering) {
           throw new Error(`No offering was returned for placement "${placementIdentifier}".`);
@@ -397,7 +463,11 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
         });
 
         if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
-          await Promise.all([loadCustomerInfo(), loadOfferings()]);
+          await Promise.all([
+            loadCustomerInfo(),
+            loadOfferings(),
+            Purchases.invalidateVirtualCurrenciesCache(),
+          ]);
         }
 
         return result;

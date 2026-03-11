@@ -99,15 +99,15 @@ export default Sentry.wrap(function App() {
     <Sentry.ErrorBoundary fallback={(errorProps) => <RootErrorFallback {...errorProps} />}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <AuthProvider>
-          <RevenueCatProvider>
-            <QueryClientProvider client={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <RevenueCatProvider>
               <BottomSheetModalProvider>
                 <ThemeProvider>
                   <AppNavigation />
                 </ThemeProvider>
               </BottomSheetModalProvider>
-            </QueryClientProvider>
-          </RevenueCatProvider>
+            </RevenueCatProvider>
+          </QueryClientProvider>
         </AuthProvider>
       </GestureHandlerRootView>
     </Sentry.ErrorBoundary>

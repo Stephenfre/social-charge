@@ -19,6 +19,7 @@ export type RevenueCatConfig = {
   iosTestApiKey?: string;
   androidApiKey?: string;
   useTestStore: boolean;
+  virtualCurrencyCode?: string;
   entitlementIdentifier: string;
   offeringIdentifier?: string;
   products: RevenueCatProductsConfig;
@@ -36,6 +37,7 @@ export const revenueCatConfig: RevenueCatConfig = {
   iosTestApiKey: process.env.EXPO_PUBLIC_RC_TEST_API_KEY_IOS,
   androidApiKey: process.env.EXPO_PUBLIC_RC_API_KEY_ANDROID,
   useTestStore: process.env.EXPO_PUBLIC_RC_USE_TEST_STORE === 'true',
+  virtualCurrencyCode: process.env.EXPO_PUBLIC_RC_VIRTUAL_CURRENCY_CODE,
   entitlementIdentifier: 'Social Charge Pro',
   offeringIdentifier: 'default',
   products: {
@@ -55,3 +57,4 @@ export const REVENUECAT_API_KEY =
       ? revenueCatConfig.iosTestApiKey ?? revenueCatConfig.iosApiKey
       : revenueCatConfig.iosApiKey
     : revenueCatConfig.androidApiKey;
+export const REVENUECAT_VIRTUAL_CURRENCY_CODE = revenueCatConfig.virtualCurrencyCode;

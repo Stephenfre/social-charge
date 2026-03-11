@@ -12,19 +12,19 @@ import { EventCard } from '~/components/EventCard/EventCard';
 import { Badge, Box, Button, Divider, Flex, Image, Text } from '~/components/ui';
 import { Icon } from '~/components/ui/icon';
 import { Spinner } from '~/components/ui/spinner';
+import { REVENUECAT_VIRTUAL_CURRENCY_CODE } from '~/config/revenuecat';
 import {
   useCancelWaitlist,
   useEventById,
   useJoinWaitlist,
   useMyWaitlistEntry,
-  useRefundTokens,
-  useSpendTokens,
+  REVENUECAT_VIRTUAL_CURRENCY_QUERY_KEYS,
+  useRevenueCatVirtualCurrency,
   useStorageImages,
-  useTokenBalance,
   useWaitlistPosition,
 } from '~/hooks';
 import { useEventVibes } from '~/hooks/useEvents';
-import { useCreateRsvp, useRemoveRsvp, useRsvps } from '~/hooks/useRsvps';
+import { useRsvps } from '~/hooks/useRsvps';
 import { WAITLIST_KEYS } from '~/hooks/useWaitlist';
 import { EVENT_KEYS } from '~/hooks/useEvents';
 import { supabase } from '~/lib/supabase';
@@ -65,17 +65,13 @@ export function ViewEventScreen() {
   const insets = useSafeAreaInsets();
   const snapPoints = useMemo(() => ['75%'], []);
 
-  const { userId, user } = useAuth();
+  const { session, userId, user } = useAuth();
   const { data: event, isLoading } = useEventById(params.eventId);
   const { data: eventVibes = [] } = useEventVibes(params.eventId);
   const { data: rsvps = [], isLoading: rsvpLoading } = useRsvps(params.eventId);
-  const { data: tokenBalance, isLoading: tokenBalanceLoading } = useTokenBalance();
-  const { mutateAsync: createRsvpAsync, isPending: creatingRsvp } = useCreateRsvp();
-  const { mutateAsync: removeRsvpAsync } = useRemoveRsvp();
+  const { data: virtualCurrency, isLoading: tokenBalanceLoading } = useRevenueCatVirtualCurrency();
   const { mutateAsync: joinWaitlistAsync, isPending: joiningWaitlist } = useJoinWaitlist();
   const { mutateAsync: cancelWaitlistAsync, isPending: leavingWaitlist } = useCancelWaitlist();
-  const spendTokens = useSpendTokens();
-  const refundTokens = useRefundTokens();
 
   const hostPaths = event?.event_hosts?.map((host) => host.profile_picture) ?? [];
   const { data: hostAvatar, isLoading: hostAvatarLoading } = useStorageImages({
@@ -98,7 +94,7 @@ export function ViewEventScreen() {
   const [isReviewVisible, setIsReviewVisible] = useState(false);
 
   const tokenCost = event?.token_cost ?? 0;
-  const currentBalance = tokenBalance ?? 0;
+  const currentBalance = virtualCurrency?.balance ?? 0;
   const projectedBalance = useMemo(() => currentBalance - tokenCost, [currentBalance, tokenCost]);
   const currentRsvpCount = event?.rsvps?.length ?? rsvps.length;
   const remainingSpots = useMemo(() => {
@@ -219,55 +215,46 @@ export function ViewEventScreen() {
 
     setIsConfirmingRsvp(true);
     setRsvpError(null);
-    let rsvpAdded = false;
-    let tokensSpent = false;
 
     try {
-      const result = await createRsvpAsync({ eventId: event.id, userId });
-      if (result !== 'added') {
+      const accessToken = session?.access_token;
+      if (!accessToken) {
+        throw new Error('You must be signed in to RSVP for an event.');
+      }
+
+      const { data, error } = await supabase.functions.invoke('confirm-rsvp-and-spend-credits', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: { eventId: event.id },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.status !== 'added') {
         setRsvpError('You are already on the guest list for this event.');
         return;
       }
-      rsvpAdded = true;
 
-      if (tokenCost > 0) {
-        await spendTokens.mutateAsync({
-          amount: tokenCost,
-          eventId: event.id,
-          meta: {
-            type: 'event_rsvp',
-            eventId: event.id,
-            eventTitle: event.title,
-            tokenCost,
-          },
-        });
-        tokensSpent = true;
-      }
+      queryClient.invalidateQueries({ queryKey: EVENT_KEYS.eventById(event.id) });
+      queryClient.invalidateQueries({ queryKey: ['rsvps', event.id] });
+      queryClient.invalidateQueries({ queryKey: ['events', 'userEvents'] });
+      queryClient.invalidateQueries({ queryKey: ['events', 'checkIns', 'byUser', userId] });
+      queryClient.invalidateQueries({ queryKey: WAITLIST_KEYS.mine(event.id, userId) });
+      queryClient.invalidateQueries({ queryKey: WAITLIST_KEYS.position(event.id, userId) });
+      queryClient.invalidateQueries({ queryKey: EVENT_KEYS.checkIn(userId) });
+      queryClient.invalidateQueries({ queryKey: EVENT_KEYS.userCheckedIn(userId, event.id) });
+      queryClient.invalidateQueries({ queryKey: ['token-transactions', userId] });
+      queryClient.invalidateQueries({
+        queryKey: REVENUECAT_VIRTUAL_CURRENCY_QUERY_KEYS.balance(
+          userId ?? null,
+          REVENUECAT_VIRTUAL_CURRENCY_CODE ?? null
+        ),
+      });
 
       setShowRsvpModal(false);
       Alert.alert('RSVP Confirmed', 'Your RSVP is confirmed.');
     } catch (error) {
-      if (tokensSpent) {
-        try {
-          await refundTokens.mutateAsync({
-            amount: tokenCost,
-            eventId: event.id,
-            meta: {
-              type: 'event_rsvp_refund',
-              eventId: event.id,
-              eventTitle: event.title,
-              tokenCost,
-            },
-          });
-        } catch {}
-      }
-
-      if (rsvpAdded) {
-        try {
-          await removeRsvpAsync({ eventId: event.id });
-        } catch {}
-      }
-
       const message =
         (error as { message?: string })?.message ??
         'Something went wrong while attempting to RSVP.';
@@ -594,7 +581,7 @@ export function ViewEventScreen() {
         onCancel={closeRsvpModal}
         onConfirm={handleConfirmRsvp}
         mode={confirmationMode}
-        isProcessing={creatingRsvp || joiningWaitlist || isConfirmingRsvp}
+        isProcessing={joiningWaitlist || isConfirmingRsvp}
         eventTitle={event.title ?? ''}
         eventDate={eventDateDisplay}
         eventTimeRange={eventTimeDisplay}
@@ -787,6 +774,7 @@ export function CancelRsvpButton({
   eventStartsAt,
   className,
   canEdit,
+  onCancelled,
 }: {
   eventId: string;
   tokenCost?: number;
@@ -794,9 +782,11 @@ export function CancelRsvpButton({
   eventStartsAt?: string | null;
   className?: string;
   canEdit?: boolean;
+  onCancelled?: () => void;
 }) {
-  const { mutateAsync: removeRsvpAsync, isPending } = useRemoveRsvp();
-  const { mutateAsync: refundTokensAsync } = useRefundTokens();
+  const queryClient = useQueryClient();
+  const { session, userId } = useAuth();
+  const [isPending, setIsPending] = useState(false);
   const label = isPending ? <Spinner /> : 'Cancel RSVP';
   const startsAt = eventStartsAt ? dayjs(eventStartsAt) : null;
   const hoursUntilStart = startsAt ? startsAt.diff(dayjs(), 'hour', true) : Infinity;
@@ -804,28 +794,53 @@ export function CancelRsvpButton({
 
   const performCancellation = async (shouldRefund: boolean) => {
     try {
-      await removeRsvpAsync({ eventId });
-      if (shouldRefund && tokenCost > 0) {
-        await refundTokensAsync({
-          amount: tokenCost,
-          eventId,
-          meta: {
-            type: 'event_rsvp_refund',
-            eventId,
-            eventTitle,
-            tokenCost,
-          },
-        });
+      setIsPending(true);
+      const accessToken = session?.access_token;
+      if (!accessToken) {
+        throw new Error('You must be signed in to cancel an RSVP.');
       }
+
+      const { data, error } = await supabase.functions.invoke('cancel-rsvp-and-refund-credits', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: { eventId, shouldRefund },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.status !== 'removed') {
+        throw new Error('Unable to cancel RSVP.');
+      }
+
+      queryClient.invalidateQueries({ queryKey: EVENT_KEYS.eventById(eventId) });
+      queryClient.invalidateQueries({ queryKey: ['rsvps', eventId] });
+      queryClient.invalidateQueries({ queryKey: ['events', 'userEvents'] });
+      queryClient.invalidateQueries({ queryKey: ['events', 'checkIns', 'byUser', userId] });
+      queryClient.invalidateQueries({ queryKey: WAITLIST_KEYS.mine(eventId, userId ?? null) });
+      queryClient.invalidateQueries({ queryKey: WAITLIST_KEYS.position(eventId, userId ?? null) });
+      queryClient.invalidateQueries({ queryKey: EVENT_KEYS.checkIn(userId ?? null) });
+      queryClient.invalidateQueries({ queryKey: EVENT_KEYS.userCheckedIn(userId ?? null, eventId) });
+      queryClient.invalidateQueries({ queryKey: ['token-transactions', userId] });
+      queryClient.invalidateQueries({
+        queryKey: REVENUECAT_VIRTUAL_CURRENCY_QUERY_KEYS.balance(
+          userId ?? null,
+          REVENUECAT_VIRTUAL_CURRENCY_CODE ?? null
+        ),
+      });
+
       Alert.alert(
         'Your RSVP was removed',
         shouldRefund
           ? `${tokenCost} credits have been refunded.`
           : 'No credits were refunded because the grace period has passed.'
       );
+      onCancelled?.();
     } catch (err) {
       const message = (err as { message?: string })?.message ?? 'Something went wrong.';
       Alert.alert('Failed to cancel RSVP', message);
+    } finally {
+      setIsPending(false);
     }
   };
 

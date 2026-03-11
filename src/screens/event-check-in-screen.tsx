@@ -208,6 +208,7 @@ export function EventCheckInScreen() {
             tokenCost={event.token_cost ?? 0}
             eventTitle={event.title ?? ''}
             eventStartsAt={event.starts_at ?? null}
+            onCancelled={() => navigation.goBack()}
           />
         )}
       </Flex>

@@ -2211,7 +2211,30 @@ export type Database = {
             }
             Returns: string
           }
+      cancel_rsvp_after_credit_refund: {
+        Args: {
+          p_event_id: string
+          p_event_title: string
+          p_idempotency_key: string
+          p_should_refund: boolean
+          p_token_cost: number
+          p_user_id: string
+          p_virtual_currency_code: string
+        }
+        Returns: Json
+      }
       check_in: { Args: { event_id: string }; Returns: undefined }
+      confirm_rsvp_after_credit_spend: {
+        Args: {
+          p_event_id: string
+          p_event_title: string
+          p_idempotency_key: string
+          p_token_cost: number
+          p_user_id: string
+          p_virtual_currency_code: string
+        }
+        Returns: Json
+      }
       decline_friend_request: {
         Args: { p_from_user_id: string }
         Returns: undefined
