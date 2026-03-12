@@ -9,6 +9,7 @@ import {
   createNativeStackNavigator,
 } from '@react-navigation/native-stack';
 import { BottomTabNavigationProp, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import type { PolicyId } from '~/content/policies';
 
 /** ----- Tab params (if you have tabs) ----- */
 export type AppTabParamList = {
@@ -36,6 +37,7 @@ export type RootStackParamList = {
   SignIn: undefined;
   Terms: undefined;
   Privacy: undefined;
+  'Policy Detail': { policyId: PolicyId };
   HomeIndex: undefined;
   ProfileIndex: undefined;
   'Profile Settings': undefined;

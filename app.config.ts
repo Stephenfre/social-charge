@@ -105,9 +105,10 @@ const config: ExpoConfig = {
       entitlementIdentifier: 'Social Charge Pro',
       offeringIdentifier: 'default',
       products: {
-        monthly: 'sub_monthly_1',
-        yearly: 'sub_yearly',
-        lifetime: 'sub_lifetime',
+        monthly: 'monthly_subscription',
+        monthly_plus: 'monthly_plus_subscription',
+        monthly_premium: 'monthly_premium_subscription',
+        yearly: 'annual_subscription',
       },
       customerCenter: {
         enabled: true,

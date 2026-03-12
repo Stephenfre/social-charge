@@ -5,8 +5,21 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Sentry from '@sentry/react-native';
 import { Box, Button, Flex, Pressable, Text } from '~/components/ui';
 import { Icon } from '~/components/ui/icon';
-import { FileText, Gem, ScrollText, Sparkles, User, Users } from 'lucide-react-native';
+import {
+  Coins,
+  FileText,
+  Gem,
+  Handshake,
+  Lock,
+  Plane,
+  ScrollText,
+  ShieldAlert,
+  Sparkles,
+  User,
+  Users,
+} from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
+import type { PolicyId } from '~/content/policies';
 import { RootStackParamList } from '~/types/navigation.types';
 import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/providers/AuthProvider';
@@ -15,7 +28,7 @@ import { useRevenueCat } from '~/providers/RevenueCatProvider';
 type SettingsSection = {
   title: string;
   items: {
-    id: string;
+    id: string | PolicyId;
     label: string;
     description: string;
     icon: LucideIcon;
@@ -28,20 +41,68 @@ const SUPPORT_SECTION: SettingsSection = {
   title: 'Support',
   items: [
     {
-      id: 'terms',
-      label: 'Terms & Conditions',
-      description: 'Learn more about our terms',
-      icon: ScrollText,
+      id: 'safety-harassment',
+      label: 'Safety Policy',
+      description: 'Harassment reporting and member safety',
+      icon: ShieldAlert,
       accentBg: '#FCE4EC',
       accentColor: '#C2185B',
     },
     {
-      id: 'privacy',
-      label: 'Privacy Policy',
-      description: 'Read our privacy policy',
-      icon: FileText,
+      id: 'travel-waiver',
+      label: 'Travel Waiver',
+      description: 'Trip risk and travel responsibility terms',
+      icon: Plane,
       accentBg: '#F3E5F5',
       accentColor: '#8E24AA',
+    },
+    {
+      id: 'event-participation',
+      label: 'Event Agreement',
+      description: 'Rules and obligations for attending events',
+      icon: Handshake,
+      accentBg: '#E0F2FE',
+      accentColor: '#0284C7',
+    },
+    {
+      id: 'code-of-conduct',
+      label: 'Code of Conduct',
+      description: 'Member behavior and community rules',
+      icon: Users,
+      accentBg: '#E8F5E9',
+      accentColor: '#2E7D32',
+    },
+    {
+      id: 'liability-waiver',
+      label: 'Liability Waiver',
+      description: 'Assumption of risk and release terms',
+      icon: FileText,
+      accentBg: '#FFF0EB',
+      accentColor: '#F97316',
+    },
+    {
+      id: 'refund-credit-policy',
+      label: 'Refund & Credits',
+      description: 'SB Credit refunds, expirations, and rollovers',
+      icon: Coins,
+      accentBg: '#FEF3C7',
+      accentColor: '#CA8A04',
+    },
+    {
+      id: 'privacy-policy',
+      label: 'Privacy Policy',
+      description: 'How your data is collected and used',
+      icon: Lock,
+      accentBg: '#E0E7FF',
+      accentColor: '#4F46E5',
+    },
+    {
+      id: 'terms-of-service',
+      label: 'Terms of Service',
+      description: 'Membership and platform terms',
+      icon: ScrollText,
+      accentBg: '#F3F4F6',
+      accentColor: '#374151',
     },
   ],
 };
@@ -102,7 +163,7 @@ export function ProfileSettingsScreen() {
       },
       SUPPORT_SECTION,
     ];
-  }, [,]);
+  }, [customerCenterEnabled, isPro]);
 
   const handleManageSubscription = useCallback(async () => {
     if (customerCenterEnabled) {
@@ -128,17 +189,21 @@ export function ProfileSettingsScreen() {
         case 'new-users':
           navigation.navigate('New Users');
           break;
-        case 'terms':
-          navigation.navigate('Terms');
-          break;
-        case 'privacy':
-          navigation.navigate('Privacy');
+        case 'safety-harassment':
+        case 'travel-waiver':
+        case 'event-participation':
+        case 'code-of-conduct':
+        case 'liability-waiver':
+        case 'refund-credit-policy':
+        case 'privacy-policy':
+        case 'terms-of-service':
+          navigation.navigate('Policy Detail', { policyId: id });
           break;
         default:
           break;
       }
     },
-    [navigation]
+    [handleManageSubscription, navigation]
   );
 
   const logout = async () => {
@@ -191,8 +256,10 @@ export function ProfileSettingsScreen() {
 
   return (
     <Flex flex className="bg-background-dark">
-      <ScrollView className="px-4 py-6" contentContainerStyle={{ flex: 1, paddingBottom: 32 }}>
-        <Flex flex justify="space-between">
+      <ScrollView
+        className="px-4 py-6"
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 }}>
+        <Flex justify="space-between" className="min-h-full">
           <Flex>
             {sections.map((section) => (
               <Box key={section.title}>

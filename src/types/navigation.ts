@@ -1,4 +1,5 @@
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { PolicyId } from '~/content/policies';
 
 export type RootStackParamList = {
   Welcome: undefined;
@@ -10,6 +11,7 @@ export type RootStackParamList = {
   Root: undefined;
   Terms: undefined;
   Privacy: undefined;
+  'Policy Detail': { policyId: PolicyId };
   OnboardingStart: { editMode?: boolean; returnToSettings?: boolean } | undefined;
   OnboardingNight:
     | { entryReason?: string; editMode?: boolean; returnToSettings?: boolean }

@@ -15,6 +15,7 @@ import {
   OnboardingNightScreen,
   OnboardingStartScreen,
   OnboardingVibeScreen,
+  PolicyDetailScreen,
   RegisterScreen,
   RegisterUserNameScreen,
   PrivacyPolicyScreen,
@@ -253,6 +254,7 @@ const AuthStack = () => (
     <RootStack.Screen name="SignIn" component={SignInScreen} />
     <RootStack.Screen name="Terms" component={TermsAndConditionsScreen} />
     <RootStack.Screen name="Privacy" component={PrivacyPolicyScreen} />
+    <RootStack.Screen name="Policy Detail" component={PolicyDetailScreen} />
   </RootStack.Navigator>
 );
 
@@ -261,6 +263,7 @@ const ProfileCompletionStack = () => (
     <RootStack.Screen name="RegisterUserName" component={RegisterUserNameScreen} />
     <RootStack.Screen name="Terms" component={TermsAndConditionsScreen} />
     <RootStack.Screen name="Privacy" component={PrivacyPolicyScreen} />
+    <RootStack.Screen name="Policy Detail" component={PolicyDetailScreen} />
   </RootStack.Navigator>
 );
 
@@ -273,6 +276,7 @@ const OnboardingStack = () => (
     <RootStack.Screen name="OnboardingVibe" component={OnboardingVibeScreen} />
     <RootStack.Screen name="Terms" component={TermsAndConditionsScreen} />
     <RootStack.Screen name="Privacy" component={PrivacyPolicyScreen} />
+    <RootStack.Screen name="Policy Detail" component={PolicyDetailScreen} />
   </RootStack.Navigator>
 );
 
@@ -287,5 +291,6 @@ const AppStack = () => (
     <RootStack.Screen name="OnboardingVibe" component={OnboardingVibeScreen} />
     <RootStack.Screen name="Terms" component={TermsAndConditionsScreen} />
     <RootStack.Screen name="Privacy" component={PrivacyPolicyScreen} />
+    <RootStack.Screen name="Policy Detail" component={PolicyDetailScreen} />
   </RootStack.Navigator>
 );

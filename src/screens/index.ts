@@ -20,5 +20,6 @@ export { OnboardingBudgetScreen } from './onboarding-budget-screen';
 export { OnboardingVibeScreen } from './onboarding-vibe-screen';
 export { TermsAndConditionsScreen } from './terms-and-conditions-screen';
 export { PrivacyPolicyScreen } from './privacy-policy-screen';
+export { PolicyDetailScreen } from './policy-detail-screen';
 export { UpdateProfileScreen } from './update-profile-screen';
 export { NewUsersScreen } from './new-users-screen';
