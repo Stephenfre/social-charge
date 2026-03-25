@@ -130,11 +130,8 @@ export function OnboardingStartScreen() {
           <Flex direction="column" className="pt-4">
             <OnboardingProgress currentStep={1} totalSteps={5} />
             <Flex>
-              <Text size="2xl" bold className="mt-4">
+              <Text size="4xl" bold className="mt-4">
                 Why are you here?
-              </Text>
-              <Text size="sm" className="text-gray-300">
-                We will tailor the rest of onboarding so every screen feels relevant.
               </Text>
             </Flex>
           </Flex>

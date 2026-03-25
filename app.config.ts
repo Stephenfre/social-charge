@@ -12,7 +12,10 @@ const googleIosUrlScheme = process.env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME;
 const revenueCatIosApiKey = process.env.EXPO_PUBLIC_RC_API_KEY_IOS;
 const revenueCatIosTestApiKey = process.env.EXPO_PUBLIC_RC_TEST_API_KEY_IOS;
 const revenueCatAndroidApiKey = process.env.EXPO_PUBLIC_RC_API_KEY_ANDROID;
+const revenueCatAndroidTestApiKey = process.env.EXPO_PUBLIC_RC_TEST_API_KEY_ANDROID;
 const revenueCatUseTestStore = process.env.EXPO_PUBLIC_RC_USE_TEST_STORE === 'true';
+const revenueCatEntitlementIdentifier = process.env.EXPO_PUBLIC_RC_ENTITLEMENT_IDENTIFIER ?? 'pro';
+const revenueCatOfferingIdentifier = process.env.EXPO_PUBLIC_RC_OFFERING_IDENTIFIER ?? 'sale';
 const googleSignInPlugin: [string, any] | null = googleIosUrlScheme
   ? [
       '@react-native-google-signin/google-signin',
@@ -66,7 +69,7 @@ const config: ExpoConfig = {
   },
   assetBundlePatterns: ['**/*'],
   ios: {
-    supportsTablet: true,
+    supportsTablet: false,
     usesAppleSignIn: true,
     bundleIdentifier: appBundleIdentifier,
     config: {
@@ -98,12 +101,13 @@ const config: ExpoConfig = {
   newArchEnabled: true,
   extra: {
     revenuecat: {
-      iosApiKey: revenueCatIosApiKey,
-      iosTestApiKey: revenueCatIosTestApiKey,
-      androidApiKey: revenueCatAndroidApiKey,
+      apiKeyIos: revenueCatIosApiKey,
+      testApiKeyIos: revenueCatIosTestApiKey,
+      apiKeyAndroid: revenueCatAndroidApiKey,
+      testApiKeyAndroid: revenueCatAndroidTestApiKey,
       useTestStore: revenueCatUseTestStore,
-      entitlementIdentifier: 'Social Charge Pro',
-      offeringIdentifier: 'default',
+      entitlementIdentifier: revenueCatEntitlementIdentifier,
+      offeringIdentifier: revenueCatOfferingIdentifier,
       products: {
         monthly: 'monthly_subscription',
         monthly_plus: 'monthly_plus_subscription',

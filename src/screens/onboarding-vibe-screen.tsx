@@ -127,7 +127,7 @@ export function OnboardingVibeScreen() {
       <Flex flex={1} gap={8}>
         <Flex gap={3} className="pt-6">
           <OnboardingProgress currentStep={2} totalSteps={5} />
-          <Text size="4xl" bold>
+          <Text size="4xl" bold className="mt-4">
             What's your vibe?
           </Text>
           <Text className="text-gray-300">Pick one so we can prioritize the right events.</Text>

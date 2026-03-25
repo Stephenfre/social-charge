@@ -318,7 +318,7 @@ export function OnboardingNightScreen() {
           <Flex className="pt-4">
             <OnboardingProgress currentStep={5} totalSteps={5} />
             <Flex>
-              <Text size="2xl" bold className="mt-4">
+              <Text size="4xl" bold className="mb-2 mt-4">
                 What does a great hangout look like for you?
               </Text>
               <Text size="md" className="text-gray-300">

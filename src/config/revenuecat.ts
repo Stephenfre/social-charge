@@ -14,10 +14,15 @@ type RevenueCatExtra = {
   apiKeyAndroid?: string;
   testApiKeyIos?: string;
   testApiKeyAndroid?: string;
+  iosApiKey?: string;
+  androidApiKey?: string;
+  iosTestApiKey?: string;
+  androidTestApiKey?: string;
   entitlementIdentifier?: string;
   offeringIdentifier?: string;
   products?: Partial<RevenueCatProductsConfig>;
   customerCenter?: { enabled?: boolean };
+  useTestStore?: boolean;
 };
 
 export type RevenueCatConfig = {
@@ -31,7 +36,10 @@ export type RevenueCatConfig = {
 
 const extra = (Constants.expoConfig?.extra?.revenuecat as RevenueCatExtra | undefined) ?? {};
 
-const useTestStore = process.env.EXPO_PUBLIC_RC_USE_TEST_STORE === 'true';
+const useTestStore =
+  process.env.EXPO_PUBLIC_RC_USE_TEST_STORE != null
+    ? process.env.EXPO_PUBLIC_RC_USE_TEST_STORE === 'true'
+    : extra.useTestStore === true;
 
 // Prefer env vars, fall back to app config extra.
 // Use platform-specific keys.
@@ -46,8 +54,12 @@ const apiKey = (() => {
     ? process.env.EXPO_PUBLIC_RC_TEST_API_KEY_IOS
     : process.env.EXPO_PUBLIC_RC_TEST_API_KEY_ANDROID;
 
-  const extraProd = isIos ? extra.apiKeyIos : extra.apiKeyAndroid;
-  const extraTest = isIos ? extra.testApiKeyIos : extra.testApiKeyAndroid;
+  const extraProd = isIos
+    ? (extra.apiKeyIos ?? extra.iosApiKey)
+    : (extra.apiKeyAndroid ?? extra.androidApiKey);
+  const extraTest = isIos
+    ? (extra.testApiKeyIos ?? extra.iosTestApiKey)
+    : (extra.testApiKeyAndroid ?? extra.androidTestApiKey);
 
   const chosen = useTestStore ? (envTest ?? extraTest) : (envProd ?? extraProd);
 
@@ -71,8 +83,12 @@ const defaultProducts: RevenueCatProductsConfig = {
 
 export const revenueCatConfig: RevenueCatConfig = {
   apiKey,
-  entitlementIdentifier: extra.entitlementIdentifier ?? 'pro', // keep this stable; don't use display names with spaces
-  offeringIdentifier: extra.offeringIdentifier ?? 'sale',
+  entitlementIdentifier:
+    process.env.EXPO_PUBLIC_RC_ENTITLEMENT_IDENTIFIER ??
+    extra.entitlementIdentifier ??
+    'pro',
+  offeringIdentifier:
+    process.env.EXPO_PUBLIC_RC_OFFERING_IDENTIFIER ?? extra.offeringIdentifier ?? 'sale',
   products: {
     monthly: extra.products?.monthly ?? defaultProducts.monthly,
     monthly_plus: extra.products?.monthly_plus ?? defaultProducts.monthly_plus,

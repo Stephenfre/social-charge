@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Flex, Text } from '~/components/ui';
+import { Button, Flex, Pressable, Text } from '~/components/ui';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NavigationProp } from '~/types/navigation';
 import { supabase } from '~/lib/supabase';
 
 import { cn } from '~/utils/cn';
-import { INTEREST_CATEGORIES } from '~/constants/interests';
-import { categoryEmojis, interestEmojis } from '~/utils/const';
+import { interestEmojis } from '~/utils/const';
 import { useAuth } from '~/providers/AuthProvider';
 import { Constants, Enums } from '~/types/database.types';
 import { OnboardingProgress } from '~/components/OnboardingProgress';
@@ -120,56 +119,60 @@ export function InterestScreen() {
 
   return (
     <SafeAreaView className="h-full bg-background-dark px-4">
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <Flex flex={1} direction="column" justify="space-between">
-          <Flex gap={3} className="pt-4">
+      <Flex flex={1}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 24 }}>
+          <Flex gap={2} className="pt-4">
             <OnboardingProgress currentStep={3} totalSteps={5} />
-            <Text size="4xl" bold>
-              Choose 5 things worth showing up for
+            <Text size="4xl" className="mt-4" bold>
+              Let&apos;s select your interests.
             </Text>
-            <Text>Choose what excites you and meet people who feel the same.</Text>
+            <Text>Please select five interests to continue.</Text>
           </Flex>
-          <Flex flex={1} gap={10} className="mt-4">
-            {Object.entries(INTEREST_CATEGORIES).map(([category, interests]) => (
-              <Flex key={category} direction="column" gap={2}>
-                <Text size="lg" bold className="capitalize">
-                  {categoryEmojis[category as keyof typeof categoryEmojis]} {category}
-                </Text>
-                <Flex gap={4}>
-                  {interests.map((interest: string) => (
-                    <Button
-                      key={interest}
-                      variant="outline"
-                      size="xl"
-                      className={`rounded-xl ${selectedInterests.includes(interest) && 'border border-white/20 bg-white/10'}`}
-                      onPress={() => handleSelectInterest(interest)}>
-                      <Text className={`${selectedInterests.includes(interest) && 'text-white'}`}>
-                        {interestEmojis[interest]} {interest}
-                      </Text>
-                    </Button>
-                  ))}
-                </Flex>
-              </Flex>
-            ))}
+
+          <Flex direction="row" wrap="wrap" gap={2} className="mt-6">
+            {validInterests.map((interest) => {
+              const selected = selectedInterests.includes(interest);
+
+              return (
+                <Pressable
+                  key={interest}
+                  onPress={() => handleSelectInterest(interest)}
+                  className={cn(
+                    'rounded-full border px-8 py-4',
+                    selected
+                      ? 'border-primary-500 bg-primary-50'
+                      : 'border-outline-300 bg-background-dark'
+                  )}>
+                  <Text
+                    className={cn(
+                      'text-md',
+                      selected ? 'text-primary-700' : 'text-background-light'
+                    )}>
+                    {interestEmojis[interest] ?? '•'} {interest}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </Flex>
-          <Flex direction="row" justify="space-between" align="center" className="mt-10">
-            <Flex direction="row" align="center" gap={4}>
-              <Button
-                size="xl"
-                className={cn(
-                  'h-14 w-full rounded-xl bg-primary-500',
-                  selectedInterests.length < 5 && 'bg-background-500'
-                )}
-                disabled={selectedInterests.length < 5}
-                onPress={onFinish}>
-                <Text size="lg" weight="600" className="text-white">
-                  Next
-                </Text>
-              </Button>
-            </Flex>
-          </Flex>
+        </ScrollView>
+
+        <Flex className="pb-4 pt-3">
+          <Button
+            size="xl"
+            className={cn(
+              'h-14 w-full rounded-xl bg-primary-500',
+              selectedInterests.length < 5 && 'bg-gray-500'
+            )}
+            disabled={selectedInterests.length < 5 || saving}
+            onPress={onFinish}>
+            <Text size="lg" weight="600" className="text-white">
+              Next
+            </Text>
+          </Button>
         </Flex>
-      </ScrollView>
+      </Flex>
     </SafeAreaView>
   );
 }

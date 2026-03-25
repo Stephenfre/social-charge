@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
 } from 'react';
+import Constants from 'expo-constants';
 import Purchases, {
   CustomerInfo,
   LOG_LEVEL,
@@ -47,6 +48,11 @@ type RevenueCatContextValue = {
 };
 
 const RevenueCatContext = createContext<RevenueCatContextValue | undefined>(undefined);
+
+const hasAnyOfferings = (availableOfferings: PurchasesOfferings | null) =>
+  Boolean(
+    availableOfferings?.current || Object.keys(availableOfferings?.all ?? {}).length > 0
+  );
 
 const resolveOffering = (
   availableOfferings: PurchasesOfferings | null,
@@ -101,6 +107,28 @@ const resolveDefaultPaywallOffering = (
 
   const allOfferings = Object.values(availableOfferings.all ?? {});
   return allOfferings[0] ?? null;
+};
+
+const buildNoOfferingsMessage = (availableOfferings: PurchasesOfferings | null) => {
+  const availableIds = Object.keys(availableOfferings?.all ?? {});
+  const bundleIdentifier =
+    Constants.expoConfig?.ios?.bundleIdentifier ??
+    Constants.expoConfig?.android?.package ??
+    'unknown';
+  const configuredOffering = revenueCatConfig.offeringIdentifier ?? 'not set';
+  const storeMode = revenueCatConfig.useTestStore ? 'test' : 'production';
+
+  return [
+    `No RevenueCat paywall offering is available. Available offerings: ${
+      availableIds.length ? availableIds.join(', ') : 'none'
+    }.`,
+    `Configured offering: ${configuredOffering}.`,
+    `Bundle ID: ${bundleIdentifier}.`,
+    `Store mode: ${storeMode}.`,
+    revenueCatConfig.useTestStore
+      ? 'This build uses the RevenueCat Test Store SDK key, so App Store products will not load unless the project also has Test Store products configured.'
+      : 'In production, this usually means the public RevenueCat SDK key points to a different project than the dashboard you are checking, or the App Store products are unavailable for this bundle ID.',
+  ].join(' ');
 };
 
 export function RevenueCatProvider({ children }: PropsWithChildren) {
@@ -164,6 +192,9 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
       const fetchedOfferings = await Purchases.getOfferings();
       setOfferings(fetchedOfferings);
       setError(null);
+      if (!hasAnyOfferings(fetchedOfferings)) {
+        console.warn('[RevenueCat]', buildNoOfferingsMessage(fetchedOfferings));
+      }
       return fetchedOfferings;
     } catch (err) {
       handlePurchasesError(err, { showAlert: false });
@@ -218,12 +249,24 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
       return;
     }
 
+    let cancelled = false;
+
     const syncUser = async () => {
       try {
         if (user?.id) {
-          await Purchases.logIn(user.id);
+          const loginResult = await Purchases.logIn(user.id);
+          if (!cancelled) {
+            setCustomerInfo(loginResult.customerInfo);
+          }
         } else {
-          await Purchases.logOut();
+          const loggedOutCustomerInfo = await Purchases.logOut();
+          if (!cancelled) {
+            setCustomerInfo(loggedOutCustomerInfo);
+          }
+        }
+
+        if (!cancelled) {
+          await Promise.all([loadCustomerInfo(), loadOfferings()]);
         }
       } catch (err) {
         handlePurchasesError(err, { showAlert: false });
@@ -231,7 +274,11 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
     };
 
     syncUser();
-  }, [handlePurchasesError, initialized, user?.id]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [handlePurchasesError, initialized, loadCustomerInfo, loadOfferings, user?.id]);
 
   useEffect(() => {
     if (!initialized || !user?.id || !customerInfo) {
@@ -292,14 +339,17 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
   }, [handlePurchasesError]);
 
   const getPackageForProduct = useCallback(
-    (productIdentifier: string): PurchasesPackage | null => {
-      if (!offerings) {
+    (
+      availableOfferings: PurchasesOfferings | null,
+      productIdentifier: string
+    ): PurchasesPackage | null => {
+      if (!availableOfferings) {
         return null;
       }
 
       const allOfferings = [
-        ...(offerings.current ? [offerings.current] : []),
-        ...Object.values(offerings.all ?? {}),
+        ...(availableOfferings.current ? [availableOfferings.current] : []),
+        ...Object.values(availableOfferings.all ?? {}),
       ];
 
       for (const offering of allOfferings) {
@@ -313,19 +363,19 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
 
       return null;
     },
-    [offerings]
+    []
   );
 
   const purchasePackage = useCallback(
     async (productKey: RevenueCatProductKey) => {
       try {
         const targetProductId = revenueCatConfig.products[productKey];
-        const availableOfferings = offerings ?? (await loadOfferings());
-        if (!availableOfferings) {
-          throw new Error('No offerings are available for purchase yet.');
+        const availableOfferings = hasAnyOfferings(offerings) ? offerings : await loadOfferings();
+        if (!hasAnyOfferings(availableOfferings)) {
+          throw new Error(buildNoOfferingsMessage(availableOfferings));
         }
 
-        const pkg = getPackageForProduct(targetProductId);
+        const pkg = getPackageForProduct(availableOfferings, targetProductId);
         if (!pkg) {
           throw new Error('The selected product is not part of the current offering.');
         }
@@ -346,19 +396,14 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
   const presentPaywall = useCallback(
     async (offeringIdentifier?: string) => {
       try {
-        const availableOfferings = offerings ?? (await loadOfferings());
+        const availableOfferings = hasAnyOfferings(offerings) ? offerings : await loadOfferings();
         const selectedOffering = offeringIdentifier
           ? resolveOffering(availableOfferings, offeringIdentifier) ??
             resolveDefaultPaywallOffering(availableOfferings)
           : resolveDefaultPaywallOffering(availableOfferings);
 
         if (!selectedOffering) {
-          const availableIds = Object.keys(availableOfferings?.all ?? {});
-          throw new Error(
-            `No RevenueCat paywall offering is available. Available offerings: ${
-              availableIds.length ? availableIds.join(', ') : 'none'
-            }.`
-          );
+          throw new Error(buildNoOfferingsMessage(availableOfferings));
         }
 
         const presentDirectly = () =>
@@ -393,7 +438,7 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
   const presentOfferingPaywall = useCallback(
     async (offeringIdentifier?: string) => {
       try {
-        const availableOfferings = offerings ?? (await loadOfferings());
+        const availableOfferings = hasAnyOfferings(offerings) ? offerings : await loadOfferings();
         if (!offeringIdentifier) {
           throw new Error('A RevenueCat offering identifier is required to present this paywall.');
         }

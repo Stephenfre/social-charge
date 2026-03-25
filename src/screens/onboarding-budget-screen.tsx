@@ -155,7 +155,7 @@ export function OnboardingBudgetScreen() {
         <Flex flex={1} gap={8}>
           <Flex gap={3} className="pt-6">
             <OnboardingProgress currentStep={4} totalSteps={5} />
-            <Text size="4xl" bold>
+            <Text size="4xl" bold className="mt-4">
               When it comes to events...
             </Text>
           </Flex>
