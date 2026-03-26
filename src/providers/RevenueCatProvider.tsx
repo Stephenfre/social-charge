@@ -186,6 +186,49 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
     }
   }, [handlePurchasesError]);
 
+  const getProductDiagnosticsSummary = useCallback(async (source: string) => {
+    const requestedProductIds = Array.from(new Set(Object.values(revenueCatConfig.products)));
+
+    try {
+      const products = await Purchases.getProducts(requestedProductIds);
+      const returnedProductIds = products.map((product) => product.identifier);
+
+      console.warn('[RevenueCat] Product diagnostics', {
+        source,
+        requestedProductIds,
+        returnedProductIds,
+        returnedProductsCount: products.length,
+      });
+
+      return `Requested product IDs: ${requestedProductIds.join(', ')}. Returned products: ${
+        returnedProductIds.length ? returnedProductIds.join(', ') : 'none'
+      }.`;
+    } catch (err) {
+      const purchasesError = err as PurchasesError;
+
+      console.warn('[RevenueCat] Product diagnostics failed', {
+        source,
+        requestedProductIds,
+        error: err,
+      });
+
+      return `Requested product IDs: ${requestedProductIds.join(
+        ', '
+      )}. Product lookup failed: ${
+        typeof purchasesError?.message === 'string' ? purchasesError.message : 'unknown error'
+      }.`;
+    }
+  }, []);
+
+  const buildNoOfferingsMessageWithDiagnostics = useCallback(
+    async (availableOfferings: PurchasesOfferings | null, source: string) => {
+      const baseMessage = buildNoOfferingsMessage(availableOfferings);
+      const diagnosticsSummary = await getProductDiagnosticsSummary(source);
+      return `${baseMessage} ${diagnosticsSummary}`;
+    },
+    [getProductDiagnosticsSummary]
+  );
+
   const loadOfferings = useCallback(async () => {
     setLoadingOfferings(true);
     try {
@@ -193,7 +236,10 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
       setOfferings(fetchedOfferings);
       setError(null);
       if (!hasAnyOfferings(fetchedOfferings)) {
-        console.warn('[RevenueCat]', buildNoOfferingsMessage(fetchedOfferings));
+        console.warn(
+          '[RevenueCat]',
+          await buildNoOfferingsMessageWithDiagnostics(fetchedOfferings, 'loadOfferings')
+        );
       }
       return fetchedOfferings;
     } catch (err) {
@@ -202,7 +248,7 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
     } finally {
       setLoadingOfferings(false);
     }
-  }, [handlePurchasesError]);
+  }, [buildNoOfferingsMessageWithDiagnostics, handlePurchasesError]);
 
   useEffect(() => {
     let isMounted = true;
@@ -372,7 +418,9 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
         const targetProductId = revenueCatConfig.products[productKey];
         const availableOfferings = hasAnyOfferings(offerings) ? offerings : await loadOfferings();
         if (!hasAnyOfferings(availableOfferings)) {
-          throw new Error(buildNoOfferingsMessage(availableOfferings));
+          throw new Error(
+            await buildNoOfferingsMessageWithDiagnostics(availableOfferings, 'purchasePackage')
+          );
         }
 
         const pkg = getPackageForProduct(availableOfferings, targetProductId);
@@ -390,7 +438,13 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
         return null;
       }
     },
-    [getPackageForProduct, handlePurchasesError, loadOfferings, offerings]
+    [
+      buildNoOfferingsMessageWithDiagnostics,
+      getPackageForProduct,
+      handlePurchasesError,
+      loadOfferings,
+      offerings,
+    ]
   );
 
   const presentPaywall = useCallback(
@@ -403,7 +457,9 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
           : resolveDefaultPaywallOffering(availableOfferings);
 
         if (!selectedOffering) {
-          throw new Error(buildNoOfferingsMessage(availableOfferings));
+          throw new Error(
+            await buildNoOfferingsMessageWithDiagnostics(availableOfferings, 'presentPaywall')
+          );
         }
 
         const presentDirectly = () =>
@@ -432,7 +488,14 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
         return null;
       }
     },
-    [customerInfo, handlePurchasesError, loadCustomerInfo, loadOfferings, offerings]
+    [
+      buildNoOfferingsMessageWithDiagnostics,
+      customerInfo,
+      handlePurchasesError,
+      loadCustomerInfo,
+      loadOfferings,
+      offerings,
+    ]
   );
 
   const presentOfferingPaywall = useCallback(
@@ -449,7 +512,7 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
           throw new Error(
             `RevenueCat offering "${offeringIdentifier}" was not found. Available offerings: ${
               availableIds.length ? availableIds.join(', ') : 'none'
-            }.`
+            }. ${await getProductDiagnosticsSummary('presentOfferingPaywall')}`
           );
         }
 
@@ -467,7 +530,13 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
         return null;
       }
     },
-    [handlePurchasesError, loadCustomerInfo, loadOfferings, offerings]
+    [
+      getProductDiagnosticsSummary,
+      handlePurchasesError,
+      loadCustomerInfo,
+      loadOfferings,
+      offerings,
+    ]
   );
 
   const presentPlacementPaywall = useCallback(
