@@ -14,8 +14,9 @@ const revenueCatIosTestApiKey = process.env.EXPO_PUBLIC_RC_TEST_API_KEY_IOS;
 const revenueCatAndroidApiKey = process.env.EXPO_PUBLIC_RC_API_KEY_ANDROID;
 const revenueCatAndroidTestApiKey = process.env.EXPO_PUBLIC_RC_TEST_API_KEY_ANDROID;
 const revenueCatUseTestStore = process.env.EXPO_PUBLIC_RC_USE_TEST_STORE === 'true';
-const revenueCatEntitlementIdentifier = process.env.EXPO_PUBLIC_RC_ENTITLEMENT_IDENTIFIER ?? 'pro';
-const revenueCatOfferingIdentifier = process.env.EXPO_PUBLIC_RC_OFFERING_IDENTIFIER ?? 'sale';
+const revenueCatEntitlementIdentifier =
+  process.env.EXPO_PUBLIC_RC_ENTITLEMENT_IDENTIFIER ?? 'Social Charge Pro';
+const revenueCatOfferingIdentifier = process.env.EXPO_PUBLIC_RC_OFFERING_IDENTIFIER ?? 'default';
 const googleSignInPlugin: [string, any] | null = googleIosUrlScheme
   ? [
       '@react-native-google-signin/google-signin',
@@ -109,10 +110,9 @@ const config: ExpoConfig = {
       entitlementIdentifier: revenueCatEntitlementIdentifier,
       offeringIdentifier: revenueCatOfferingIdentifier,
       products: {
-        monthly: 'monthly_subscription',
-        monthly_plus: 'monthly_plus_subscription',
-        monthly_premium: 'monthly_premium_subscription',
-        yearly: 'annual_subscription',
+        monthly: 'basic_monthly',
+        monthly_plus: 'plus_monthly',
+        monthly_premium: 'premium_monthly',
       },
       customerCenter: {
         enabled: true,

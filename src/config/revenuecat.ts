@@ -5,7 +5,7 @@ type RevenueCatProductsConfig = {
   monthly: string;
   monthly_plus: string;
   monthly_premium: string;
-  yearly: string;
+  yearly?: string;
 };
 export type RevenueCatProductKey = keyof RevenueCatProductsConfig;
 
@@ -75,10 +75,9 @@ const apiKey = (() => {
 })();
 
 const defaultProducts: RevenueCatProductsConfig = {
-  monthly: 'monthly_subscription',
-  monthly_plus: 'monthly_plus_subscription',
-  monthly_premium: 'monthly_premium_subscription',
-  yearly: 'annual_subscription',
+  monthly: 'basic_monthly',
+  monthly_plus: 'plus_monthly',
+  monthly_premium: 'premium_monthly',
 };
 
 export const revenueCatConfig: RevenueCatConfig = {
@@ -86,9 +85,9 @@ export const revenueCatConfig: RevenueCatConfig = {
   entitlementIdentifier:
     process.env.EXPO_PUBLIC_RC_ENTITLEMENT_IDENTIFIER ??
     extra.entitlementIdentifier ??
-    'pro',
+    'Social Charge Pro',
   offeringIdentifier:
-    process.env.EXPO_PUBLIC_RC_OFFERING_IDENTIFIER ?? extra.offeringIdentifier ?? 'sale',
+    process.env.EXPO_PUBLIC_RC_OFFERING_IDENTIFIER ?? extra.offeringIdentifier ?? 'default',
   products: {
     monthly: extra.products?.monthly ?? defaultProducts.monthly,
     monthly_plus: extra.products?.monthly_plus ?? defaultProducts.monthly_plus,

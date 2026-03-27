@@ -187,7 +187,13 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
   }, [handlePurchasesError]);
 
   const getProductDiagnosticsSummary = useCallback(async (source: string) => {
-    const requestedProductIds = Array.from(new Set(Object.values(revenueCatConfig.products)));
+    const requestedProductIds = Array.from(
+      new Set(
+        Object.values(revenueCatConfig.products).filter(
+          (productId): productId is string => typeof productId === 'string' && productId.length > 0
+        )
+      )
+    );
 
     try {
       const products = await Purchases.getProducts(requestedProductIds);
@@ -416,6 +422,9 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
     async (productKey: RevenueCatProductKey) => {
       try {
         const targetProductId = revenueCatConfig.products[productKey];
+        if (!targetProductId) {
+          throw new Error(`RevenueCat product "${productKey}" is not configured for this build.`);
+        }
         const availableOfferings = hasAnyOfferings(offerings) ? offerings : await loadOfferings();
         if (!hasAnyOfferings(availableOfferings)) {
           throw new Error(
