@@ -1,6 +1,7 @@
 // src/providers/AuthProvider.tsx
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
+import * as Sentry from '@sentry/react-native';
 import { supabase } from '~/lib/supabase';
 import { UsersRow } from '~/types/user.type';
 import { signInWithGoogle, signOut } from '~/auth/google';
@@ -58,16 +59,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const load = async (sess: Session | null) => {
-      setSession(sess);
-      if (sess?.user?.id) {
-        await fetchUser(sess.user.id);
-      } else {
+      try {
+        setSession(sess);
+        if (sess?.user?.id) {
+          await fetchUser(sess.user.id);
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        Sentry.captureException(error);
         setUser(null);
+      } finally {
+        setInitializing(false);
       }
-      setInitializing(false);
     };
 
-    supabase.auth.getSession().then(({ data: { session } }) => load(session));
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => load(session))
+      .catch((error) => {
+        Sentry.captureException(error);
+        setSession(null);
+        setUser(null);
+        setInitializing(false);
+      });
 
     const {
       data: { subscription },

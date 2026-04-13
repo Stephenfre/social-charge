@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import type { ExpoConfig } from 'expo/config';
 
 const appEnv =
@@ -17,6 +19,7 @@ const revenueCatUseTestStore = process.env.EXPO_PUBLIC_RC_USE_TEST_STORE === 'tr
 const revenueCatEntitlementIdentifier =
   process.env.EXPO_PUBLIC_RC_ENTITLEMENT_IDENTIFIER ?? 'Social Charge Pro';
 const revenueCatOfferingIdentifier = process.env.EXPO_PUBLIC_RC_OFFERING_IDENTIFIER ?? 'default';
+const revenueCatVirtualCurrencyCode = process.env.EXPO_PUBLIC_RC_VIRTUAL_CURRENCY_CODE ?? 'battery';
 const googleSignInPlugin: [string, any] | null = googleIosUrlScheme
   ? [
       '@react-native-google-signin/google-signin',
@@ -25,6 +28,8 @@ const googleSignInPlugin: [string, any] | null = googleIosUrlScheme
       },
     ]
   : null;
+const googleServicesFile = './google-services.json';
+const hasGoogleServicesFile = existsSync(resolve(__dirname, googleServicesFile));
 
 const config: ExpoConfig = {
   name: appName,
@@ -43,7 +48,16 @@ const config: ExpoConfig = {
       {
         image: './assets/splash.png',
         resizeMode: 'contain',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#0F1012',
+      },
+    ],
+    [
+      'expo-notifications',
+      {
+        icon: './assets/notification-icon.png',
+        color: '#1989E9',
+        defaultChannel: 'default',
+        enableBackgroundRemoteNotifications: true,
       },
     ],
     'expo-font',
@@ -66,7 +80,7 @@ const config: ExpoConfig = {
   splash: {
     image: './assets/splash.png',
     resizeMode: 'contain',
-    backgroundColor: '#ffffff',
+    backgroundColor: '#0F1012',
   },
   assetBundlePatterns: ['**/*'],
   ios: {
@@ -79,6 +93,12 @@ const config: ExpoConfig = {
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
       CFBundleDisplayName: appName,
+      NSCameraUsageDescription:
+        'Social Charge uses the camera only to take a profile photo or scan guest QR codes for event check-in.',
+      NSLocationWhenInUseUsageDescription:
+        'Social Charge uses your location to fill in your city, state, and country and to improve nearby event recommendations.',
+      NSPhotoLibraryUsageDescription:
+        'Social Charge uses your photo library only so you can choose a profile photo.',
     },
   },
   android: {
@@ -87,6 +107,7 @@ const config: ExpoConfig = {
       backgroundColor: '#ffffff',
     },
     package: appBundleIdentifier,
+    googleServicesFile: hasGoogleServicesFile ? googleServicesFile : undefined,
     config: {
       googleMaps: {
         apiKey: googleMapsApiKey,
@@ -109,6 +130,7 @@ const config: ExpoConfig = {
       useTestStore: revenueCatUseTestStore,
       entitlementIdentifier: revenueCatEntitlementIdentifier,
       offeringIdentifier: revenueCatOfferingIdentifier,
+      virtualCurrencyCode: revenueCatVirtualCurrencyCode,
       products: {
         monthly: 'basic_monthly',
         monthly_plus: 'plus_monthly',

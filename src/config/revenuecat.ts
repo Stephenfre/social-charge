@@ -20,6 +20,7 @@ type RevenueCatExtra = {
   androidTestApiKey?: string;
   entitlementIdentifier?: string;
   offeringIdentifier?: string;
+  virtualCurrencyCode?: string;
   products?: Partial<RevenueCatProductsConfig>;
   customerCenter?: { enabled?: boolean };
   useTestStore?: boolean;
@@ -29,6 +30,7 @@ export type RevenueCatConfig = {
   apiKey: string;
   entitlementIdentifier: string;
   offeringIdentifier?: string;
+  virtualCurrencyCode: string;
   products: RevenueCatProductsConfig;
   customerCenter: { enabled: boolean };
   useTestStore: boolean;
@@ -88,6 +90,8 @@ export const revenueCatConfig: RevenueCatConfig = {
     'Social Charge Pro',
   offeringIdentifier:
     process.env.EXPO_PUBLIC_RC_OFFERING_IDENTIFIER ?? extra.offeringIdentifier ?? 'default',
+  virtualCurrencyCode:
+    process.env.EXPO_PUBLIC_RC_VIRTUAL_CURRENCY_CODE ?? extra.virtualCurrencyCode ?? 'battery',
   products: {
     monthly: extra.products?.monthly ?? defaultProducts.monthly,
     monthly_plus: extra.products?.monthly_plus ?? defaultProducts.monthly_plus,
@@ -102,3 +106,4 @@ export const revenueCatConfig: RevenueCatConfig = {
 
 export const REVENUECAT_ENTITLEMENT = revenueCatConfig.entitlementIdentifier;
 export const REVENUECAT_API_KEY = revenueCatConfig.apiKey;
+export const REVENUECAT_VIRTUAL_CURRENCY_CODE = revenueCatConfig.virtualCurrencyCode;

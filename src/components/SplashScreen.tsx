@@ -1,13 +1,30 @@
-import { Image, View } from 'react-native';
+import { ActivityIndicator, ImageBackground, View } from 'react-native';
 
-export function SplashScreen() {
+type SplashScreenProps = {
+  showSpinner?: boolean;
+};
+
+export function SplashScreen({ showSpinner = false }: SplashScreenProps) {
   return (
-    <View className="flex-1 items-center justify-center bg-background-dark">
-      <Image
-        source={require('../../assets/splash.png')}
-        style={{ width: 220, height: 220 }}
-        resizeMode="contain"
-      />
-    </View>
+    <ImageBackground
+      source={require('../../assets/splash.png')}
+      resizeMode="contain"
+      style={{
+        flex: 1,
+        backgroundColor: '#0F1012',
+      }}>
+      {showSpinner ? (
+        <View
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 72,
+            alignItems: 'center',
+          }}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+        </View>
+      ) : null}
+    </ImageBackground>
   );
 }

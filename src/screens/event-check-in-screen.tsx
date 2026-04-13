@@ -1,5 +1,5 @@
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -9,8 +9,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Countdown } from '~/components/Countdown/Countdown';
 import { EventCard } from '~/components/EventCard/EventCard';
 import { Map } from '~/components/Map/Map';
+import { PremiumBlurGate } from '~/components/PremiumBlurGate';
 import { Badge, Box, Button, Flex, Image, Pressable, Text } from '~/components/ui';
 import { Icon } from '~/components/ui/icon';
+import { REVENUECAT_ENTITLEMENT } from '~/config/revenuecat';
 import {
   useStorageImages,
   useEventById,
@@ -19,6 +21,7 @@ import {
   useUserCheckedInEvent,
 } from '~/hooks';
 import { useAuth } from '~/providers/AuthProvider';
+import { useRevenueCat } from '~/providers/RevenueCatProvider';
 import { RootStackParamList, useRouteStack } from '~/types/navigation.types';
 import { cn } from '~/utils/cn';
 import { CancelRsvpButton } from './view-event-screen';
@@ -31,6 +34,13 @@ export function EventCheckInScreen() {
   const navigation = useNavigation<CheckInNav>();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const {
+    presentPaywall,
+    loadingOfferings,
+    isPro,
+    initialized: revenueCatInitialized,
+    refreshCustomerInfo,
+  } = useRevenueCat();
   const { params } = useRouteStack<'CheckInIndex'>();
   const eventIdParam = params?.eventId ?? null;
 
@@ -54,6 +64,8 @@ export function EventCheckInScreen() {
   });
   const [isUserCheckInModalVisible, setIsUserCheckInModalVisible] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
+  const [isOpeningPaywall, setIsOpeningPaywall] = useState(false);
+  const [hasValidatedAttendeeAccess, setHasValidatedAttendeeAccess] = useState(false);
 
   const handlePressNavigateHome = () => {
     navigation.reset({
@@ -86,6 +98,15 @@ export function EventCheckInScreen() {
 
   const handleCloseChat = useCallback(() => setShowChatModal(false), []);
 
+  const handleUpgradePress = useCallback(async () => {
+    setIsOpeningPaywall(true);
+    try {
+      await presentPaywall();
+    } finally {
+      setIsOpeningPaywall(false);
+    }
+  }, [presentPaywall]);
+
   const startsAt = event?.starts_at ? dayjs(event.starts_at) : null;
   const endsAt = event?.ends_at ? dayjs(event.ends_at) : null;
   const isUserAlreadyCheckedIn =
@@ -95,6 +116,35 @@ export function EventCheckInScreen() {
   const isBeforeStart = startsAt ? dayjs().isBefore(startsAt) : false;
   const hasEventEnded = endsAt ? dayjs().isAfter(endsAt) : false;
   const withinTwoHours = startsAt ? startsAt.diff(dayjs(), 'hour', true) <= 2 : false;
+  const canViewAttendees = hasValidatedAttendeeAccess && isPro;
+
+  useEffect(() => {
+    if (!revenueCatInitialized) {
+      return;
+    }
+
+    let cancelled = false;
+
+    setHasValidatedAttendeeAccess(false);
+
+    const validateAttendeeAccess = async () => {
+      const info = await refreshCustomerInfo();
+
+      if (cancelled) {
+        return;
+      }
+
+      setHasValidatedAttendeeAccess(
+        Boolean(info?.entitlements.active[REVENUECAT_ENTITLEMENT])
+      );
+    };
+
+    void validateAttendeeAccess();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshCustomerInfo, revenueCatInitialized]);
 
   if (!eventIdParam) {
     return (
@@ -363,12 +413,12 @@ export function EventCheckInScreen() {
               )}
             </Flex>
 
-            {user?.membership === 'basic' && (
-              <Flex gap={4}>
-                <Text bold size="2xl">
-                  Who's Going:
-                </Text>
-                {event.rsvps?.length ? (
+            <Flex gap={4}>
+              <Text bold size="2xl">
+                Who&apos;s Going:
+              </Text>
+              {canViewAttendees ? (
+                event.rsvps?.length ? (
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     <Flex direction="row" align="center" gap={6}>
                       {event.rsvps.map((rsvp, index) => (
@@ -395,9 +445,41 @@ export function EventCheckInScreen() {
                   </ScrollView>
                 ) : (
                   <Text>Be the first to RSVP!</Text>
-                )}
-              </Flex>
-            )}
+                )
+              ) : event.rsvps?.length ? (
+                <PremiumBlurGate
+                  disabled={isOpeningPaywall || loadingOfferings}
+                  onPress={handleUpgradePress}
+                  minHeight={170}>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <Flex direction="row" align="center" gap={6} className="px-2 py-3">
+                      {event.rsvps.map((rsvp, index) => (
+                        <Flex
+                          key={`${rsvp?.user_id ?? 'attendee'}-${index}`}
+                          align="center"
+                          gap={4}>
+                          {attendeeAvatars && !attendeeAvatarLoading ? (
+                            <Image
+                              alt="picture of guest"
+                              source={{ uri: attendeeAvatars[index] ?? '' }}
+                              rounded="full"
+                              size="md"
+                            />
+                          ) : (
+                            <Box className="h-28 w-28 rounded-full bg-slate-500" />
+                          )}
+                          <Text size="sm">
+                            {`${rsvp?.first_name ?? ''} ${rsvp?.last_name ?? ''}`.trim() || 'Guest'}
+                          </Text>
+                        </Flex>
+                      ))}
+                    </Flex>
+                  </ScrollView>
+                </PremiumBlurGate>
+              ) : (
+                <Text>Be the first to RSVP!</Text>
+              )}
+            </Flex>
 
             <Flex gap={2}>
               <Text bold size="xl">

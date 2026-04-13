@@ -147,15 +147,44 @@ export function UpdateProfileScreen() {
     }
   }, [user, reset]);
 
+  const confirmPermissionRequest = (title: string, message: string) =>
+    new Promise<boolean>((resolve) => {
+      Alert.alert(title, message, [
+        { text: 'Not Now', style: 'cancel', onPress: () => resolve(false) },
+        { text: 'Continue', onPress: () => resolve(true) },
+      ]);
+    });
+
   const handleImagePick = async (useCamera: boolean = false) => {
     try {
-      // Request permissions
+      const currentPermission = useCamera
+        ? await ImagePicker.getCameraPermissionsAsync()
+        : await ImagePicker.getMediaLibraryPermissionsAsync();
+
+      if (!currentPermission.granted) {
+        const shouldRequest = await confirmPermissionRequest(
+          useCamera ? 'Camera Access' : 'Photo Library Access',
+          useCamera
+            ? 'We use your camera only so you can take a profile photo.'
+            : 'We use your photo library only so you can choose a profile photo.'
+        );
+
+        if (!shouldRequest) {
+          return;
+        }
+      }
+
       const { status } = useCamera
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (status !== 'granted') {
-        Alert.alert('Permission denied', 'Please allow access to continue');
+        Alert.alert(
+          'Permission Denied',
+          useCamera
+            ? 'Camera access is used only to take a profile photo. You can enable it later in Settings.'
+            : 'Photo library access is used only to choose a profile photo. You can enable it later in Settings.'
+        );
         return;
       }
 
@@ -220,11 +249,23 @@ export function UpdateProfileScreen() {
 
   const captureLocation = async () => {
     try {
+      const currentPermission = await Location.getForegroundPermissionsAsync();
+      if (!currentPermission.granted) {
+        const shouldRequest = await confirmPermissionRequest(
+          'Location Access',
+          'We use your location to fill in your city, state, and country and to improve nearby event recommendations.'
+        );
+
+        if (!shouldRequest) {
+          return { city: user?.city ?? '', state: user?.state ?? '', country: user?.country ?? '' };
+        }
+      }
+
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert(
           'Location Permission',
-          'We could not access your location. Enable permissions later in Settings to get nearby events.'
+          'Location access lets us fill in your city, state, and country and improve nearby event recommendations. You can enable it later in Settings.'
         );
         return { city: user?.city ?? '', state: user?.state ?? '', country: user?.country ?? '' };
       }

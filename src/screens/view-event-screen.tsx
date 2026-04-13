@@ -8,11 +8,12 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EventCard } from '~/components/EventCard/EventCard';
+import { PremiumBlurGate } from '~/components/PremiumBlurGate';
 
 import { Badge, Box, Button, Divider, Flex, Image, Text } from '~/components/ui';
 import { Icon } from '~/components/ui/icon';
 import { Spinner } from '~/components/ui/spinner';
-import { REVENUECAT_VIRTUAL_CURRENCY_CODE } from '~/config/revenuecat';
+import { REVENUECAT_ENTITLEMENT, REVENUECAT_VIRTUAL_CURRENCY_CODE } from '~/config/revenuecat';
 import {
   useCancelWaitlist,
   useEventById,
@@ -29,6 +30,7 @@ import { WAITLIST_KEYS } from '~/hooks/useWaitlist';
 import { EVENT_KEYS } from '~/hooks/useEvents';
 import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/providers/AuthProvider';
+import { useRevenueCat } from '~/providers/RevenueCatProvider';
 import { EventReviewContent } from './event-review-screen';
 
 import { cn } from '~/utils/cn';
@@ -66,10 +68,22 @@ export function ViewEventScreen() {
   const snapPoints = useMemo(() => ['75%'], []);
 
   const { session, userId, user } = useAuth();
+  const {
+    presentPaywall,
+    presentPlacementPaywall,
+    loadingOfferings,
+    isPro,
+    initialized: revenueCatInitialized,
+    refreshCustomerInfo,
+  } = useRevenueCat();
   const { data: event, isLoading } = useEventById(params.eventId);
   const { data: eventVibes = [] } = useEventVibes(params.eventId);
   const { data: rsvps = [], isLoading: rsvpLoading } = useRsvps(params.eventId);
-  const { data: virtualCurrency, isLoading: tokenBalanceLoading } = useRevenueCatVirtualCurrency();
+  const {
+    data: virtualCurrency,
+    isLoading: tokenBalanceLoading,
+    refetch: refetchVirtualCurrency,
+  } = useRevenueCatVirtualCurrency();
   const { mutateAsync: joinWaitlistAsync, isPending: joiningWaitlist } = useJoinWaitlist();
   const { mutateAsync: cancelWaitlistAsync, isPending: leavingWaitlist } = useCancelWaitlist();
 
@@ -92,6 +106,8 @@ export function ViewEventScreen() {
   const [confirmationMode, setConfirmationMode] = useState<ConfirmationMode>('rsvp');
   const [rsvpError, setRsvpError] = useState<string | null>(null);
   const [isReviewVisible, setIsReviewVisible] = useState(false);
+  const [isOpeningPaywall, setIsOpeningPaywall] = useState(false);
+  const [hasValidatedAttendeeAccess, setHasValidatedAttendeeAccess] = useState(false);
 
   const tokenCost = event?.token_cost ?? 0;
   const currentBalance = virtualCurrency?.balance ?? 0;
@@ -111,6 +127,35 @@ export function ViewEventScreen() {
     if (!event?.ends_at) return false;
     return dayjs().isAfter(dayjs(event.ends_at));
   }, [event?.ends_at]);
+  const canViewAttendees = hasValidatedAttendeeAccess && isPro;
+
+  useEffect(() => {
+    if (!revenueCatInitialized) {
+      return;
+    }
+
+    let cancelled = false;
+
+    setHasValidatedAttendeeAccess(false);
+
+    const validateAttendeeAccess = async () => {
+      const info = await refreshCustomerInfo();
+
+      if (cancelled) {
+        return;
+      }
+
+      setHasValidatedAttendeeAccess(
+        Boolean(info?.entitlements.active[REVENUECAT_ENTITLEMENT])
+      );
+    };
+
+    void validateAttendeeAccess();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshCustomerInfo, revenueCatInitialized]);
 
   useEffect(() => {
     const eventId = params.eventId;
@@ -163,6 +208,15 @@ export function ViewEventScreen() {
     navigation.goBack();
   };
 
+  const handleUpgradePress = async () => {
+    setIsOpeningPaywall(true);
+    try {
+      await presentPaywall();
+    } finally {
+      setIsOpeningPaywall(false);
+    }
+  };
+
   const handleJoinWaitlist = async () => {
     if (!event?.id) return;
 
@@ -171,10 +225,7 @@ export function ViewEventScreen() {
       setShowRsvpModal(false);
       Alert.alert('Waitlist joined', "You're on the waitlist for this event.");
     } catch (error) {
-      const message = getErrorMessage(
-        error,
-        'Something went wrong while joining the waitlist.'
-      );
+      const message = getErrorMessage(error, 'Something went wrong while joining the waitlist.');
       setRsvpError(message);
     }
   };
@@ -186,10 +237,7 @@ export function ViewEventScreen() {
       await cancelWaitlistAsync({ eventId: event.id });
       Alert.alert('Waitlist updated', 'You have left the waitlist.');
     } catch (error) {
-      const message = getErrorMessage(
-        error,
-        'Something went wrong while leaving the waitlist.'
-      );
+      const message = getErrorMessage(error, 'Something went wrong while leaving the waitlist.');
       Alert.alert('Waitlist', message);
     }
   };
@@ -208,10 +256,16 @@ export function ViewEventScreen() {
       return;
     }
 
-    // if (!tokenBalanceLoading && tokenCost > currentBalance) {
-    //   setRsvpError('You do not have enough credits to RSVP for this event.');
-    //   return;
-    // }
+    if (!tokenBalanceLoading && tokenCost > currentBalance) {
+      setIsConfirmingRsvp(true);
+      try {
+        await presentPlacementPaywall('battery_pack_purchase');
+        await refetchVirtualCurrency();
+      } finally {
+        setIsConfirmingRsvp(false);
+      }
+      return;
+    }
 
     setIsConfirmingRsvp(true);
     setRsvpError(null);
@@ -430,71 +484,97 @@ export function ViewEventScreen() {
               </Flex>
             </Flex>
 
-            <Flex>
-              <Text bold size="2xl">
-                About this event
-              </Text>
-              <Text>{event.description}</Text>
-            </Flex>
-
-            {user?.membership !== 'basic' && (
-              <Flex gap={4}>
+            <Flex gap={12}>
+              <Flex>
                 <Text bold size="2xl">
-                  Who's Going?
+                  About this event
                 </Text>
-                {event.rsvps?.length ? (
-                  <Flex direction="row" align="center" gap={10} wrap="wrap">
-                    {event.rsvps.map((rsvp, idx) => (
-                      <Flex key={rsvp.user_id} align="center" gap={4}>
-                        {eventRsvpsAvatar && !eventRsvpsAvatarLoading ? (
-                          <Image
-                            key={rsvp.user_id}
-                            alt="picture of guest"
-                            source={{ uri: eventRsvpsAvatar[idx] ?? '' }}
-                            rounded="full"
-                            size="xl"
-                          />
-                        ) : (
-                          <Box className="h-28 w-28 rounded-full bg-slate-500" />
-                        )}
-                        <Text>{rsvp.first_name + ' ' + rsvp.last_name}</Text>
-                      </Flex>
+                <Text>{event.description}</Text>
+              </Flex>
+
+              <Flex>
+                <Text bold size="2xl">
+                  Vibe Check
+                </Text>
+                {eventVibes.length ? (
+                  <Flex direction="row" flex wrap="wrap" gap={2}>
+                    {eventVibes.map((vibe) => (
+                      <Badge key={vibe.vibe_slug} variant="primary">
+                        <Text size="sm" className="uppercase text-primary-300">
+                          {vibe.vibe_slug}
+                        </Text>
+                      </Badge>
                     ))}
                   </Flex>
                 ) : (
-                  <Text>Be the first to RSVP!</Text>
+                  <Text>RSVP to change the vibe</Text>
                 )}
               </Flex>
-            )}
-
-            <Flex gap={4}>
-              <Text bold size="2xl">
-                Vibe Check
-              </Text>
-              {eventVibes.length ? (
-                <Flex direction="row" flex wrap="wrap" gap={2}>
-                  {eventVibes.map((vibe) => (
-                    <Badge key={vibe.vibe_slug} variant="primary">
-                      <Text size="sm" className="uppercase text-primary-300">
-                        {vibe.vibe_slug}
-                      </Text>
-                    </Badge>
-                  ))}
-                </Flex>
-              ) : (
-                <Text>RSVP to change the vibe</Text>
-              )}
+              <Flex>
+                <Text bold size="2xl">
+                  Who's Going?
+                </Text>
+                {canViewAttendees ? (
+                  event.rsvps?.length ? (
+                    <Flex direction="row" align="center" gap={10} wrap="wrap">
+                      {event.rsvps.map((rsvp, idx) => (
+                        <Flex key={rsvp.user_id} align="center" gap={4}>
+                          {eventRsvpsAvatar && !eventRsvpsAvatarLoading ? (
+                            <Image
+                              key={rsvp.user_id}
+                              alt="picture of guest"
+                              source={{ uri: eventRsvpsAvatar[idx] ?? '' }}
+                              rounded="full"
+                              size="xl"
+                            />
+                          ) : (
+                            <Box className="h-28 w-28 rounded-full bg-slate-500" />
+                          )}
+                          <Text>{rsvp.first_name + ' ' + rsvp.last_name}</Text>
+                        </Flex>
+                      ))}
+                    </Flex>
+                  ) : (
+                    <Text>Be the first to RSVP!</Text>
+                  )
+                ) : (
+                  <PremiumBlurGate
+                    disabled={isOpeningPaywall || loadingOfferings}
+                    onPress={handleUpgradePress}
+                    minHeight={100}>
+                    <>
+                      {event.rsvps?.length ? (
+                        <Flex
+                          direction="row"
+                          align="center"
+                          gap={10}
+                          wrap="wrap"
+                          className="px-2 py-3">
+                          {event.rsvps.map((rsvp, idx) => (
+                            <Flex key={rsvp.user_id} align="center" gap={4}>
+                              {eventRsvpsAvatar && !eventRsvpsAvatarLoading ? (
+                                <Image
+                                  key={rsvp.user_id}
+                                  alt="picture of guest"
+                                  source={{ uri: eventRsvpsAvatar[idx] ?? '' }}
+                                  rounded="full"
+                                  size="xl"
+                                />
+                              ) : (
+                                <Box className="h-28 w-28 rounded-full bg-slate-500" />
+                              )}
+                              <Text>{rsvp.first_name + ' ' + rsvp.last_name}</Text>
+                            </Flex>
+                          ))}
+                        </Flex>
+                      ) : (
+                        <Text>Be the first to RSVP!</Text>
+                      )}
+                    </>
+                  </PremiumBlurGate>
+                )}
+              </Flex>
             </Flex>
-            {/* 
-            <Flex gap={4}>
-              <Text bold size="2xl">
-                Check-in List
-              </Text>
-              <EventCheckInList
-                checkIns={event.check_ins}
-                emptyMessage="No attendees have checked in yet."
-              />
-            </Flex> */}
           </Flex>
         </BottomSheetView>
       </BottomSheet>
@@ -536,9 +616,7 @@ export function ViewEventScreen() {
                       isOnWaitlist ? 'bg-background-700' : 'bg-primary-600'
                     )}
                     onPress={
-                      isOnWaitlist
-                        ? handleLeaveWaitlist
-                        : () => openConfirmationModal('waitlist')
+                      isOnWaitlist ? handleLeaveWaitlist : () => openConfirmationModal('waitlist')
                     }
                     disabled={joiningWaitlist || leavingWaitlist}>
                     <Text bold size="lg" className="text-white">
@@ -667,6 +745,7 @@ function RsvpConfirmationModal({
 }: ConfirmationProps) {
   const costLine = [{ label: 'Event', value: eventTitle }];
   const isWaitlistMode = mode === 'waitlist';
+  const needsCredits = !isWaitlistMode && projectedBalance < 0 && !balanceLoading;
 
   return (
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onCancel}>
@@ -734,20 +813,22 @@ function RsvpConfirmationModal({
           <Flex className="px-4">
             {errorMessage ? (
               <Text alert>{errorMessage}</Text>
-            ) : !isWaitlistMode && projectedBalance < 0 && !balanceLoading ? (
+            ) : needsCredits ? (
               <Text alert>You do not have enough credits to complete this RSVP.</Text>
             ) : null}
             <Button
               className="h-14 rounded-lg bg-primary-600"
               onPress={onConfirm}
-              disabled={
-                isProcessing || (!isWaitlistMode && (balanceLoading || projectedBalance < 0))
-              }>
+              disabled={isProcessing || (!isWaitlistMode && balanceLoading)}>
               {isProcessing ? (
                 <Spinner />
               ) : (
                 <Text bold size="lg" className="text-white">
-                  {isWaitlistMode ? 'Confirm Join Waitlist' : 'Confirm RSVP'}
+                  {isWaitlistMode
+                    ? 'Confirm Join Waitlist'
+                    : needsCredits
+                      ? 'Add Credits'
+                      : 'Confirm RSVP'}
                 </Text>
               )}
             </Button>
@@ -820,7 +901,9 @@ export function CancelRsvpButton({
       queryClient.invalidateQueries({ queryKey: WAITLIST_KEYS.mine(eventId, userId ?? null) });
       queryClient.invalidateQueries({ queryKey: WAITLIST_KEYS.position(eventId, userId ?? null) });
       queryClient.invalidateQueries({ queryKey: EVENT_KEYS.checkIn(userId ?? null) });
-      queryClient.invalidateQueries({ queryKey: EVENT_KEYS.userCheckedIn(userId ?? null, eventId) });
+      queryClient.invalidateQueries({
+        queryKey: EVENT_KEYS.userCheckedIn(userId ?? null, eventId),
+      });
       queryClient.invalidateQueries({ queryKey: ['token-transactions', userId] });
       queryClient.invalidateQueries({
         queryKey: REVENUECAT_VIRTUAL_CURRENCY_QUERY_KEYS.balance(

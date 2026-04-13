@@ -176,6 +176,7 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
 
   const loadCustomerInfo = useCallback(async () => {
     try {
+      await Purchases.invalidateCustomerInfoCache();
       const info = await Purchases.getCustomerInfo();
       setCustomerInfo(info);
       setError(null);

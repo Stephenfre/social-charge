@@ -95,12 +95,14 @@ export function ProfileScreen() {
               </Text>
             </Badge>
           </Flex>
-          <Button
-            className="rounded-xl bg-primary-500"
-            disabled={isOpeningPaywall || loadingOfferings}
-            onPress={handleUpgradePress}>
-            <Text bold>Go Premium</Text>
-          </Button>
+          {!isPro ? (
+            <Button
+              className="rounded-xl bg-primary-500"
+              disabled={isOpeningPaywall || loadingOfferings}
+              onPress={handleUpgradePress}>
+              <Text bold>Go Premium</Text>
+            </Button>
+          ) : null}
           <Flex>
             <Text size="2xl" bold className="mb-2">
               Interests

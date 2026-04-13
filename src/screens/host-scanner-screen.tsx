@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, StyleSheet, Vibration } from 'react-native';
+import { Alert, Linking, StyleSheet, Vibration } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { Buffer } from 'buffer';
@@ -61,11 +61,25 @@ export function HostScannerScreen({ hostRunId = null }: HostScannerScreenProps) 
     };
   }, []);
 
-  useEffect(() => {
-    if (!permission?.granted && permission?.canAskAgain) {
-      requestPermission();
-    }
-  }, [permission?.granted, permission?.canAskAgain, requestPermission]);
+  const requestCameraAccess = useCallback(() => {
+    Alert.alert(
+      'Camera Access',
+      'We use the camera only to scan guest QR codes for event check-in.',
+      [
+        { text: 'Not Now', style: 'cancel' },
+        {
+          text: 'Continue',
+          onPress: () => {
+            void requestPermission();
+          },
+        },
+      ]
+    );
+  }, [requestPermission]);
+
+  const openDeviceSettings = useCallback(() => {
+    void Linking.openSettings();
+  }, []);
 
   const decodeJwtPayload = useCallback((segment: string): QrPayload => {
     const normalized = segment.replace(/-/g, '+').replace(/_/g, '/');
@@ -206,12 +220,15 @@ export function HostScannerScreen({ hostRunId = null }: HostScannerScreenProps) 
         <Text size="xl" bold className="text-center">
           Camera access is required to scan QR codes.
         </Text>
+        <Text className="mt-3 text-center">
+          We use the camera only to scan guest QR codes for event check-in.
+        </Text>
         <Button
-          onPress={requestPermission}
+          onPress={permission.canAskAgain ? requestCameraAccess : openDeviceSettings}
           className="mt-4 w-1/2 rounded-xl bg-primary"
           size="xl">
           <Text bold className="text-white">
-            Enable Camera
+            {permission.canAskAgain ? 'Allow Camera Access' : 'Open Settings'}
           </Text>
         </Button>
         <Button variant="outline" className="mt-3 w-1/2" onPress={closeScanner}>

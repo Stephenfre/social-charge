@@ -121,8 +121,6 @@ function AppNavigation() {
   const [isApplyingUpdate, setIsApplyingUpdate] = useState(false);
 
   useEffect(() => {
-    if (initializing) return;
-
     const hideSplash = async () => {
       try {
         await ExpoSplashScreen.hideAsync();
@@ -131,7 +129,9 @@ function AppNavigation() {
       }
     };
 
-    void hideSplash();
+    if (!initializing) {
+      void hideSplash();
+    }
   }, [initializing]);
 
   useEffect(() => {
