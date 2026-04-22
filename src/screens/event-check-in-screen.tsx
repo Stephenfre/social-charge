@@ -1,10 +1,10 @@
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ArrowLeft, Calendar, Clock, MapPin, MessageCircle, TicketX } from 'lucide-react-native';
-import { Modal, ScrollView, View } from 'react-native';
+import { Modal, Platform, ScrollView, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Countdown } from '~/components/Countdown/Countdown';
 import { EventCard } from '~/components/EventCard/EventCard';
@@ -33,6 +33,11 @@ type CheckInNav = NativeStackNavigationProp<RootStackParamList>;
 export function EventCheckInScreen() {
   const navigation = useNavigation<CheckInNav>();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const SMALL_SCREEN_WIDTH = 390;
+
+  const snapPoints = useMemo(() => ['70%', '90%'], []);
+
   const { user } = useAuth();
   const {
     presentPaywall,
@@ -134,9 +139,7 @@ export function EventCheckInScreen() {
         return;
       }
 
-      setHasValidatedAttendeeAccess(
-        Boolean(info?.entitlements.active[REVENUECAT_ENTITLEMENT])
-      );
+      setHasValidatedAttendeeAccess(Boolean(info?.entitlements.active[REVENUECAT_ENTITLEMENT]));
     };
 
     void validateAttendeeAccess();
@@ -278,14 +281,24 @@ export function EventCheckInScreen() {
         eventEndsAt={event?.ends_at ?? null}
       />
       <Flex className="relative">
+        <EventCard
+          event={event}
+          overlay
+          imageSize="background"
+          rounded="none"
+          showDate={false}
+          showLocation={false}
+          showTitle={false}
+          showToken={false}
+        />
         <Pressable
-          className="absolute left-4 top-20 z-10"
+          className="absolute left-4 top-20"
           hitSlop={16}
           onPress={() => navigation.goBack()}>
           <ArrowLeft size={28} color="#fff" />
         </Pressable>
         <Pressable
-          className="absolute right-4 top-20 z-10"
+          className="absolute right-4 top-20"
           hitSlop={16}
           accessibilityRole="button"
           accessibilityLabel="Open event chat"
@@ -298,23 +311,16 @@ export function EventCheckInScreen() {
             </Text>
           </Flex>
         </Pressable>
-        <EventCard
-          event={event}
-          overlay
-          imageSize="background"
-          rounded="none"
-          showDate={false}
-          showLocation={false}
-          showTitle={false}
-          showToken={false}
-        />
       </Flex>
 
       <BottomSheet
         index={0}
-        snapPoints={['70%', '75%']}
+        snapPoints={snapPoints}
+        enableDynamicSizing={false}
         enablePanDownToClose={false}
-        enableOverDrag={false}
+        enableOverDrag
+        enableHandlePanningGesture
+        enableContentPanningGesture
         handleIndicatorStyle={{ backgroundColor: 'transparent' }}
         backgroundStyle={{
           backgroundColor: '#0F1012',
@@ -328,7 +334,7 @@ export function EventCheckInScreen() {
           }}>
           <Flex className="px-4" gap={8}>
             <Flex gap={3}>
-              <Text size="5xl" bold>
+              <Text size={width < SMALL_SCREEN_WIDTH ? '4xl' : '5xl'} bold>
                 {event.title}
               </Text>
               <Flex direction="row" align="center" gap={3} wrap="wrap">
@@ -498,7 +504,11 @@ export function EventCheckInScreen() {
           </Flex>
         </BottomSheetScrollView>
       </BottomSheet>
-      <View className="absolute bottom-0 left-0 right-0 border-t bg-background-dark px-14 py-6">
+      <View
+        className={cn(
+          'absolute bottom-0 left-0 right-0 border-t bg-background-dark px-14',
+          Platform.OS === 'android' ? 'pb-14 pt-3' : 'py-6'
+        )}>
         {user?.role === 'user' ? renderUserActions() : renderHostAction()}
       </View>
       <Modal

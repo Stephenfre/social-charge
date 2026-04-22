@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { ArrowLeft, Calendar, Clock, MapPin, TicketX } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Modal, Pressable, View } from 'react-native';
+import { Alert, Modal, Pressable, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EventCard } from '~/components/EventCard/EventCard';
 import { PremiumBlurGate } from '~/components/PremiumBlurGate';
@@ -64,10 +64,12 @@ export function ViewEventScreen() {
   const { params } = useRouteStack<'ViewEvent'>();
   const navigation = useNavigation<EventNav>();
   const queryClient = useQueryClient();
+  const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const snapPoints = useMemo(() => ['55%', '90%'], []);
+  const snapPoints = useMemo(() => ['70%', '90%'], []);
+  const SMALL_SCREEN_WIDTH = 390;
 
-  const { session, userId, user } = useAuth();
+  const { session, userId } = useAuth();
   const {
     presentPaywall,
     presentPlacementPaywall,
@@ -382,9 +384,6 @@ export function ViewEventScreen() {
   return (
     <Flex flex className="bg-background-dark">
       <Flex className="relative">
-        <Pressable className="absolute left-4 top-20 z-10" hitSlop={16} onPress={handleSafeBack}>
-          <ArrowLeft size={28} color="#fff" />
-        </Pressable>
         <EventCard
           event={event}
           overlay
@@ -395,6 +394,9 @@ export function ViewEventScreen() {
           showTitle={false}
           showToken={false}
         />
+        <Pressable className="absolute left-4 top-20" hitSlop={16} onPress={handleSafeBack}>
+          <ArrowLeft size={28} color="#fff" />
+        </Pressable>
       </Flex>
 
       {/* PERSISTENT BOTTOM SHEET ACTION BAR */}
@@ -419,7 +421,7 @@ export function ViewEventScreen() {
           }}>
           <Flex className="px-4" gap={6}>
             <Flex>
-              <Text size="5xl" bold>
+              <Text size={width < SMALL_SCREEN_WIDTH ? '4xl' : '5xl'} bold>
                 {event.title}
               </Text>
 

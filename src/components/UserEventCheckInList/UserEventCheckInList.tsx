@@ -2,7 +2,7 @@ import React, { useCallback, useMemo } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import dayjs from 'dayjs';
-import { Dimensions, FlatList, StyleSheet, View } from 'react-native';
+import { Dimensions, FlatList, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Button, Flex, Image, Pressable, Text } from '~/components/ui';
 import { useUserEventCheckIns, useUserEvents } from '~/hooks';
 import type { UserEventCardRow } from '~/types/event.types';
@@ -18,10 +18,15 @@ const CARD_W = Math.min(400, Math.round(SCREEN_W * 0.9));
 const GAP = 14;
 const SIDE_SPACER = Math.max(0, Math.round((SCREEN_W - CARD_W) / 2));
 const SKELETON_ITEMS = Array.from({ length: 3 }, (_, index) => `skeleton-${index}`);
+const SMALL_SCREEN_WIDTH = 390;
+const SMALL_QR_SIZE = 120;
+const DEFAULT_QR_SIZE = 160;
 
 export const UserEventCheckInList = React.forwardRef<React.ComponentRef<typeof View>>(
   function UserEventCheckInList(_props, ref) {
+    const { width } = useWindowDimensions();
     const { data: events, isLoading: eventsLoading } = useUserEvents(6);
+    const qrSize = width < SMALL_SCREEN_WIDTH ? SMALL_QR_SIZE : DEFAULT_QR_SIZE;
     const eventIds = useMemo(
       () => (events ?? []).map((event) => event.id).filter(Boolean) as string[],
       [events]
@@ -84,7 +89,7 @@ export const UserEventCheckInList = React.forwardRef<React.ComponentRef<typeof V
 
             <Flex className="px-4">
               <Flex direction="row" align="center" justify="space-between">
-                <Text size="5xl" bold className="flex-1">
+                <Text size={width < SMALL_SCREEN_WIDTH ? '4xl' : '5xl'} bold className="flex-1">
                   {item.title}
                 </Text>
               </Flex>
@@ -114,7 +119,7 @@ export const UserEventCheckInList = React.forwardRef<React.ComponentRef<typeof V
                       </Text>
                     </Flex>
                   ) : (
-                    <UserCheckInQr eventId={item.id!} size={160} />
+                    <UserCheckInQr eventId={item.id!} size={qrSize} />
                   ))}
               </Flex>
             </Flex>
@@ -128,7 +133,7 @@ export const UserEventCheckInList = React.forwardRef<React.ComponentRef<typeof V
           </Pressable>
         );
       },
-      [checkedInEventIds, navigation]
+      [checkedInEventIds, navigation, qrSize]
     );
 
     const renderSkeletonItem = useCallback(() => {
@@ -144,41 +149,44 @@ export const UserEventCheckInList = React.forwardRef<React.ComponentRef<typeof V
             shadowRadius: 10,
             elevation: 6,
             overflow: 'hidden',
-        }}>
-        <View style={{ borderRadius: 16, overflow: 'hidden' }}>
-          <View className="h-56 w-full rounded-none bg-background-700" />
-          <LinearGradient colors={['transparent', '#18191f']} style={styles.gradient} />
+          }}>
+          <View style={{ borderRadius: 16, overflow: 'hidden' }}>
+            <View className="h-56 w-full rounded-none bg-background-700" />
+            <LinearGradient colors={['transparent', '#18191f']} style={styles.gradient} />
+          </View>
+
+          <Flex className="px-4">
+            <Flex direction="row" align="center" justify="space-between">
+              <View className="mt-2 h-10 w-3/4 rounded-md bg-background-700" />
+            </Flex>
+
+            <Flex direction="row" gap={4} className="mt-3">
+              <Flex direction="row" align="center" gap={2}>
+                <View className="h-5 w-5 rounded-full bg-background-700" />
+                <View className="h-5 w-28 rounded-md bg-background-700" />
+              </Flex>
+              <Flex direction="row" align="center" gap={2}>
+                <View className="h-5 w-5 rounded-full bg-background-700" />
+                <View className="h-5 w-20 rounded-md bg-background-700" />
+              </Flex>
+            </Flex>
+
+            <Flex direction="row" align="center" gap={2} className="mt-2">
+              <View className="h-5 w-5 rounded-full bg-background-700" />
+              <View className="h-5 w-2/3 rounded-md bg-background-700" />
+            </Flex>
+
+            <Flex align="center" className="mt-10">
+              <View
+                className="rounded-xl bg-background-700"
+                style={{ width: qrSize, height: qrSize }}
+              />
+              <View className="mt-3 h-4 w-24 rounded-md bg-background-700" />
+            </Flex>
+          </Flex>
         </View>
-
-        <Flex className="px-4">
-          <Flex direction="row" align="center" justify="space-between">
-            <View className="mt-2 h-10 w-3/4 rounded-md bg-background-700" />
-          </Flex>
-
-          <Flex direction="row" gap={4} className="mt-3">
-            <Flex direction="row" align="center" gap={2}>
-              <View className="h-5 w-5 rounded-full bg-background-700" />
-              <View className="h-5 w-28 rounded-md bg-background-700" />
-            </Flex>
-            <Flex direction="row" align="center" gap={2}>
-              <View className="h-5 w-5 rounded-full bg-background-700" />
-              <View className="h-5 w-20 rounded-md bg-background-700" />
-            </Flex>
-          </Flex>
-
-          <Flex direction="row" align="center" gap={2} className="mt-2">
-            <View className="h-5 w-5 rounded-full bg-background-700" />
-            <View className="h-5 w-2/3 rounded-md bg-background-700" />
-          </Flex>
-
-          <Flex align="center" className="mt-10">
-            <View className="h-40 w-40 rounded-xl bg-background-700" />
-            <View className="mt-3 h-4 w-24 rounded-md bg-background-700" />
-          </Flex>
-        </Flex>
-      </View>
       );
-    }, []);
+    }, [qrSize]);
 
     if (eventsLoading) {
       return (
