@@ -1,11 +1,21 @@
 // src/providers/AuthProvider.tsx
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { Session } from '@supabase/supabase-js';
 import * as Sentry from '@sentry/react-native';
 import { supabase } from '~/lib/supabase';
 import { UsersRow } from '~/types/user.type';
 import { signInWithGoogle, signOut } from '~/auth/google';
 import { signInWithApple } from '~/auth/apple';
+
+const STARTUP_PROFILE_TIMEOUT_MS = 8000;
 
 type AuthCtx = {
   session: Session | null;
@@ -41,59 +51,146 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<UsersRow | null>(null);
   const [initializing, setInitializing] = useState(true);
+  const mountedRef = useRef(false);
+  const profileRequestIdRef = useRef(0);
 
   // 👇 NEW
   const [justCompletedOnboarding, setJustCompletedOnboarding] = useState(false);
 
-  const fetchUser = useCallback(async (userId: string) => {
-    const { data, error } = await supabase.from('users').select('*').eq('id', userId).single();
+  useEffect(() => {
+    mountedRef.current = true;
 
-    if (!error && data) {
-      setUser(data);
-      return data;
-    } else {
-      setUser(null);
-      return null;
-    }
+    return () => {
+      mountedRef.current = false;
+      profileRequestIdRef.current += 1;
+    };
   }, []);
 
-  useEffect(() => {
-    const load = async (sess: Session | null) => {
+  const fetchUser = useCallback(async (userId: string) => {
+    const { data, error } = await supabase.from('users').select('*').eq('id', userId).maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return data ?? null;
+  }, []);
+
+  const hydrateUser = useCallback(
+    async (sess: Session | null) => {
+      const requestId = profileRequestIdRef.current + 1;
+      profileRequestIdRef.current = requestId;
+
+      if (!sess?.user?.id) {
+        setUser(null);
+        return null;
+      }
+
       try {
-        setSession(sess);
-        if (sess?.user?.id) {
-          await fetchUser(sess.user.id);
-        } else {
-          setUser(null);
+        const nextUser = await fetchUser(sess.user.id);
+        if (mountedRef.current && profileRequestIdRef.current === requestId) {
+          setUser(nextUser);
         }
+        return nextUser;
       } catch (error) {
         Sentry.captureException(error);
+        if (mountedRef.current && profileRequestIdRef.current === requestId) {
+          setUser(null);
+        }
+        return null;
+      }
+    },
+    [fetchUser]
+  );
+
+  const finishInitialProfileHydration = useCallback(
+    async (sess: Session | null) => {
+      if (!sess?.user?.id) {
         setUser(null);
-      } finally {
+        return;
+      }
+
+      await Promise.race([
+        hydrateUser(sess),
+        new Promise((resolve) => setTimeout(resolve, STARTUP_PROFILE_TIMEOUT_MS)),
+      ]);
+    },
+    [hydrateUser]
+  );
+
+  useEffect(() => {
+    const startupTimeout = setTimeout(() => {
+      if (mountedRef.current) {
         setInitializing(false);
       }
+    }, STARTUP_PROFILE_TIMEOUT_MS);
+
+    const setSessionFromAuth = (nextSession: Session | null) => {
+      setSession(nextSession);
+
+      if (!nextSession?.user?.id) {
+        profileRequestIdRef.current += 1;
+        setUser(null);
+        return;
+      }
+
+      setTimeout(() => {
+        if (mountedRef.current) {
+          void hydrateUser(nextSession);
+        }
+      }, 0);
     };
 
     supabase.auth
       .getSession()
-      .then(({ data: { session } }) => load(session))
+      .then(async ({ data: { session: initialSession } }) => {
+        if (!mountedRef.current) return;
+
+        setSession(initialSession);
+        await finishInitialProfileHydration(initialSession);
+      })
       .catch((error) => {
         Sentry.captureException(error);
+        if (!mountedRef.current) return;
+
         setSession(null);
         setUser(null);
-        setInitializing(false);
+      })
+      .finally(() => {
+        clearTimeout(startupTimeout);
+        if (mountedRef.current) {
+          setInitializing(false);
+        }
       });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, s) => load(s));
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSessionFromAuth(nextSession);
+    });
 
-    return () => subscription.unsubscribe();
-  }, [fetchUser]);
+    return () => {
+      clearTimeout(startupTimeout);
+      subscription.unsubscribe();
+    };
+  }, [finishInitialProfileHydration, hydrateUser]);
 
   const refreshUser = useCallback(async () => {
     if (!session?.user?.id) return null;
-    return fetchUser(session.user.id);
+
+    try {
+      const nextUser = await fetchUser(session.user.id);
+      if (mountedRef.current) {
+        setUser(nextUser);
+      }
+      return nextUser;
+    } catch (error) {
+      Sentry.captureException(error);
+      if (mountedRef.current) {
+        setUser(null);
+      }
+      return null;
+    }
   }, [session?.user?.id, fetchUser]);
 
   const value = useMemo(
