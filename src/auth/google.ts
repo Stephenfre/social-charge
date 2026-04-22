@@ -6,15 +6,21 @@ import { supabase } from '~/lib/supabase';
 let isConfigured = false;
 
 const getGoogleConfig = () => {
-  const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+  const serverClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+  const androidClientId = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
   const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
 
-  if (!webClientId) {
+  if (!serverClientId) {
     throw new Error('Missing EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID for Google Sign In.');
   }
 
+  if (Platform.OS === 'android' && !androidClientId) {
+    throw new Error('Missing EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID for Google Sign In.');
+  }
+
   return {
-    webClientId,
+    serverClientId,
+    androidClientId,
     iosClientId,
   };
 };
@@ -22,10 +28,10 @@ const getGoogleConfig = () => {
 const configureGoogleSignin = () => {
   if (isConfigured) return;
 
-  const { webClientId, iosClientId } = getGoogleConfig();
+  const { serverClientId, iosClientId } = getGoogleConfig();
 
   GoogleSignin.configure({
-    webClientId,
+    webClientId: serverClientId,
     iosClientId,
     offlineAccess: false,
   });
