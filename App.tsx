@@ -8,29 +8,29 @@ import * as Updates from 'expo-updates';
 import * as ExpoSplashScreen from 'expo-splash-screen';
 
 import './global.css';
-import { MainTabNavigator } from '~/navigation/MainTabNavigator';
-import {
-  InterestScreen,
-  OnboardingBudgetScreen,
-  OnboardingNightScreen,
-  OnboardingStartScreen,
-  OnboardingVibeScreen,
-  PolicyDetailScreen,
-  RegisterScreen,
-  RegisterUserNameScreen,
-  PrivacyPolicyScreen,
-  TermsAndConditionsScreen,
-  SignInScreen,
-  WelcomeScreen,
-} from '~/screens';
+import { SplashScreen } from '~/components/SplashScreen';
 import { AuthProvider, useAuth } from '~/providers/AuthProvider';
 import { RevenueCatProvider } from '~/providers/RevenueCatProvider';
 import { ThemeProvider } from '~/providers/ThemeProvider';
 import { RootStack, type RootStackParamList } from '~/types/navigation.types';
 import { resolveRootStackTarget } from '~/utils/resolveRootStackTarget';
+import { InterestScreen } from '~/screens/interest-screen';
+import { OnboardingBudgetScreen } from '~/screens/onboarding-budget-screen';
+import { OnboardingNightScreen } from '~/screens/onboarding-night-screen';
+import { OnboardingStartScreen } from '~/screens/onboarding-start-screen';
+import { OnboardingVibeScreen } from '~/screens/onboarding-vibe-screen';
+import { PolicyDetailScreen } from '~/screens/policy-detail-screen';
+import { PrivacyPolicyScreen } from '~/screens/privacy-policy-screen';
+import { RegisterScreen } from '~/screens/register-screen';
+import { RegisterUserNameScreen } from '~/screens/register-user-name-screen';
+import { SignInScreen } from '~/screens/sign-in-screen';
+import { TermsAndConditionsScreen } from '~/screens/terms-and-conditions-screen';
+import { WelcomeScreen } from '~/screens/welcome-screen';
 import * as Sentry from '@sentry/react-native';
 
 void ExpoSplashScreen.preventAutoHideAsync();
+
+const SPLASH_FAILSAFE_TIMEOUT_MS = 10000;
 
 const routingInstrumentation = Sentry.reactNavigationIntegration();
 const navigationRef = createNavigationContainerRef<RootStackParamList>();
@@ -100,6 +100,16 @@ const RootErrorFallback = ({ error, resetError }: ErrorFallbackProps) => {
 const queryClient = new QueryClient();
 
 export default Sentry.wrap(function App() {
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      void ExpoSplashScreen.hideAsync().catch(() => {});
+    }, SPLASH_FAILSAFE_TIMEOUT_MS);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, []);
+
   return (
     <Sentry.ErrorBoundary fallback={(errorProps) => <RootErrorFallback {...errorProps} />}>
       <GestureHandlerRootView style={{ flex: 1 }}>
@@ -184,7 +194,7 @@ function AppNavigation() {
   };
 
   if (initializing) {
-    return null;
+    return <SplashScreen showSpinner />;
   }
 
   const target = resolveRootStackTarget(session, user);
@@ -250,6 +260,13 @@ function AppNavigation() {
 
 /* ---------- Navigators ---------- */
 
+const RootTabsScreen = () => {
+  const { MainTabNavigator } =
+    require('~/navigation/MainTabNavigator') as typeof import('~/navigation/MainTabNavigator');
+
+  return <MainTabNavigator />;
+};
+
 const AuthStack = () => (
   <RootStack.Navigator screenOptions={{ headerShown: false }}>
     <RootStack.Screen name="Welcome" component={WelcomeScreen} />
@@ -286,7 +303,7 @@ const OnboardingStack = () => (
 
 const AppStack = () => (
   <RootStack.Navigator screenOptions={{ headerShown: false }}>
-    <RootStack.Screen name="Root" component={MainTabNavigator} />
+    <RootStack.Screen name="Root" component={RootTabsScreen} />
     {/* optional: reuse onboarding screens for settings flows */}
     <RootStack.Screen name="OnboardingStart" component={OnboardingStartScreen} />
     <RootStack.Screen name="OnboardingNight" component={OnboardingNightScreen} />

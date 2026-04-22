@@ -18,7 +18,6 @@ import Purchases, {
   PurchasesPackage,
   PURCHASES_ERROR_CODE,
 } from 'react-native-purchases';
-import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 
 import {
   REVENUECAT_API_KEY,
@@ -28,6 +27,24 @@ import {
 } from '~/config/revenuecat';
 import { supabase } from '~/lib/supabase';
 import { useAuth } from './AuthProvider';
+
+const PAYWALL_RESULT = {
+  NOT_PRESENTED: 'NOT_PRESENTED',
+  ERROR: 'ERROR',
+  CANCELLED: 'CANCELLED',
+  PURCHASED: 'PURCHASED',
+  RESTORED: 'RESTORED',
+} as const;
+type PaywallResult = (typeof PAYWALL_RESULT)[keyof typeof PAYWALL_RESULT];
+type RevenueCatUIModule = typeof import('react-native-purchases-ui');
+
+let revenueCatUIModulePromise: Promise<RevenueCatUIModule> | null = null;
+
+const getRevenueCatUI = async () => {
+  revenueCatUIModulePromise ??= import('react-native-purchases-ui');
+  const module = await revenueCatUIModulePromise;
+  return module.default;
+};
 
 type RevenueCatContextValue = {
   initialized: boolean;
@@ -40,9 +57,9 @@ type RevenueCatContextValue = {
   refreshCustomerInfo: () => Promise<CustomerInfo | null>;
   restorePurchases: () => Promise<CustomerInfo | null>;
   purchasePackage: (productKey: RevenueCatProductKey) => Promise<CustomerInfo | null>;
-  presentPaywall: (offeringIdentifier?: string) => Promise<PAYWALL_RESULT | null>;
-  presentOfferingPaywall: (offeringIdentifier?: string) => Promise<PAYWALL_RESULT | null>;
-  presentPlacementPaywall: (placementIdentifier: string) => Promise<PAYWALL_RESULT | null>;
+  presentPaywall: (offeringIdentifier?: string) => Promise<PaywallResult | null>;
+  presentOfferingPaywall: (offeringIdentifier?: string) => Promise<PaywallResult | null>;
+  presentPlacementPaywall: (placementIdentifier: string) => Promise<PaywallResult | null>;
   presentCustomerCenter: () => Promise<void>;
   customerCenterEnabled: boolean;
 };
@@ -471,6 +488,7 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
           );
         }
 
+        const RevenueCatUI = await getRevenueCatUI();
         const presentDirectly = () => RevenueCatUI.presentPaywall({ offering: selectedOffering });
 
         let result = await RevenueCatUI.presentPaywallIfNeeded({
@@ -524,6 +542,7 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
           );
         }
 
+        const RevenueCatUI = await getRevenueCatUI();
         const result = await RevenueCatUI.presentPaywall({
           offering: selectedOffering,
         });
@@ -574,6 +593,7 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
           throw new Error(`No offering was returned for placement "${placementIdentifier}".`);
         }
 
+        const RevenueCatUI = await getRevenueCatUI();
         const result = await RevenueCatUI.presentPaywall({
           offering: selectedOffering,
         });
@@ -602,6 +622,7 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
     }
 
     try {
+      const RevenueCatUI = await getRevenueCatUI();
       await RevenueCatUI.presentCustomerCenter();
       await loadCustomerInfo();
     } catch (err) {

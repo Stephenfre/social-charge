@@ -1,10 +1,19 @@
 import { Platform } from 'react-native';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '~/lib/supabase';
 
+type GoogleSigninModule = typeof import('@react-native-google-signin/google-signin');
+type GoogleSigninStatic = GoogleSigninModule['GoogleSignin'];
+
 let isConfigured = false;
 let playServicesPromise: Promise<boolean> | null = null;
+let googleSigninModulePromise: Promise<GoogleSigninModule> | null = null;
+
+const getGoogleSignin = async () => {
+  googleSigninModulePromise ??= import('@react-native-google-signin/google-signin');
+  const { GoogleSignin } = await googleSigninModulePromise;
+  return GoogleSignin;
+};
 
 const getGoogleConfig = () => {
   const serverClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
@@ -26,8 +35,10 @@ const getGoogleConfig = () => {
   };
 };
 
-const configureGoogleSignin = () => {
-  if (isConfigured) return;
+const configureGoogleSignin = async (): Promise<GoogleSigninStatic> => {
+  const GoogleSignin = await getGoogleSignin();
+
+  if (isConfigured) return GoogleSignin;
 
   const { serverClientId, iosClientId } = getGoogleConfig();
 
@@ -38,10 +49,11 @@ const configureGoogleSignin = () => {
   });
 
   isConfigured = true;
+  return GoogleSignin;
 };
 
 export const prepareGoogleSignIn = async () => {
-  configureGoogleSignin();
+  const GoogleSignin = await configureGoogleSignin();
 
   if (Platform.OS === 'android') {
     playServicesPromise ??= GoogleSignin.hasPlayServices({
@@ -49,12 +61,14 @@ export const prepareGoogleSignIn = async () => {
     });
     await playServicesPromise;
   }
+
+  return GoogleSignin;
 };
 
 export const signInWithGoogle = async (): Promise<
   { cancelled: true } | { cancelled: false; session: Session }
 > => {
-  await prepareGoogleSignIn();
+  const GoogleSignin = await prepareGoogleSignIn();
 
   const response = await GoogleSignin.signIn();
   if (response.type === 'cancelled') {
@@ -79,7 +93,7 @@ export const signInWithGoogle = async (): Promise<
 
 export const signOut = async () => {
   try {
-    configureGoogleSignin();
+    const GoogleSignin = await configureGoogleSignin();
     await GoogleSignin.signOut();
   } catch {
     // ignore native sign-out failures and always clear Supabase session

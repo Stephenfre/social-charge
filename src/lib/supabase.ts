@@ -6,15 +6,21 @@ import { Database } from '~/types/database.types';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    ...(Platform.OS !== 'web' ? { storage: AsyncStorage } : {}),
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-    lock: processLock,
-  },
-});
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+
+export const supabase = createClient<Database>(
+  supabaseUrl || 'https://missing-supabase-url.supabase.co',
+  supabaseAnonKey || 'missing-supabase-anon-key',
+  {
+    auth: {
+      ...(Platform.OS !== 'web' ? { storage: AsyncStorage } : {}),
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+      lock: processLock,
+    },
+  }
+);
 
 // Tells Supabase Auth to continuously refresh the session automatically
 // if the app is in the foreground. When this is added, you will continue

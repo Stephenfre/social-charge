@@ -10,7 +10,7 @@ import React, {
 } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import * as Sentry from '@sentry/react-native';
-import { supabase } from '~/lib/supabase';
+import { isSupabaseConfigured, supabase } from '~/lib/supabase';
 import { UsersRow } from '~/types/user.type';
 import { signInWithGoogle, signOut } from '~/auth/google';
 import { signInWithApple } from '~/auth/apple';
@@ -119,6 +119,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      Sentry.captureMessage('Supabase public environment variables are missing.');
+      setSession(null);
+      setUser(null);
+      setInitializing(false);
+      return;
+    }
+
     const startupTimeout = setTimeout(() => {
       if (mountedRef.current) {
         setInitializing(false);
