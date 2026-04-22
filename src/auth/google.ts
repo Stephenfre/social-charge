@@ -4,6 +4,7 @@ import type { Session } from '@supabase/supabase-js';
 import { supabase } from '~/lib/supabase';
 
 let isConfigured = false;
+let playServicesPromise: Promise<boolean> | null = null;
 
 const getGoogleConfig = () => {
   const serverClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
@@ -39,14 +40,21 @@ const configureGoogleSignin = () => {
   isConfigured = true;
 };
 
-export const signInWithGoogle = async (): Promise<
-  { cancelled: true } | { cancelled: false; session: Session }
-> => {
+export const prepareGoogleSignIn = async () => {
   configureGoogleSignin();
 
   if (Platform.OS === 'android') {
-    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+    playServicesPromise ??= GoogleSignin.hasPlayServices({
+      showPlayServicesUpdateDialog: true,
+    });
+    await playServicesPromise;
   }
+};
+
+export const signInWithGoogle = async (): Promise<
+  { cancelled: true } | { cancelled: false; session: Session }
+> => {
+  await prepareGoogleSignIn();
 
   const response = await GoogleSignin.signIn();
   if (response.type === 'cancelled') {

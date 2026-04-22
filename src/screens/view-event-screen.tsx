@@ -1,4 +1,4 @@
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
@@ -65,7 +65,7 @@ export function ViewEventScreen() {
   const navigation = useNavigation<EventNav>();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
-  const snapPoints = useMemo(() => ['75%'], []);
+  const snapPoints = useMemo(() => ['55%', '90%'], []);
 
   const { session, userId, user } = useAuth();
   const {
@@ -145,9 +145,7 @@ export function ViewEventScreen() {
         return;
       }
 
-      setHasValidatedAttendeeAccess(
-        Boolean(info?.entitlements.active[REVENUECAT_ENTITLEMENT])
-      );
+      setHasValidatedAttendeeAccess(Boolean(info?.entitlements.active[REVENUECAT_ENTITLEMENT]));
     };
 
     void validateAttendeeAccess();
@@ -401,21 +399,21 @@ export function ViewEventScreen() {
 
       {/* PERSISTENT BOTTOM SHEET ACTION BAR */}
       <BottomSheet
-        index={1}
+        index={0}
         snapPoints={snapPoints}
+        enableDynamicSizing={false}
         enablePanDownToClose={false}
-        enableOverDrag={false}
-        enableHandlePanningGesture={false}
-        enableContentPanningGesture={false}
-        handleIndicatorStyle={{ backgroundColor: 'transparent' }}
+        enableOverDrag
+        enableHandlePanningGesture
+        enableContentPanningGesture
+        handleIndicatorStyle={{ backgroundColor: '#3F3F46' }}
         backgroundStyle={{
           backgroundColor: '#0F1012',
           borderTopLeftRadius: 24,
           borderTopRightRadius: 24,
         }}>
-        <BottomSheetView
-          style={{
-            flex: 1,
+        <BottomSheetScrollView
+          contentContainerStyle={{
             paddingHorizontal: 16,
             paddingBottom: insets.bottom + 120,
           }}>
@@ -576,7 +574,7 @@ export function ViewEventScreen() {
               </Flex>
             </Flex>
           </Flex>
-        </BottomSheetView>
+        </BottomSheetScrollView>
       </BottomSheet>
       <View
         className="absolute bottom-0 left-0 right-0 border-t bg-background-dark px-14 pt-3"
@@ -589,6 +587,14 @@ export function ViewEventScreen() {
               Review Event
             </Text>
           </Button>
+        ) : isRsvped && event.id ? (
+          <CancelRsvpButton
+            eventId={event.id}
+            tokenCost={event.token_cost ?? 0}
+            eventTitle={event.title ?? ''}
+            eventStartsAt={event.starts_at ?? null}
+            className="h-14 w-full rounded-lg bg-primary-700"
+          />
         ) : (
           <Flex direction="row" align="center" justify="space-between">
             <Flex align="center">
@@ -600,14 +606,7 @@ export function ViewEventScreen() {
               </Text>
             </Flex>
             <Flex className="w-1/2" gap={2}>
-              {isRsvped && event.id ? (
-                <CancelRsvpButton
-                  eventId={event.id}
-                  tokenCost={event.token_cost ?? 0}
-                  eventTitle={event.title ?? ''}
-                  eventStartsAt={event.starts_at ?? null}
-                />
-              ) : isSoldOut ? (
+              {isSoldOut ? (
                 <>
                   <Button
                     variant="primary"
@@ -868,7 +867,7 @@ export function CancelRsvpButton({
   const queryClient = useQueryClient();
   const { session, userId } = useAuth();
   const [isPending, setIsPending] = useState(false);
-  const label = isPending ? <Spinner /> : 'Cancel RSVP';
+  const label = isPending ? <Spinner /> : 'Cancel';
   const startsAt = eventStartsAt ? dayjs(eventStartsAt) : null;
   const hoursUntilStart = startsAt ? startsAt.diff(dayjs(), 'hour', true) : Infinity;
   const isWithinGracePeriod = hoursUntilStart >= 2;
@@ -891,7 +890,7 @@ export function CancelRsvpButton({
       }
 
       if (data?.status !== 'removed') {
-        throw new Error('Unable to cancel RSVP.');
+        throw new Error('Unable to Cancel.');
       }
 
       queryClient.invalidateQueries({ queryKey: EVENT_KEYS.eventById(eventId) });
@@ -921,7 +920,7 @@ export function CancelRsvpButton({
       onCancelled?.();
     } catch (err) {
       const message = (err as { message?: string })?.message ?? 'Something went wrong.';
-      Alert.alert('Failed to cancel RSVP', message);
+      Alert.alert('Failed to Cancel', message);
     } finally {
       setIsPending(false);
     }
@@ -931,7 +930,7 @@ export function CancelRsvpButton({
     const message = isWithinGracePeriod
       ? 'Are you sure you want to cancel and refund your credits?'
       : "The cancellation grace period has passed. You can still cancel, but you won't receive a refund.";
-    Alert.alert('Cancel RSVP', message, [
+    Alert.alert('Cancel', message, [
       { text: 'No', style: 'cancel' },
       { text: 'Yes', onPress: () => performCancellation(isWithinGracePeriod) },
     ]);

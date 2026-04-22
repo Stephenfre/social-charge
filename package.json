@@ -18,8 +18,8 @@
     "eas:ios:prod": "eas build --platform ios --profile production",
     "eas:ios:staging": "eas build --platform ios --profile staging",
     "eas:ios:preview": "eas build --platform ios --profile preview",
-    "eas:ios:submit": "APP_ENV=production EXPO_PUBLIC_RC_USE_TEST_STORE=false eas submit --platform ios --profile production",
-    "eas:ios:update": "eas update --platform ios --channel production",
+    "eas:ios:submit": "APP_ENV=production EXPO_PUBLIC_RC_USE_TEST_STORE=false eas submit --profile production",
+    "eas:update": "eas update --channel production",
     "eas:android:dev": "eas build --platform android --profile development",
     "eas:android:prod": "eas build --platform android --profile production"
   },

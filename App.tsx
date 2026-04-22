@@ -61,6 +61,10 @@ type ErrorFallbackProps = {
 const RootErrorFallback = ({ error, resetError }: ErrorFallbackProps) => {
   const message = error instanceof Error ? error.message : 'Unexpected error encountered.';
 
+  useEffect(() => {
+    void ExpoSplashScreen.hideAsync().catch(() => {});
+  }, []);
+
   return (
     <GestureHandlerRootView
       style={{

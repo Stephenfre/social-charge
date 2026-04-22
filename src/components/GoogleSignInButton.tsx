@@ -1,11 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator } from 'react-native';
 import { Text, Flex, Button } from '~/components/ui';
 import { useAuth } from '~/providers/AuthProvider';
+import { prepareGoogleSignIn } from '~/auth/google';
 
 export function GoogleSignInButton() {
   const { signInWithGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void prepareGoogleSignIn().catch(() => {});
+  }, []);
 
   const onPress = async () => {
     if (loading) return;
@@ -41,9 +47,10 @@ export function GoogleSignInButton() {
           </>
         )}
       </Pressable> */}
-      <Button className="h-14 w-full rounded-xl bg-white" onPress={onPress}>
+      <Button className="h-14 w-full rounded-xl bg-white" onPress={onPress} disabled={loading}>
+        {loading ? <ActivityIndicator color="#111827" /> : null}
         <Text size="lg" weight="600" className="text-typography-dark">
-          Continue with Google
+          {loading ? 'Connecting...' : 'Continue with Google'}
         </Text>
       </Button>
 

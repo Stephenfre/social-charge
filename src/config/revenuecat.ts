@@ -37,11 +37,11 @@ export type RevenueCatConfig = {
 };
 
 const extra = (Constants.expoConfig?.extra?.revenuecat as RevenueCatExtra | undefined) ?? {};
+const isProductionBuild =
+  Constants.expoConfig?.extra?.appEnv === 'production' ||
+  Constants.expoConfig?.name === 'Social Charge';
 
-const useTestStore =
-  process.env.EXPO_PUBLIC_RC_USE_TEST_STORE != null
-    ? process.env.EXPO_PUBLIC_RC_USE_TEST_STORE === 'true'
-    : extra.useTestStore === true;
+const useTestStore = isProductionBuild ? false : extra.useTestStore === true;
 
 // Prefer env vars, fall back to app config extra.
 // Use platform-specific keys.
@@ -66,11 +66,7 @@ const apiKey = (() => {
   const chosen = useTestStore ? (envTest ?? extraTest) : (envProd ?? extraProd);
 
   if (!chosen || typeof chosen !== 'string' || chosen.trim().length === 0) {
-    throw new Error(
-      `[RevenueCat] Missing ${useTestStore ? 'TEST' : 'PROD'} API key for ${
-        isIos ? 'iOS' : 'Android'
-      }. Check EXPO_PUBLIC_RC_* env vars or app.config extra.`
-    );
+    return '';
   }
 
   return chosen.trim();

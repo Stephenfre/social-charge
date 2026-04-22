@@ -1,4 +1,4 @@
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import {
   PropsWithChildren,
   createContext,
@@ -50,9 +50,7 @@ type RevenueCatContextValue = {
 const RevenueCatContext = createContext<RevenueCatContextValue | undefined>(undefined);
 
 const hasAnyOfferings = (availableOfferings: PurchasesOfferings | null) =>
-  Boolean(
-    availableOfferings?.current || Object.keys(availableOfferings?.all ?? {}).length > 0
-  );
+  Boolean(availableOfferings?.current || Object.keys(availableOfferings?.all ?? {}).length > 0);
 
 const resolveOffering = (
   availableOfferings: PurchasesOfferings | null,
@@ -219,9 +217,7 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
         error: err,
       });
 
-      return `Requested product IDs: ${requestedProductIds.join(
-        ', '
-      )}. Product lookup failed: ${
+      return `Requested product IDs: ${requestedProductIds.join(', ')}. Product lookup failed: ${
         typeof purchasesError?.message === 'string' ? purchasesError.message : 'unknown error'
       }.`;
     }
@@ -264,7 +260,11 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
       try {
         if (!REVENUECAT_API_KEY) {
           throw new Error(
-            'RevenueCat API key is missing. Set EXPO_PUBLIC_RC_API_KEY_IOS or EXPO_PUBLIC_RC_TEST_API_KEY_IOS for iOS builds.'
+            `RevenueCat API key is missing. Set EXPO_PUBLIC_RC_API_KEY_${
+              Platform.OS === 'ios' ? 'IOS' : 'ANDROID'
+            } or EXPO_PUBLIC_RC_TEST_API_KEY_${
+              Platform.OS === 'ios' ? 'IOS' : 'ANDROID'
+            } for this build.`
           );
         }
 
@@ -367,9 +367,7 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
         return;
       }
 
-      setUserState((current) =>
-        current ? { ...current, membership: nextMembership } : current
-      );
+      setUserState((current) => (current ? { ...current, membership: nextMembership } : current));
     };
 
     syncMembership();
@@ -407,7 +405,8 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
 
       for (const offering of allOfferings) {
         const match = offering.availablePackages.find(
-          (pkg) => pkg.product.identifier === productIdentifier || pkg.identifier === productIdentifier
+          (pkg) =>
+            pkg.product.identifier === productIdentifier || pkg.identifier === productIdentifier
         );
         if (match) {
           return match;
@@ -462,8 +461,8 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
       try {
         const availableOfferings = hasAnyOfferings(offerings) ? offerings : await loadOfferings();
         const selectedOffering = offeringIdentifier
-          ? resolveOffering(availableOfferings, offeringIdentifier) ??
-            resolveDefaultPaywallOffering(availableOfferings)
+          ? (resolveOffering(availableOfferings, offeringIdentifier) ??
+            resolveDefaultPaywallOffering(availableOfferings))
           : resolveDefaultPaywallOffering(availableOfferings);
 
         if (!selectedOffering) {
@@ -472,8 +471,7 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
           );
         }
 
-        const presentDirectly = () =>
-          RevenueCatUI.presentPaywall({ offering: selectedOffering });
+        const presentDirectly = () => RevenueCatUI.presentPaywall({ offering: selectedOffering });
 
         let result = await RevenueCatUI.presentPaywallIfNeeded({
           requiredEntitlementIdentifier: REVENUECAT_ENTITLEMENT,
@@ -540,13 +538,7 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
         return null;
       }
     },
-    [
-      getProductDiagnosticsSummary,
-      handlePurchasesError,
-      loadCustomerInfo,
-      loadOfferings,
-      offerings,
-    ]
+    [getProductDiagnosticsSummary, handlePurchasesError, loadCustomerInfo, loadOfferings, offerings]
   );
 
   const presentPlacementPaywall = useCallback(
