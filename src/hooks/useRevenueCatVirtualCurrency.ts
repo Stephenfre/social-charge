@@ -17,8 +17,15 @@ export function useRevenueCatVirtualCurrency(code = REVENUECAT_VIRTUAL_CURRENCY_
     queryKey: REVENUECAT_VIRTUAL_CURRENCY_QUERY_KEYS.balance(userId, code),
     enabled: Boolean(userId),
     queryFn: async () => {
+      try {
+        await Purchases.invalidateVirtualCurrenciesCache();
+      } catch {
+        // Keep reading balance even if cache invalidation is unavailable or fails.
+      }
+
+      const live = await Purchases.getVirtualCurrencies();
       const cached = await Purchases.getCachedVirtualCurrencies();
-      const virtualCurrencies = cached ?? (await Purchases.getVirtualCurrencies());
+      const virtualCurrencies = live ?? cached;
       const currencies = virtualCurrencies.all ?? {};
 
       if (code && currencies[code]) {

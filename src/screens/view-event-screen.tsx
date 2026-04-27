@@ -27,6 +27,7 @@ import {
 } from '~/hooks';
 import { useEventVibes } from '~/hooks/useEvents';
 import { useRsvps } from '~/hooks/useRsvps';
+import { TOKEN_QUERY_KEYS } from '~/hooks/useTokens';
 import { WAITLIST_KEYS } from '~/hooks/useWaitlist';
 import { EVENT_KEYS } from '~/hooks/useEvents';
 import { supabase } from '~/lib/supabase';
@@ -39,6 +40,7 @@ import { RootStackParamList, useRouteStack } from '~/types/navigation.types';
 
 type EventNav = NativeStackNavigationProp<RootStackParamList, 'CreateEvent', 'EventReview'>;
 type ConfirmationMode = 'rsvp' | 'waitlist';
+type VirtualCurrencyBalanceShape = { balance?: number } & Record<string, unknown>;
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error && error.message) {
@@ -81,6 +83,20 @@ export function ViewEventScreen() {
   } = useRevenueCat();
   const { data: event, isLoading } = useEventById(params.eventId);
   const { data: eventVibes = [] } = useEventVibes(params.eventId);
+  const uniqueEventVibes = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          eventVibes
+            .filter(
+              (vibe): vibe is (typeof eventVibes)[number] & { vibe_slug: string } =>
+                typeof vibe?.vibe_slug === 'string' && vibe.vibe_slug.length > 0
+            )
+            .map((vibe) => [vibe.vibe_slug.toLowerCase(), vibe])
+        ).values()
+      ),
+    [eventVibes]
+  );
   const {
     data: existingReview,
     isLoading: reviewLoading,
@@ -286,11 +302,28 @@ export function ViewEventScreen() {
 
     setIsConfirmingRsvp(true);
     setRsvpError(null);
+    let optimisticSnapshot: VirtualCurrencyBalanceShape | null | undefined;
+    let appliedOptimisticUpdate = false;
 
     try {
       const accessToken = session?.access_token;
       if (!accessToken) {
         throw new Error('You must be signed in to RSVP for an event.');
+      }
+
+      const virtualCurrencyKey = REVENUECAT_VIRTUAL_CURRENCY_QUERY_KEYS.balance(
+        userId ?? null,
+        REVENUECAT_VIRTUAL_CURRENCY_CODE ?? null
+      );
+
+      // Optimistically reduce balance so the modal/UI updates immediately.
+      optimisticSnapshot = queryClient.getQueryData<VirtualCurrencyBalanceShape | null>(virtualCurrencyKey);
+      if (optimisticSnapshot && typeof optimisticSnapshot.balance === 'number') {
+        queryClient.setQueryData<VirtualCurrencyBalanceShape>(virtualCurrencyKey, {
+          ...optimisticSnapshot,
+          balance: optimisticSnapshot.balance - tokenCost,
+        });
+        appliedOptimisticUpdate = true;
       }
 
       const { data, error } = await supabase.functions.invoke('confirm-rsvp-and-spend-credits', {
@@ -315,7 +348,9 @@ export function ViewEventScreen() {
       queryClient.invalidateQueries({ queryKey: WAITLIST_KEYS.position(event.id, userId) });
       queryClient.invalidateQueries({ queryKey: EVENT_KEYS.checkIn(userId) });
       queryClient.invalidateQueries({ queryKey: EVENT_KEYS.userCheckedIn(userId, event.id) });
-      queryClient.invalidateQueries({ queryKey: ['token-transactions', userId] });
+      queryClient.invalidateQueries({
+        queryKey: TOKEN_QUERY_KEYS.transactions(userId ?? undefined),
+      });
       queryClient.invalidateQueries({
         queryKey: REVENUECAT_VIRTUAL_CURRENCY_QUERY_KEYS.balance(
           userId ?? null,
@@ -326,11 +361,21 @@ export function ViewEventScreen() {
       setShowRsvpModal(false);
       Alert.alert('RSVP Confirmed', 'Your RSVP is confirmed.');
     } catch (error) {
+      if (appliedOptimisticUpdate) {
+        queryClient.setQueryData(
+          REVENUECAT_VIRTUAL_CURRENCY_QUERY_KEYS.balance(
+            userId ?? null,
+            REVENUECAT_VIRTUAL_CURRENCY_CODE ?? null
+          ),
+          optimisticSnapshot
+        );
+      }
       const message =
         (error as { message?: string })?.message ??
         'Something went wrong while attempting to RSVP.';
       setRsvpError(message);
     } finally {
+      await refetchVirtualCurrency();
       setIsConfirmingRsvp(false);
     }
   };
@@ -513,9 +558,9 @@ export function ViewEventScreen() {
                 <Text bold size="2xl">
                   Vibe Check
                 </Text>
-                {eventVibes.length ? (
+                {uniqueEventVibes.length ? (
                   <Flex direction="row" flex wrap="wrap" gap={2}>
-                    {eventVibes.map((vibe) => (
+                    {uniqueEventVibes.map((vibe) => (
                       <Badge key={vibe.vibe_slug} variant="primary">
                         <Text size="sm" className="uppercase text-primary-300">
                           {vibe.vibe_slug}
@@ -936,7 +981,9 @@ export function CancelRsvpButton({
       queryClient.invalidateQueries({
         queryKey: EVENT_KEYS.userCheckedIn(userId ?? null, eventId),
       });
-      queryClient.invalidateQueries({ queryKey: ['token-transactions', userId] });
+      queryClient.invalidateQueries({
+        queryKey: TOKEN_QUERY_KEYS.transactions(userId ?? undefined),
+      });
       queryClient.invalidateQueries({
         queryKey: REVENUECAT_VIRTUAL_CURRENCY_QUERY_KEYS.balance(
           userId ?? null,
