@@ -263,6 +263,25 @@ function AppNavigation() {
           </View>
         </View>
       ) : null}
+      {isApplyingUpdate ? (
+        <View
+          pointerEvents="auto"
+          style={{
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#0F1012',
+          }}>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+          <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600', marginTop: 16 }}>
+            Applying update
+          </Text>
+        </View>
+      ) : null}
     </NavigationContainer>
   );
 }
