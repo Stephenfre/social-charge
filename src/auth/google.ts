@@ -92,14 +92,25 @@ export const signInWithGoogle = async (): Promise<
 };
 
 export const signOut = async () => {
-  try {
-    const GoogleSignin = await configureGoogleSignin();
-    await GoogleSignin.signOut();
-  } catch {
-    // ignore native sign-out failures and always clear Supabase session
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const provider =
+    session?.user?.app_metadata && typeof session.user.app_metadata.provider === 'string'
+      ? session.user.app_metadata.provider
+      : null;
+
+  if (provider === 'google') {
+    try {
+      const GoogleSignin = await configureGoogleSignin();
+      await GoogleSignin.signOut();
+    } catch {
+      // Ignore native sign-out failures and still clear Supabase session.
+    }
   }
 
-  const { error } = await supabase.auth.signOut();
+  // Local sign-out guarantees the client session is cleared immediately.
+  const { error } = await supabase.auth.signOut({ scope: 'local' });
   if (error) {
     const code =
       'code' in error && typeof (error as { code?: unknown }).code === 'string'

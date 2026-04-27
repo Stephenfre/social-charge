@@ -12,7 +12,7 @@ import type { Session } from '@supabase/supabase-js';
 import * as Sentry from '@sentry/react-native';
 import { isSupabaseConfigured, supabase } from '~/lib/supabase';
 import { UsersRow } from '~/types/user.type';
-import { signInWithGoogle, signOut } from '~/auth/google';
+import { signInWithGoogle, signOut as providerSignOut } from '~/auth/google';
 import { signInWithApple } from '~/auth/apple';
 
 const STARTUP_PROFILE_TIMEOUT_MS = 8000;
@@ -200,6 +200,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return null;
     }
   }, [session?.user?.id, fetchUser]);
+
+  const signOut = useCallback(async () => {
+    // Immediately clear local auth state so routing updates without waiting for auth callbacks.
+    profileRequestIdRef.current += 1;
+    setSession(null);
+    setUser(null);
+
+    try {
+      await providerSignOut();
+    } catch (error) {
+      Sentry.captureException(error);
+      throw error;
+    }
+  }, []);
 
   const value = useMemo(
     () => ({

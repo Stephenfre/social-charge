@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import { ArrowRight, Minus, Plus } from 'lucide-react-native';
 import { ScrollView } from 'react-native';
 import { Box, Button, Flex, Text } from '~/components/ui';
-import { useRevenueCatVirtualCurrency, useTokenTransactions } from '~/hooks';
+import { useRevenueCatVirtualCurrency, useTokenBalance, useTokenTransactions } from '~/hooks';
 import { useRevenueCat } from '~/providers/RevenueCatProvider';
 
 type WalletHistoryItem = {
@@ -53,6 +53,7 @@ export function WalletScreen() {
     isRefetching: isBalanceRefetching,
     refetch: refetchVirtualCurrency,
   } = useRevenueCatVirtualCurrency();
+  const { data: tokenBalance, refetch: refetchTokenBalance } = useTokenBalance();
 
   const { data: tokenTransactions, isLoading: isTransactionsLoading } = useTokenTransactions();
   const handleOpenTokensPaywall = useCallback(async () => {
@@ -61,8 +62,8 @@ export function WalletScreen() {
     }
 
     await presentPlacementPaywall('battery_pack_purchase');
-    await refetchVirtualCurrency();
-  }, [initialized, loadingOfferings, presentPlacementPaywall, refetchVirtualCurrency]);
+    await Promise.all([refetchVirtualCurrency(), refetchTokenBalance()]);
+  }, [initialized, loadingOfferings, presentPlacementPaywall, refetchTokenBalance, refetchVirtualCurrency]);
 
   const isBalanceLoading = isBalanceInitialLoading || isBalanceRefetching;
   const historyItems = useMemo<WalletHistoryItem[]>(() => {
@@ -133,7 +134,7 @@ export function WalletScreen() {
               {!isBalanceLoading ? (
                 <Flex direction="row" gap={2} align="center">
                   <Text size="5xl" bold>
-                    {virtualCurrency?.balance ?? 0}
+                    {tokenBalance ?? 0}
                   </Text>
                   <Text size="2xl">Credits</Text>
                 </Flex>

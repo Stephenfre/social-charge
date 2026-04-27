@@ -21,13 +21,12 @@ import {
   useMyWaitlistEntry,
   REVENUECAT_VIRTUAL_CURRENCY_QUERY_KEYS,
   useEventReview,
-  useRevenueCatVirtualCurrency,
   useStorageImages,
   useWaitlistPosition,
 } from '~/hooks';
 import { useEventVibes } from '~/hooks/useEvents';
 import { useRsvps } from '~/hooks/useRsvps';
-import { TOKEN_QUERY_KEYS } from '~/hooks/useTokens';
+import { TOKEN_QUERY_KEYS, useTokenBalance } from '~/hooks/useTokens';
 import { WAITLIST_KEYS } from '~/hooks/useWaitlist';
 import { EVENT_KEYS } from '~/hooks/useEvents';
 import { supabase } from '~/lib/supabase';
@@ -40,7 +39,6 @@ import { RootStackParamList, useRouteStack } from '~/types/navigation.types';
 
 type EventNav = NativeStackNavigationProp<RootStackParamList, 'CreateEvent', 'EventReview'>;
 type ConfirmationMode = 'rsvp' | 'waitlist';
-type VirtualCurrencyBalanceShape = { balance?: number } & Record<string, unknown>;
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error && error.message) {
@@ -105,10 +103,10 @@ export function ViewEventScreen() {
   } = useEventReview(params.eventId);
   const { data: rsvps = [], isLoading: rsvpLoading } = useRsvps(params.eventId);
   const {
-    data: virtualCurrency,
+    data: tokenBalance,
     isLoading: tokenBalanceLoading,
-    refetch: refetchVirtualCurrency,
-  } = useRevenueCatVirtualCurrency();
+    refetch: refetchTokenBalance,
+  } = useTokenBalance();
   const { mutateAsync: joinWaitlistAsync, isPending: joiningWaitlist } = useJoinWaitlist();
   const { mutateAsync: cancelWaitlistAsync, isPending: leavingWaitlist } = useCancelWaitlist();
 
@@ -143,7 +141,7 @@ export function ViewEventScreen() {
   );
 
   const tokenCost = event?.token_cost ?? 0;
-  const currentBalance = virtualCurrency?.balance ?? 0;
+  const currentBalance = tokenBalance ?? 0;
   const projectedBalance = useMemo(() => currentBalance - tokenCost, [currentBalance, tokenCost]);
   const currentRsvpCount = event?.rsvps?.length ?? rsvps.length;
   const remainingSpots = useMemo(() => {
@@ -293,7 +291,7 @@ export function ViewEventScreen() {
       setIsConfirmingRsvp(true);
       try {
         await presentPlacementPaywall('battery_pack_purchase');
-        await refetchVirtualCurrency();
+        await refetchTokenBalance();
       } finally {
         setIsConfirmingRsvp(false);
       }
@@ -302,7 +300,7 @@ export function ViewEventScreen() {
 
     setIsConfirmingRsvp(true);
     setRsvpError(null);
-    let optimisticSnapshot: VirtualCurrencyBalanceShape | null | undefined;
+    let optimisticSnapshot: number | undefined;
     let appliedOptimisticUpdate = false;
 
     try {
@@ -311,18 +309,12 @@ export function ViewEventScreen() {
         throw new Error('You must be signed in to RSVP for an event.');
       }
 
-      const virtualCurrencyKey = REVENUECAT_VIRTUAL_CURRENCY_QUERY_KEYS.balance(
-        userId ?? null,
-        REVENUECAT_VIRTUAL_CURRENCY_CODE ?? null
-      );
+      const tokenBalanceKey = TOKEN_QUERY_KEYS.balance(userId ?? undefined);
 
       // Optimistically reduce balance so the modal/UI updates immediately.
-      optimisticSnapshot = queryClient.getQueryData<VirtualCurrencyBalanceShape | null>(virtualCurrencyKey);
-      if (optimisticSnapshot && typeof optimisticSnapshot.balance === 'number') {
-        queryClient.setQueryData<VirtualCurrencyBalanceShape>(virtualCurrencyKey, {
-          ...optimisticSnapshot,
-          balance: optimisticSnapshot.balance - tokenCost,
-        });
+      optimisticSnapshot = queryClient.getQueryData<number>(tokenBalanceKey);
+      if (typeof optimisticSnapshot === 'number') {
+        queryClient.setQueryData<number>(tokenBalanceKey, optimisticSnapshot - tokenCost);
         appliedOptimisticUpdate = true;
       }
 
@@ -362,20 +354,14 @@ export function ViewEventScreen() {
       Alert.alert('RSVP Confirmed', 'Your RSVP is confirmed.');
     } catch (error) {
       if (appliedOptimisticUpdate) {
-        queryClient.setQueryData(
-          REVENUECAT_VIRTUAL_CURRENCY_QUERY_KEYS.balance(
-            userId ?? null,
-            REVENUECAT_VIRTUAL_CURRENCY_CODE ?? null
-          ),
-          optimisticSnapshot
-        );
+        queryClient.setQueryData(TOKEN_QUERY_KEYS.balance(userId ?? undefined), optimisticSnapshot);
       }
       const message =
         (error as { message?: string })?.message ??
         'Something went wrong while attempting to RSVP.';
       setRsvpError(message);
     } finally {
-      await refetchVirtualCurrency();
+      await refetchTokenBalance();
       setIsConfirmingRsvp(false);
     }
   };
