@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { RefreshControl, ScrollView, View } from 'react-native';
 import { Button, ButtonText, Flex, Pressable, Text } from '~/components/ui';
 import { FontAwesome } from '@expo/vector-icons';
 import ReanimatedSkeleton from 'react-native-reanimated-skeleton';
@@ -106,6 +106,7 @@ export function HomeScreen() {
 
   const { userId, justCompletedOnboarding, setJustCompletedOnboarding } = useAuth();
   const [completionVisible, setCompletionVisible] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     setCompletionVisible(justCompletedOnboarding);
@@ -116,11 +117,26 @@ export function HomeScreen() {
     setJustCompletedOnboarding(false);
   }, [setJustCompletedOnboarding]);
 
-  const { data: forYouEvents = [], isLoading: forYouEventsLoading } = useForYouEvents(userId);
-  const { data: upcomingEvents = [], isLoading: upcomingEventsLoading } = useUpcomingEvents();
-  const { data: lowTokenEvents = [], isLoading: lowTokenEventsLoading } = useLowTokenEvents();
-  const { data: thisWeekendEvents = [], isLoading: thisWeekendEventsLoading } =
-    useThisWeekendEvents();
+  const {
+    data: forYouEvents = [],
+    isLoading: forYouEventsLoading,
+    refetch: refetchForYouEvents,
+  } = useForYouEvents(userId);
+  const {
+    data: upcomingEvents = [],
+    isLoading: upcomingEventsLoading,
+    refetch: refetchUpcomingEvents,
+  } = useUpcomingEvents();
+  const {
+    data: lowTokenEvents = [],
+    isLoading: lowTokenEventsLoading,
+    refetch: refetchLowTokenEvents,
+  } = useLowTokenEvents();
+  const {
+    data: thisWeekendEvents = [],
+    isLoading: thisWeekendEventsLoading,
+    refetch: refetchThisWeekendEvents,
+  } = useThisWeekendEvents();
   // const { data: trendingEvents = [], isLoading: trendingEventsLoading } = useTrendingEvents();
 
   function splitIntoRows<T>(arr: T[], numRows: number): T[][] {
@@ -144,9 +160,33 @@ export function HomeScreen() {
     navigation.navigate('All Events');
   };
 
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        refetchUpcomingEvents(),
+        refetchThisWeekendEvents(),
+        refetchForYouEvents(),
+        refetchLowTokenEvents(),
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refetchForYouEvents, refetchLowTokenEvents, refetchThisWeekendEvents, refetchUpcomingEvents]);
+
   return (
     <SafeAreaView className="flex flex-1 bg-background-dark" edges={['top']}>
-      <ScrollView className="my-2">
+      <ScrollView
+        className="my-2"
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor="#FFFFFF"
+            colors={['#1989E9']}
+            progressBackgroundColor="#0F1012"
+          />
+        }>
         <Flex gap={4}>
           {upcomingEventsLoading || upcomingEvents.length ? (
             <View className="mx-4">

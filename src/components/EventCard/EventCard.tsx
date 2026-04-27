@@ -50,7 +50,7 @@ export function EventCard({
   //   paths: [event?.cover_img], // stored in users table
   // });
 
-  const src = event?.cover_img;
+  const src = event?.cover_img ? { uri: event.cover_img } : undefined;
   // Array.isArray(data) && data[0]
   //   ? { uri: data[0] as string } // never null ✅
   //   : '';
@@ -63,13 +63,7 @@ export function EventCard({
         </Button>
       )}
       <Pressable onPress={onPress} className={className}>
-        <Image
-          source={src ?? ''}
-          size={imageSize}
-          overlay={overlay}
-          rounded={rounded}
-          alt="image"
-        />
+        <Image source={src} size={imageSize} overlay={overlay} rounded={rounded} alt="image" />
       </Pressable>
 
       <Flex
