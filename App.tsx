@@ -2,13 +2,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import { AppState, Pressable, StatusBar, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, Pressable, StatusBar, Text, View } from 'react-native';
 import { useEffect, useState } from 'react';
 import * as Updates from 'expo-updates';
 import * as ExpoSplashScreen from 'expo-splash-screen';
 
 import './global.css';
-import { SplashScreen } from '~/components/SplashScreen';
 import { AuthProvider, useAuth } from '~/providers/AuthProvider';
 import { RevenueCatProvider } from '~/providers/RevenueCatProvider';
 import { ThemeProvider } from '~/providers/ThemeProvider';
@@ -194,7 +193,17 @@ function AppNavigation() {
   };
 
   if (initializing) {
-    return <SplashScreen showSpinner />;
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#0F1012',
+        }}>
+        <ActivityIndicator size="large" color="#FFFFFF" />
+      </View>
+    );
   }
 
   const target = resolveRootStackTarget(session, user);
