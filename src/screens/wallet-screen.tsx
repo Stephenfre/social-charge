@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import dayjs from 'dayjs';
 import { ArrowRight, Minus, Plus } from 'lucide-react-native';
-import { ScrollView } from 'react-native';
+import { RefreshControl, ScrollView } from 'react-native';
 import { Box, Button, Flex, Text } from '~/components/ui';
 import { useRevenueCatVirtualCurrency, useTokenBalance, useTokenTransactions } from '~/hooks';
 import { useRevenueCat } from '~/providers/RevenueCatProvider';
@@ -53,9 +53,15 @@ export function WalletScreen() {
     isRefetching: isBalanceRefetching,
     refetch: refetchVirtualCurrency,
   } = useRevenueCatVirtualCurrency();
-  const { data: tokenBalance, refetch: refetchTokenBalance } = useTokenBalance();
+  const { data: tokenBalance, isRefetching: isTokenBalanceRefetching, refetch: refetchTokenBalance } =
+    useTokenBalance();
 
-  const { data: tokenTransactions, isLoading: isTransactionsLoading } = useTokenTransactions();
+  const {
+    data: tokenTransactions,
+    isLoading: isTransactionsLoading,
+    isRefetching: isTransactionsRefetching,
+    refetch: refetchTokenTransactions,
+  } = useTokenTransactions();
   const handleOpenTokensPaywall = useCallback(async () => {
     if (!initialized || loadingOfferings) {
       return;
@@ -66,6 +72,15 @@ export function WalletScreen() {
   }, [initialized, loadingOfferings, presentPlacementPaywall, refetchTokenBalance, refetchVirtualCurrency]);
 
   const isBalanceLoading = isBalanceInitialLoading || isBalanceRefetching;
+  const isRefreshing =
+    isBalanceRefetching || isTokenBalanceRefetching || isTransactionsRefetching;
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([
+      refetchVirtualCurrency(),
+      refetchTokenBalance(),
+      refetchTokenTransactions(),
+    ]);
+  }, [refetchTokenBalance, refetchTokenTransactions, refetchVirtualCurrency]);
   const historyItems = useMemo<WalletHistoryItem[]>(() => {
     const productPriceMap = new Map<string, string>();
 
@@ -126,11 +141,26 @@ export function WalletScreen() {
 
   return (
     <Flex flex className="bg-background-dark p-4">
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={() => void handleRefresh()} />
+        }>
         <Flex gap={6}>
           <Box className="h-32 rounded-lg bg-background-900">
             <Flex className="px-4 pt-6" gap={2}>
-              <Text size="lg">CURRENT BALANCE</Text>
+              <Flex direction="row" align="center" justify="space-between">
+                <Text size="lg">CURRENT BALANCE</Text>
+                <Button
+                  variant="link"
+                  onPress={() => void handleRefresh()}
+                  disabled={isRefreshing}
+                  className="px-0">
+                  <Text size="sm" className="text-primary-400">
+                    {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                  </Text>
+                </Button>
+              </Flex>
               {!isBalanceLoading ? (
                 <Flex direction="row" gap={2} align="center">
                   <Text size="5xl" bold>
