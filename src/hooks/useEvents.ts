@@ -304,7 +304,7 @@ export function useEventVibes(eventId: string) {
 export type VibeSlug = Enums<'vibe_slug'>;
 
 export type SocialExpectation = 'exceeded' | 'met' | 'below';
-export type AttendAgainFeeling = 'charged_up' | 'sparked' | 'drained';
+export type AttendAgainFeeling = 'yes' | 'no' | 'maybe';
 export type EventReviewRow = {
   id?: string;
   event_id?: string;
@@ -342,6 +342,8 @@ export function useEventReview(eventId?: string | null) {
         .select('*')
         .eq('event_id', eventId!)
         .eq('reviewer_id', userId!)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
       if (error) throw error;
       return (data as EventReviewRow | null) ?? null;

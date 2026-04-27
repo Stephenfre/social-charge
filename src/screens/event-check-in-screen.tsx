@@ -1,7 +1,7 @@
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ArrowLeft, Calendar, Clock, MapPin, MessageCircle, TicketX } from 'lucide-react-native';
 import { Modal, Platform, ScrollView, useWindowDimensions, View } from 'react-native';
@@ -19,6 +19,7 @@ import {
   useEventVibes,
   useCheckIn,
   useUserCheckedInEvent,
+  useEventReview,
 } from '~/hooks';
 import { useAuth } from '~/providers/AuthProvider';
 import { useRevenueCat } from '~/providers/RevenueCatProvider';
@@ -54,6 +55,12 @@ export function EventCheckInScreen() {
 
   const { data: eventVibes = [], isLoading: loadingEventVibes } = useEventVibes(effectiveEventId);
   const { data: userCheckedIn } = useUserCheckedInEvent(effectiveEventId);
+  const {
+    data: existingReview,
+    isLoading: reviewLoading,
+    isFetching: reviewFetching,
+    refetch: refetchExistingReview,
+  } = useEventReview(effectiveEventId);
   const { mutate: checkIn, isPending } = useCheckIn();
 
   const hostPaths = event?.event_hosts?.map((host) => host?.profile_picture ?? null) ?? [];
@@ -93,7 +100,7 @@ export function EventCheckInScreen() {
     });
   };
   const handleReviewPress = () => {
-    if (!event?.id) return;
+    if (!event?.id || reviewActionDisabled) return;
     navigation.navigate('EventReview', { eventId: event.id });
   };
   const handleOpenChat = useCallback(() => {
@@ -122,6 +129,15 @@ export function EventCheckInScreen() {
   const hasEventEnded = endsAt ? dayjs().isAfter(endsAt) : false;
   const withinTwoHours = startsAt ? startsAt.diff(dayjs(), 'hour', true) <= 2 : false;
   const canViewAttendees = hasValidatedAttendeeAccess && isPro;
+  const hasReviewedEvent = Boolean(existingReview);
+  const reviewActionDisabled = reviewLoading || reviewFetching || hasReviewedEvent;
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!effectiveEventId || !user?.id) return;
+      void refetchExistingReview();
+    }, [effectiveEventId, refetchExistingReview, user?.id])
+  );
 
   useEffect(() => {
     if (!revenueCatInitialized) {
@@ -239,9 +255,19 @@ export function EventCheckInScreen() {
   const renderUserActions = () => {
     if (hasEventEnded) {
       return (
-        <Button className="h-14 w-full rounded-lg bg-primary" onPress={handleReviewPress}>
-          <Text bold size="lg" className="text-white">
-            Review Event
+        <Button
+          className={cn(
+            'h-14 w-full rounded-lg',
+            reviewActionDisabled ? 'bg-white/10' : 'bg-primary'
+          )}
+          onPress={handleReviewPress}
+          disabled={reviewActionDisabled}>
+          <Text bold size="lg" className={reviewActionDisabled ? 'text-white/60' : 'text-white'}>
+            {hasReviewedEvent
+              ? 'Reviewed'
+              : reviewLoading || reviewFetching
+                ? 'Checking Review'
+                : 'Review Event'}
           </Text>
         </Button>
       );

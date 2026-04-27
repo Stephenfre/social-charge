@@ -10,44 +10,7 @@ import { supabase } from '~/lib/supabase';
 import { Enums } from '~/types/database.types';
 import { OnboardingProgress } from '~/components/OnboardingProgress';
 import { RootRoute } from '~/types/navigation.types';
-
-const VIBE_OPTIONS: {
-  slug: Enums<'vibe_slug'>;
-  emoji: string;
-  title: string;
-  description: string;
-}[] = [
-  {
-    slug: 'social',
-    emoji: '🎉',
-    title: 'Social',
-    description: 'Big energy. Group events. Nightlife.',
-  },
-  {
-    slug: 'explorer',
-    emoji: '🌎',
-    title: 'Explorer',
-    description: 'Adventures. Trips. Trying new things.',
-  },
-  {
-    slug: 'connector',
-    emoji: '🤝',
-    title: 'Connector',
-    description: 'Deep convos. Meaningful moments.',
-  },
-  {
-    slug: 'chill',
-    emoji: '😌',
-    title: 'Chill',
-    description: 'Low-key. Relaxed. Easygoing.',
-  },
-  {
-    slug: 'wildcard',
-    emoji: '⚡',
-    title: 'Wildcard',
-    description: 'Spontaneous. Down for anything.',
-  },
-];
+import { VIBE_OPTIONS } from '~/constants/vibes';
 
 export function OnboardingVibeScreen() {
   const navigation = useNavigation<NavigationProp<'OnboardingVibe'>>();

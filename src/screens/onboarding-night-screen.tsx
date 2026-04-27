@@ -13,46 +13,9 @@ import { useNightPreferences } from '~/hooks';
 import { supabase } from '~/lib/supabase';
 import { Enums, TablesInsert } from '~/types/database.types';
 import { OnboardingProgress } from '~/components/OnboardingProgress';
+import { VIBE_OPTIONS } from '~/constants/vibes';
 
 type VibeOption = Enums<'vibe_slug'>;
-
-const VIBE_OPTIONS: {
-  slug: VibeOption;
-  emoji: string;
-  title: string;
-  description: string;
-}[] = [
-  {
-    slug: 'social',
-    emoji: '🎉',
-    title: 'Social',
-    description: 'Big energy. Group events. Nightlife.',
-  },
-  {
-    slug: 'explorer',
-    emoji: '🌎',
-    title: 'Explorer',
-    description: 'Adventures. Trips. Trying new things.',
-  },
-  {
-    slug: 'connector',
-    emoji: '🤝',
-    title: 'Connector',
-    description: 'Deep convos. Meaningful moments.',
-  },
-  {
-    slug: 'chill',
-    emoji: '😌',
-    title: 'Chill',
-    description: 'Low-key. Relaxed. Easygoing.',
-  },
-  {
-    slug: 'wildcard',
-    emoji: '⚡',
-    title: 'Wildcard',
-    description: 'Spontaneous. Down for anything.',
-  },
-];
 
 const TIME_OPTIONS = [
   { id: 'morning', label: 'Morning', Icon: Sun, value: 'morning' as Enums<'time_bucket'> },
@@ -367,7 +330,7 @@ export function OnboardingNightScreen() {
           </Flex>
 
           <Flex gap={3}>
-            <SectionLabel title="Days" Icon={Calendar} />
+            <SectionLabel title="Days you're available" Icon={Calendar} />
             <Flex gap={3}>
               {DAY_OPTIONS.map(({ id, label }) => {
                 const selected = selectedDays.includes(id);

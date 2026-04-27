@@ -1,10 +1,10 @@
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { ArrowLeft, Calendar, Clock, MapPin, TicketX } from 'lucide-react-native';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EventCard } from '~/components/EventCard/EventCard';
@@ -20,6 +20,7 @@ import {
   useJoinWaitlist,
   useMyWaitlistEntry,
   REVENUECAT_VIRTUAL_CURRENCY_QUERY_KEYS,
+  useEventReview,
   useRevenueCatVirtualCurrency,
   useStorageImages,
   useWaitlistPosition,
@@ -80,6 +81,12 @@ export function ViewEventScreen() {
   } = useRevenueCat();
   const { data: event, isLoading } = useEventById(params.eventId);
   const { data: eventVibes = [] } = useEventVibes(params.eventId);
+  const {
+    data: existingReview,
+    isLoading: reviewLoading,
+    isFetching: reviewFetching,
+    refetch: refetchExistingReview,
+  } = useEventReview(params.eventId);
   const { data: rsvps = [], isLoading: rsvpLoading } = useRsvps(params.eventId);
   const {
     data: virtualCurrency,
@@ -108,8 +115,16 @@ export function ViewEventScreen() {
   const [confirmationMode, setConfirmationMode] = useState<ConfirmationMode>('rsvp');
   const [rsvpError, setRsvpError] = useState<string | null>(null);
   const [isReviewVisible, setIsReviewVisible] = useState(false);
+  const [hasSubmittedReview, setHasSubmittedReview] = useState(false);
   const [isOpeningPaywall, setIsOpeningPaywall] = useState(false);
   const [hasValidatedAttendeeAccess, setHasValidatedAttendeeAccess] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!params.eventId || !userId) return;
+      void refetchExistingReview();
+    }, [params.eventId, refetchExistingReview, userId])
+  );
 
   const tokenCost = event?.token_cost ?? 0;
   const currentBalance = virtualCurrency?.balance ?? 0;
@@ -121,6 +136,8 @@ export function ViewEventScreen() {
   }, [event?.capacity, currentRsvpCount]);
 
   const isRsvped = useMemo(() => rsvps.some((r) => r.user_id === userId), [rsvps, userId]);
+  const hasReviewedEvent = hasSubmittedReview || Boolean(existingReview);
+  const reviewActionDisabled = reviewLoading || reviewFetching || hasReviewedEvent;
   const isSoldOut = remainingSpots !== null && remainingSpots <= 0;
   const { data: waitlistEntry } = useMyWaitlistEntry(event?.id ?? '');
   const { data: waitlistPosition } = useWaitlistPosition(event?.id ?? '', Boolean(waitlistEntry));
@@ -375,7 +392,7 @@ export function ViewEventScreen() {
       ? `${primaryHost.first_name ?? ''} ${primaryHost.last_name ?? ''}`.trim()
       : null;
   const handleReviewPress = () => {
-    if (!event?.id) return;
+    if (!event?.id || reviewActionDisabled) return;
     setIsReviewVisible(true);
   };
 
@@ -584,9 +601,19 @@ export function ViewEventScreen() {
           paddingBottom: insets.bottom + 10,
         }}>
         {hasEventEnded ? (
-          <Button className="h-14 w-full rounded-lg bg-primary-600" onPress={handleReviewPress}>
-            <Text bold size="lg" className="text-white">
-              Review Event
+          <Button
+            className={cn(
+              'h-14 w-full rounded-lg',
+              reviewActionDisabled ? 'bg-white/10' : 'bg-primary-600'
+            )}
+            onPress={handleReviewPress}
+            disabled={reviewActionDisabled}>
+            <Text bold size="lg" className={reviewActionDisabled ? 'text-white/60' : 'text-white'}>
+              {hasReviewedEvent
+                ? 'Reviewed'
+                : reviewLoading || reviewFetching
+                  ? 'Checking Review'
+                  : 'Review Event'}
             </Text>
           </Button>
         ) : isRsvped && event.id ? (
@@ -678,7 +705,11 @@ export function ViewEventScreen() {
           presentationStyle="fullScreen"
           visible={isReviewVisible}
           onRequestClose={() => setIsReviewVisible(false)}>
-          <EventReviewContent eventId={event.id} onClose={() => setIsReviewVisible(false)} />
+          <EventReviewContent
+            eventId={event.id}
+            onClose={() => setIsReviewVisible(false)}
+            onSubmitted={() => setHasSubmittedReview(true)}
+          />
         </Modal>
       )}
     </Flex>

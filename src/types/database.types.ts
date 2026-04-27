@@ -3021,45 +3021,25 @@ export type Database = {
         Args: { geom: unknown; move: number; wrap: number }
         Returns: unknown
       }
-      submit_full_review:
-        | {
-            Args: {
-              p_attend_again: string
-              p_attendee_vibes: Database["public"]["Enums"]["vibe_slug"][]
-              p_event_comment: string
-              p_event_id: string
-              p_event_rating: number
-              p_group_vibe_rating: number
-              p_host_rating: number
-              p_host_reviews: Json
-              p_nps_score: number
-              p_organization_rating: number
-              p_quick_vibe_tags: Json
-              p_social_comment: string
-              p_social_expectation: string
-              p_venue_rating: number
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_attend_again: string
-              p_attendee_vibes: Json
-              p_event_comment: string
-              p_event_id: string
-              p_event_rating: number
-              p_group_vibe_rating: number
-              p_host_rating: number
-              p_host_reviews: Json
-              p_nps_score: number
-              p_organization_rating: number
-              p_quick_vibe_tags: string[]
-              p_social_comment: string
-              p_social_expectation: string
-              p_venue_rating: number
-            }
-            Returns: Json
-          }
+      submit_full_review: {
+        Args: {
+          p_attend_again: string
+          p_attendee_vibes: Json
+          p_event_comment: string
+          p_event_id: string
+          p_event_rating: number
+          p_group_vibe_rating: number
+          p_host_rating: number
+          p_host_reviews: Json
+          p_nps_score: number
+          p_organization_rating: number
+          p_quick_vibe_tags: string[]
+          p_social_comment: string
+          p_social_expectation: string
+          p_venue_rating: number
+        }
+        Returns: Json
+      }
       undo_check_in: { Args: { event_id: string }; Returns: undefined }
       unlockrows: { Args: { "": string }; Returns: number }
       updategeometrysrid: {
