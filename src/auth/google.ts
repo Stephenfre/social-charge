@@ -100,5 +100,21 @@ export const signOut = async () => {
   }
 
   const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+  if (error) {
+    const code =
+      'code' in error && typeof (error as { code?: unknown }).code === 'string'
+        ? (error as { code: string }).code
+        : null;
+    const message = typeof error.message === 'string' ? error.message.toLowerCase() : '';
+
+    // If the session is already gone, treat logout as successful.
+    const isMissingSession =
+      code === 'session_not_found' ||
+      message.includes('auth session missing') ||
+      message.includes('session missing');
+
+    if (!isMissingSession) {
+      throw error;
+    }
+  }
 };
