@@ -77,13 +77,17 @@ export const UserEventCheckInList = React.forwardRef<React.ComponentRef<typeof V
               elevation: 6,
             }}>
             <View style={{ borderRadius: 16, overflow: 'hidden' }}>
-              <Image
-                source={item?.cover_img ? { uri: item.cover_img } : undefined}
-                size="cover"
-                overlay={false}
-                alt="image"
-                rounded="2xl"
-              />
+              {item.cover_img ? (
+                <Image
+                  source={{ uri: item.cover_img }}
+                  size="cover"
+                  overlay={false}
+                  alt="image"
+                  rounded="2xl"
+                />
+              ) : (
+                <View className="h-64 w-full rounded-2xl bg-background-700" />
+              )}
               <LinearGradient colors={['transparent', '#18191f']} style={styles.gradient} />
             </View>
 

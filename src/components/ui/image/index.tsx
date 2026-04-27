@@ -2,6 +2,7 @@
 import React from 'react';
 import { createImage } from '@gluestack-ui/image';
 import { Platform, Image as RNImage, View } from 'react-native';
+import type { ImageSourcePropType } from 'react-native';
 import { tva } from '@gluestack-ui/nativewind-utils/tva';
 import type { VariantProps } from '@gluestack-ui/nativewind-utils';
 
@@ -43,6 +44,13 @@ const imageStyle = tva({
 
 const UIImage = createImage({ Root: RNImage });
 
+const hasRenderableSource = (source: ImageSourcePropType | undefined) => {
+  if (!source) return false;
+  if (typeof source === 'number') return true;
+  if (Array.isArray(source)) return source.some(hasRenderableSource);
+  return typeof source.uri === 'string' && source.uri.length > 0;
+};
+
 type ImageProps = VariantProps<typeof imageStyle> &
   React.ComponentProps<typeof UIImage> & {
     className?: string;
@@ -55,18 +63,21 @@ const Image = React.forwardRef<React.ComponentRef<typeof UIImage>, ImageProps>(f
 ) {
   // Apply variants to the container so overlay clips correctly
   const wrapperClasses = imageStyle({ size, rounded });
+  const shouldRenderImage = hasRenderableSource(props.source as ImageSourcePropType | undefined);
 
   return (
     <View className={cn('relative overflow-hidden', wrapperClasses, className)}>
-      <UIImage
-        ref={ref}
-        {...props}
-        className="h-full w-full" // keep image filling the wrapper
-        // @ts-expect-error web-only style reset
-        style={
-          Platform.OS === 'web' ? { height: 'revert-layer', width: 'revert-layer' } : undefined
-        }
-      />
+      {shouldRenderImage ? (
+        <UIImage
+          ref={ref}
+          {...props}
+          className="h-full w-full" // keep image filling the wrapper
+          // @ts-expect-error web-only style reset
+          style={
+            Platform.OS === 'web' ? { height: 'revert-layer', width: 'revert-layer' } : undefined
+          }
+        />
+      ) : null}
       {overlay && <View className="pointer-events-none absolute inset-0 bg-black/50" />}
     </View>
   );
