@@ -162,9 +162,10 @@ const ACCOUNT_BASE_ITEMS: SettingsSection['items'] = [
 
 export function ProfileSettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { session } = useAuth();
+  const { session, signOut } = useAuth();
   const { isPro, presentPaywall, presentCustomerCenter, customerCenterEnabled } = useRevenueCat();
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const sections = useMemo<SettingsSection[]>(() => {
     const accountItems = [...ACCOUNT_BASE_ITEMS];
@@ -361,9 +362,22 @@ export function ProfileSettingsScreen() {
     ]
   );
 
-  const logout = async () => {
-    await supabase.auth.signOut();
-  };
+  const logout = useCallback(async () => {
+    if (isLoggingOut || isDeletingAccount) {
+      return;
+    }
+
+    setIsLoggingOut(true);
+    try {
+      await signOut();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to log out right now.';
+      Alert.alert('Logout failed', message);
+      Sentry.captureException(error);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }, [isDeletingAccount, isLoggingOut, signOut]);
 
   const handleDeleteAccount = useCallback(async () => {
     const accessToken = session?.access_token;
@@ -450,9 +464,10 @@ export function ProfileSettingsScreen() {
           <Flex>
             <Button
               className="rounded-lg border-2 border-error-500 bg-background-dark"
-              onPress={logout}>
+              onPress={logout}
+              disabled={isLoggingOut || isDeletingAccount}>
               <Text className="text-error-500" bold>
-                Logout
+                {isLoggingOut ? 'Logging out...' : 'Logout'}
               </Text>
             </Button>
             <Button
