@@ -6,6 +6,7 @@ import { ActivityIndicator, AppState, Pressable, StatusBar, Text, View } from 'r
 import { useEffect, useState } from 'react';
 import * as Updates from 'expo-updates';
 import * as ExpoSplashScreen from 'expo-splash-screen';
+import * as Notifications from 'expo-notifications';
 
 import './global.css';
 import { AuthProvider, useAuth } from '~/providers/AuthProvider';
@@ -28,6 +29,15 @@ import { WelcomeScreen } from '~/screens/welcome-screen';
 import * as Sentry from '@sentry/react-native';
 
 void ExpoSplashScreen.preventAutoHideAsync();
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 const SPLASH_FAILSAFE_TIMEOUT_MS = 10000;
 

@@ -34,6 +34,12 @@ import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/providers/AuthProvider';
 import { useRevenueCat } from '~/providers/RevenueCatProvider';
 import { EventReviewContent } from './event-review-screen';
+import {
+  cancelEventLocalNotifications,
+  notifyCreditRefund,
+  notifyLowCreditsAfterRsvp,
+  scheduleRsvpLocalNotifications,
+} from '~/utils/localNotifications';
 
 import { cn } from '~/utils/cn';
 import { RootStackParamList, useRouteStack } from '~/types/navigation.types';
@@ -368,6 +374,15 @@ export function ViewEventScreen() {
       });
       queryClient.invalidateQueries({ queryKey: virtualCurrencyBalanceKey });
 
+      await scheduleRsvpLocalNotifications({
+        eventId: event.id,
+        title: event.title ?? 'Your event',
+        startsAt: event.starts_at,
+        endsAt: event.ends_at,
+        location: event.location_text || event.formatted_address,
+      });
+      await notifyLowCreditsAfterRsvp({ balance: Math.max(0, currentBalance - tokenCost) });
+
       setShowRsvpModal(false);
       Alert.alert('RSVP Confirmed', 'Your RSVP is confirmed.');
     } catch (error) {
@@ -453,9 +468,6 @@ export function ViewEventScreen() {
     if (!event?.id || reviewActionDisabled) return;
     setIsReviewVisible(true);
   };
-
-  console.log(eventVibes);
-
   return (
     <Flex flex className="bg-background-dark">
       <Flex className="relative">
@@ -1006,6 +1018,11 @@ export function CancelRsvpButton({
           REVENUECAT_VIRTUAL_CURRENCY_CODE ?? null
         ),
       });
+
+      await cancelEventLocalNotifications(eventId);
+      if (shouldRefund) {
+        await notifyCreditRefund({ amount: tokenCost });
+      }
 
       Alert.alert(
         'Your RSVP was removed',
