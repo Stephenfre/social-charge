@@ -14,3 +14,4 @@ export * from './useEventChat';
 export * from './useChatUserMetadata';
 export * from './useWaitlist';
 export * from './useRevenueCatVirtualCurrency';
+export * from './useCreditBalance';

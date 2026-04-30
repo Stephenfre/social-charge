@@ -16,6 +16,7 @@ import { Spinner } from '~/components/ui/spinner';
 import { REVENUECAT_ENTITLEMENT, REVENUECAT_VIRTUAL_CURRENCY_CODE } from '~/config/revenuecat';
 import {
   useCancelWaitlist,
+  useCreditBalance,
   useEventById,
   useJoinWaitlist,
   useMyWaitlistEntry,
@@ -26,7 +27,7 @@ import {
 } from '~/hooks';
 import { useEventVibes } from '~/hooks/useEvents';
 import { useRsvps } from '~/hooks/useRsvps';
-import { TOKEN_QUERY_KEYS, useTokenBalance } from '~/hooks/useTokens';
+import { TOKEN_QUERY_KEYS } from '~/hooks/useTokens';
 import { WAITLIST_KEYS } from '~/hooks/useWaitlist';
 import { EVENT_KEYS } from '~/hooks/useEvents';
 import { supabase } from '~/lib/supabase';
@@ -103,10 +104,12 @@ export function ViewEventScreen() {
   } = useEventReview(params.eventId);
   const { data: rsvps = [], isLoading: rsvpLoading } = useRsvps(params.eventId);
   const {
-    data: tokenBalance,
+    balance: currentBalance,
     isLoading: tokenBalanceLoading,
-    refetch: refetchTokenBalance,
-  } = useTokenBalance();
+    refetch: refetchCreditBalance,
+    virtualCurrencyQuery,
+  } = useCreditBalance();
+  const virtualCurrency = virtualCurrencyQuery.data;
   const { mutateAsync: joinWaitlistAsync, isPending: joiningWaitlist } = useJoinWaitlist();
   const { mutateAsync: cancelWaitlistAsync, isPending: leavingWaitlist } = useCancelWaitlist();
 
@@ -141,7 +144,6 @@ export function ViewEventScreen() {
   );
 
   const tokenCost = event?.token_cost ?? 0;
-  const currentBalance = tokenBalance ?? 0;
   const projectedBalance = useMemo(() => currentBalance - tokenCost, [currentBalance, tokenCost]);
   const currentRsvpCount = event?.rsvps?.length ?? rsvps.length;
   const remainingSpots = useMemo(() => {
@@ -291,7 +293,7 @@ export function ViewEventScreen() {
       setIsConfirmingRsvp(true);
       try {
         await presentPlacementPaywall('battery_pack_purchase');
-        await refetchTokenBalance();
+        await refetchCreditBalance();
       } finally {
         setIsConfirmingRsvp(false);
       }
@@ -301,7 +303,9 @@ export function ViewEventScreen() {
     setIsConfirmingRsvp(true);
     setRsvpError(null);
     let optimisticSnapshot: number | undefined;
+    let optimisticVirtualCurrencySnapshot: typeof virtualCurrency | undefined;
     let appliedOptimisticUpdate = false;
+    let appliedVirtualCurrencyOptimisticUpdate = false;
 
     try {
       const accessToken = session?.access_token;
@@ -310,12 +314,28 @@ export function ViewEventScreen() {
       }
 
       const tokenBalanceKey = TOKEN_QUERY_KEYS.balance(userId ?? undefined);
+      const virtualCurrencyBalanceKey = REVENUECAT_VIRTUAL_CURRENCY_QUERY_KEYS.balance(
+        userId ?? null,
+        REVENUECAT_VIRTUAL_CURRENCY_CODE ?? null
+      );
 
       // Optimistically reduce balance so the modal/UI updates immediately.
       optimisticSnapshot = queryClient.getQueryData<number>(tokenBalanceKey);
       if (typeof optimisticSnapshot === 'number') {
         queryClient.setQueryData<number>(tokenBalanceKey, optimisticSnapshot - tokenCost);
         appliedOptimisticUpdate = true;
+      }
+      optimisticVirtualCurrencySnapshot =
+        queryClient.getQueryData<typeof virtualCurrency>(virtualCurrencyBalanceKey);
+      if (
+        optimisticVirtualCurrencySnapshot &&
+        typeof optimisticVirtualCurrencySnapshot.balance === 'number'
+      ) {
+        queryClient.setQueryData<typeof virtualCurrency>(virtualCurrencyBalanceKey, {
+          ...optimisticVirtualCurrencySnapshot,
+          balance: optimisticVirtualCurrencySnapshot.balance - tokenCost,
+        });
+        appliedVirtualCurrencyOptimisticUpdate = true;
       }
 
       const { data, error } = await supabase.functions.invoke('confirm-rsvp-and-spend-credits', {
@@ -341,14 +361,12 @@ export function ViewEventScreen() {
       queryClient.invalidateQueries({ queryKey: EVENT_KEYS.checkIn(userId) });
       queryClient.invalidateQueries({ queryKey: EVENT_KEYS.userCheckedIn(userId, event.id) });
       queryClient.invalidateQueries({
-        queryKey: TOKEN_QUERY_KEYS.transactions(userId ?? undefined),
+        queryKey: TOKEN_QUERY_KEYS.balance(userId ?? undefined),
       });
       queryClient.invalidateQueries({
-        queryKey: REVENUECAT_VIRTUAL_CURRENCY_QUERY_KEYS.balance(
-          userId ?? null,
-          REVENUECAT_VIRTUAL_CURRENCY_CODE ?? null
-        ),
+        queryKey: TOKEN_QUERY_KEYS.transactions(userId ?? undefined),
       });
+      queryClient.invalidateQueries({ queryKey: virtualCurrencyBalanceKey });
 
       setShowRsvpModal(false);
       Alert.alert('RSVP Confirmed', 'Your RSVP is confirmed.');
@@ -356,12 +374,21 @@ export function ViewEventScreen() {
       if (appliedOptimisticUpdate) {
         queryClient.setQueryData(TOKEN_QUERY_KEYS.balance(userId ?? undefined), optimisticSnapshot);
       }
+      if (appliedVirtualCurrencyOptimisticUpdate) {
+        queryClient.setQueryData(
+          REVENUECAT_VIRTUAL_CURRENCY_QUERY_KEYS.balance(
+            userId ?? null,
+            REVENUECAT_VIRTUAL_CURRENCY_CODE ?? null
+          ),
+          optimisticVirtualCurrencySnapshot
+        );
+      }
       const message =
         (error as { message?: string })?.message ??
         'Something went wrong while attempting to RSVP.';
       setRsvpError(message);
     } finally {
-      await refetchTokenBalance();
+      await refetchCreditBalance();
       setIsConfirmingRsvp(false);
     }
   };
@@ -914,7 +941,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 export function CancelRsvpButton({
   eventId,
   tokenCost = 0,
-  eventTitle,
+  eventTitle: _eventTitle,
   eventStartsAt,
   className,
   canEdit,
@@ -966,6 +993,9 @@ export function CancelRsvpButton({
       queryClient.invalidateQueries({ queryKey: EVENT_KEYS.checkIn(userId ?? null) });
       queryClient.invalidateQueries({
         queryKey: EVENT_KEYS.userCheckedIn(userId ?? null, eventId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: TOKEN_QUERY_KEYS.balance(userId ?? undefined),
       });
       queryClient.invalidateQueries({
         queryKey: TOKEN_QUERY_KEYS.transactions(userId ?? undefined),

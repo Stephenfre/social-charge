@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import { ArrowRight, Minus, Plus } from 'lucide-react-native';
 import { RefreshControl, ScrollView } from 'react-native';
 import { Box, Button, Flex, Text } from '~/components/ui';
-import { useRevenueCatVirtualCurrency, useTokenBalance, useTokenTransactions } from '~/hooks';
+import { useCreditBalance } from '~/hooks';
 import { useRevenueCat } from '~/providers/RevenueCatProvider';
 
 type WalletHistoryItem = {
@@ -48,39 +48,25 @@ export function WalletScreen() {
   const { initialized, loadingOfferings, error, presentPlacementPaywall, customerInfo, offerings } =
     useRevenueCat();
   const {
-    data: virtualCurrency,
-    isLoading: isBalanceInitialLoading,
-    isRefetching: isBalanceRefetching,
-    refetch: refetchVirtualCurrency,
-  } = useRevenueCatVirtualCurrency();
-  const { data: tokenBalance, isRefetching: isTokenBalanceRefetching, refetch: refetchTokenBalance } =
-    useTokenBalance();
-
-  const {
-    data: tokenTransactions,
-    isLoading: isTransactionsLoading,
-    isRefetching: isTransactionsRefetching,
-    refetch: refetchTokenTransactions,
-  } = useTokenTransactions();
+    balance: currentBalance,
+    isLoading: isBalanceLoading,
+    isRefetching: isRefreshing,
+    refetch: refetchBalance,
+    tokenTransactionsQuery,
+  } = useCreditBalance();
+  const { data: tokenTransactions, isLoading: isTransactionsLoading } = tokenTransactionsQuery;
   const handleOpenTokensPaywall = useCallback(async () => {
     if (!initialized || loadingOfferings) {
       return;
     }
 
     await presentPlacementPaywall('battery_pack_purchase');
-    await Promise.all([refetchVirtualCurrency(), refetchTokenBalance()]);
-  }, [initialized, loadingOfferings, presentPlacementPaywall, refetchTokenBalance, refetchVirtualCurrency]);
+    await refetchBalance();
+  }, [initialized, loadingOfferings, presentPlacementPaywall, refetchBalance]);
 
-  const isBalanceLoading = isBalanceInitialLoading || isBalanceRefetching;
-  const isRefreshing =
-    isBalanceRefetching || isTokenBalanceRefetching || isTransactionsRefetching;
   const handleRefresh = useCallback(async () => {
-    await Promise.all([
-      refetchVirtualCurrency(),
-      refetchTokenBalance(),
-      refetchTokenTransactions(),
-    ]);
-  }, [refetchTokenBalance, refetchTokenTransactions, refetchVirtualCurrency]);
+    await refetchBalance();
+  }, [refetchBalance]);
   const historyItems = useMemo<WalletHistoryItem[]>(() => {
     const productPriceMap = new Map<string, string>();
 
@@ -164,7 +150,7 @@ export function WalletScreen() {
               {!isBalanceLoading ? (
                 <Flex direction="row" gap={2} align="center">
                   <Text size="5xl" bold>
-                    {tokenBalance ?? 0}
+                    {currentBalance}
                   </Text>
                   <Text size="2xl">Credits</Text>
                 </Flex>
