@@ -998,21 +998,27 @@ export type Database = {
       }
       rsvps: {
         Row: {
+          canceled_at: string | null
           created_at: string | null
           event_id: string
           id: string
+          status: Database["public"]["Enums"]["rsvp_status"]
           user_id: string | null
         }
         Insert: {
+          canceled_at?: string | null
           created_at?: string | null
           event_id: string
           id?: string
+          status?: Database["public"]["Enums"]["rsvp_status"]
           user_id?: string | null
         }
         Update: {
+          canceled_at?: string | null
           created_at?: string | null
           event_id?: string
           id?: string
+          status?: Database["public"]["Enums"]["rsvp_status"]
           user_id?: string | null
         }
         Relationships: [
@@ -1074,6 +1080,58 @@ export type Database = {
           },
           {
             foreignKeyName: "rsvps_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rsvp_cancelation: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          note: string | null
+          reason: string
+          rsvp_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          note?: string | null
+          reason: string
+          rsvp_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          note?: string | null
+          reason?: string
+          rsvp_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rsvp_cancelation_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvp_cancelation_rsvp_id_fkey"
+            columns: ["rsvp_id"]
+            isOneToOne: false
+            referencedRelation: "rsvps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvp_cancelation_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
@@ -3125,6 +3183,7 @@ export type Database = {
         | "Tech"
         | "Pets"
       membership_role: "superadmin" | "admin" | "basic" | "plus" | "premium"
+      rsvp_status: "active" | "canceled"
       social_archetype: "chill" | "social" | "adventurer"
       style_band:
         | "cheap_casual"
@@ -3334,6 +3393,7 @@ export const Constants = {
         "Pets",
       ],
       membership_role: ["superadmin", "admin", "basic", "plus", "premium"],
+      rsvp_status: ["active", "canceled"],
       social_archetype: ["chill", "social", "adventurer"],
       style_band: [
         "cheap_casual",

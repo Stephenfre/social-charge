@@ -5,7 +5,17 @@ import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { ArrowLeft, Calendar, Clock, MapPin, TicketX } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Modal, Pressable, useWindowDimensions, View } from 'react-native';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  TextInput,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EventCard } from '~/components/EventCard/EventCard';
 import { PremiumBlurGate } from '~/components/PremiumBlurGate';
@@ -43,9 +53,18 @@ import {
 
 import { cn } from '~/utils/cn';
 import { RootStackParamList, useRouteStack } from '~/types/navigation.types';
+import type { VEventWithFullDetails } from '~/types/event.types';
 
 type EventNav = NativeStackNavigationProp<RootStackParamList, 'CreateEvent', 'EventReview'>;
 type ConfirmationMode = 'rsvp' | 'waitlist';
+type CancellationReason = 'schedule_conflict' | 'not_interested' | 'cost' | 'other';
+
+const CANCELLATION_REASONS: { label: string; value: CancellationReason }[] = [
+  { label: 'Schedule conflict', value: 'schedule_conflict' },
+  { label: 'No longer interested', value: 'not_interested' },
+  { label: 'Credit cost', value: 'cost' },
+  { label: 'Other', value: 'other' },
+];
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error && error.message) {
@@ -151,7 +170,7 @@ export function ViewEventScreen() {
 
   const tokenCost = event?.token_cost ?? 0;
   const projectedBalance = useMemo(() => currentBalance - tokenCost, [currentBalance, tokenCost]);
-  const currentRsvpCount = event?.rsvps?.length ?? rsvps.length;
+  const currentRsvpCount = rsvps.length;
   const remainingSpots = useMemo(() => {
     if (event?.capacity == null) return null;
     return Math.max(event.capacity - currentRsvpCount, 0);
@@ -353,7 +372,7 @@ export function ViewEventScreen() {
         throw error;
       }
 
-      if (data?.status !== 'added') {
+      if (data?.status !== 'added' && data?.status !== 'confirmed') {
         setRsvpError('You are already on the guest list for this event.');
         return;
       }
@@ -953,7 +972,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 export function CancelRsvpButton({
   eventId,
   tokenCost = 0,
-  eventTitle: _eventTitle,
+  eventTitle,
   eventStartsAt,
   className,
   canEdit,
@@ -970,12 +989,15 @@ export function CancelRsvpButton({
   const queryClient = useQueryClient();
   const { session, userId } = useAuth();
   const [isPending, setIsPending] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedCancelReason, setSelectedCancelReason] = useState<CancellationReason | null>(null);
+  const [cancelReasonNote, setCancelReasonNote] = useState('');
   const label = isPending ? <Spinner /> : 'Cancel';
   const startsAt = eventStartsAt ? dayjs(eventStartsAt) : null;
   const hoursUntilStart = startsAt ? startsAt.diff(dayjs(), 'hour', true) : Infinity;
   const isWithinGracePeriod = hoursUntilStart >= 2;
 
-  const performCancellation = async (shouldRefund: boolean) => {
+  const performCancellation = async () => {
     try {
       setIsPending(true);
       const accessToken = session?.access_token;
@@ -983,9 +1005,16 @@ export function CancelRsvpButton({
         throw new Error('You must be signed in to cancel an RSVP.');
       }
 
+      const shouldRefund = isWithinGracePeriod;
+      const trimmedCancelReasonNote = cancelReasonNote.trim();
       const { data, error } = await supabase.functions.invoke('cancel-rsvp-and-refund-credits', {
         headers: { Authorization: `Bearer ${accessToken}` },
-        body: { eventId, shouldRefund },
+        body: {
+          eventId,
+          shouldRefund,
+          cancellationReason: selectedCancelReason,
+          cancellationReasonNote: trimmedCancelReasonNote || null,
+        },
       });
 
       if (error) {
@@ -996,23 +1025,49 @@ export function CancelRsvpButton({
         throw new Error('Unable to Cancel.');
       }
 
-      queryClient.invalidateQueries({ queryKey: EVENT_KEYS.eventById(eventId) });
-      queryClient.invalidateQueries({ queryKey: ['rsvps', eventId] });
-      queryClient.invalidateQueries({ queryKey: ['events', 'userEvents'] });
-      queryClient.invalidateQueries({ queryKey: ['events', 'checkIns', 'byUser', userId] });
-      queryClient.invalidateQueries({ queryKey: WAITLIST_KEYS.mine(eventId, userId ?? null) });
-      queryClient.invalidateQueries({ queryKey: WAITLIST_KEYS.position(eventId, userId ?? null) });
-      queryClient.invalidateQueries({ queryKey: EVENT_KEYS.checkIn(userId ?? null) });
-      queryClient.invalidateQueries({
-        queryKey: EVENT_KEYS.userCheckedIn(userId ?? null, eventId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: TOKEN_QUERY_KEYS.balance(userId ?? undefined),
-      });
-      queryClient.invalidateQueries({
-        queryKey: TOKEN_QUERY_KEYS.transactions(userId ?? undefined),
-      });
-      queryClient.invalidateQueries({
+      const refundedAmount = typeof data?.tokenCost === 'number' ? data.tokenCost : tokenCost;
+
+      queryClient.setQueryData<{ user_id: string | null }[]>(['rsvps', eventId], (current) =>
+        current?.filter((rsvp) => rsvp.user_id !== userId)
+      );
+      queryClient.setQueryData<VEventWithFullDetails>(EVENT_KEYS.eventById(eventId), (current) =>
+        current
+          ? {
+              ...current,
+              is_current_user_rsvped: false,
+              current_user_rsvp_at: null,
+              rsvps: current.rsvps?.filter((rsvp) => rsvp.user_id !== userId) ?? null,
+            }
+          : current
+      );
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: EVENT_KEYS.eventById(eventId) }),
+        queryClient.invalidateQueries({ queryKey: ['rsvps', eventId] }),
+        queryClient.invalidateQueries({ queryKey: ['events', 'userEvents'] }),
+        queryClient.invalidateQueries({ queryKey: ['events', 'checkIns', 'byUser', userId] }),
+        queryClient.invalidateQueries({ queryKey: WAITLIST_KEYS.mine(eventId, userId ?? null) }),
+        queryClient.invalidateQueries({
+          queryKey: WAITLIST_KEYS.position(eventId, userId ?? null),
+        }),
+        queryClient.invalidateQueries({ queryKey: EVENT_KEYS.checkIn(userId ?? null) }),
+        queryClient.invalidateQueries({
+          queryKey: EVENT_KEYS.userCheckedIn(userId ?? null, eventId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: TOKEN_QUERY_KEYS.balance(userId ?? undefined),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: TOKEN_QUERY_KEYS.transactions(userId ?? undefined),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: REVENUECAT_VIRTUAL_CURRENCY_QUERY_KEYS.balance(
+            userId ?? null,
+            REVENUECAT_VIRTUAL_CURRENCY_CODE ?? null
+          ),
+        }),
+      ]);
+      await queryClient.refetchQueries({
         queryKey: REVENUECAT_VIRTUAL_CURRENCY_QUERY_KEYS.balance(
           userId ?? null,
           REVENUECAT_VIRTUAL_CURRENCY_CODE ?? null
@@ -1021,15 +1076,16 @@ export function CancelRsvpButton({
 
       await cancelEventLocalNotifications(eventId);
       if (shouldRefund) {
-        await notifyCreditRefund({ amount: tokenCost });
+        await notifyCreditRefund({ amount: refundedAmount });
       }
 
       Alert.alert(
         'Your RSVP was removed',
         shouldRefund
-          ? `${tokenCost} credits have been refunded.`
+          ? `${refundedAmount} credits have been refunded.`
           : 'No credits were refunded because the grace period has passed.'
       );
+      setShowCancelModal(false);
       onCancelled?.();
     } catch (err) {
       const message = (err as { message?: string })?.message ?? 'Something went wrong.';
@@ -1040,28 +1096,148 @@ export function CancelRsvpButton({
   };
 
   const confirmCancellation = () => {
-    const message = isWithinGracePeriod
-      ? 'Are you sure you want to cancel and refund your credits?'
-      : "The cancellation grace period has passed. You can still cancel, but you won't receive a refund.";
-    Alert.alert('Cancel', message, [
-      { text: 'No', style: 'cancel' },
-      { text: 'Yes', onPress: () => performCancellation(isWithinGracePeriod) },
-    ]);
+    setSelectedCancelReason(null);
+    setCancelReasonNote('');
+    setShowCancelModal(true);
+  };
+
+  const closeCancelModal = () => {
+    if (isPending) return;
+    setShowCancelModal(false);
   };
 
   return (
-    <Button
-      size="xl"
-      variant="primary"
-      className={cn(
-        className ? className : 'w-full whitespace-nowrap rounded-lg',
-        canEdit && 'w-[48%]'
-      )}
-      onPress={confirmCancellation}
-      disabled={isPending}>
-      <Text bold size="lg">
-        {label}
-      </Text>
-    </Button>
+    <>
+      <Button
+        size="xl"
+        variant="primary"
+        className={cn(
+          className ? className : 'w-full whitespace-nowrap rounded-lg',
+          canEdit && 'w-[48%]'
+        )}
+        onPress={confirmCancellation}
+        disabled={isPending}>
+        <Text bold size="lg">
+          {label}
+        </Text>
+      </Button>
+      <Modal
+        transparent
+        animationType="fade"
+        visible={showCancelModal}
+        onRequestClose={closeCancelModal}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          className="flex-1"
+          keyboardVerticalOffset={24}>
+          <Flex className="relative flex-1 items-center justify-center bg-black/70 px-6 py-8">
+            <Pressable
+              className="absolute inset-0"
+              onPress={closeCancelModal}
+              disabled={isPending}
+              accessibilityRole="button"
+            />
+            <Flex className="max-h-[88%] w-full max-w-md rounded-xl bg-background py-6" gap={4}>
+              <Flex direction="row" justify="space-between" align="center" className="px-4">
+                <Text bold size="xl" className="text-white">
+                  Cancel RSVP
+                </Text>
+                <Text className="text-primary-600" onPress={closeCancelModal}>
+                  Close
+                </Text>
+              </Flex>
+              <Divider className="bg-background-800/20" />
+              <ScrollView
+                className="shrink"
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+                contentContainerClassName="px-4 pb-2">
+                <Flex gap={4}>
+                  <Text className="text-white">
+                    {eventTitle ? `Cancel your RSVP for ${eventTitle}?` : 'Cancel your RSVP?'}
+                  </Text>
+                  <Text size="sm" className="text-gray-300">
+                    {isWithinGracePeriod
+                      ? `${tokenCost} credits will be returned to your wallet.`
+                      : 'The refund window has passed, so no credits will be returned.'}
+                  </Text>
+
+                  <Flex gap={3}>
+                    <Text bold className="text-white">
+                      Why are you cancelling?
+                    </Text>
+                    {CANCELLATION_REASONS.map((reason) => {
+                      const selected = selectedCancelReason === reason.value;
+
+                      return (
+                        <Pressable
+                          key={reason.value}
+                          accessibilityRole="radio"
+                          accessibilityState={{ checked: selected }}
+                          disabled={isPending}
+                          onPress={() => setSelectedCancelReason(reason.value)}
+                          className={cn(
+                            'rounded-lg border border-background-800 p-4',
+                            selected && 'border-primary-600'
+                          )}>
+                          <Flex direction="row" align="center" gap={3}>
+                            <Box
+                              className={cn(
+                                'h-5 w-5 rounded-full border-2 border-white p-1',
+                                selected && 'border-primary-600'
+                              )}>
+                              {selected ? (
+                                <Box className="h-full w-full rounded-full bg-primary-600" />
+                              ) : null}
+                            </Box>
+                            <Text bold className="text-white">
+                              {reason.label}
+                            </Text>
+                          </Flex>
+                        </Pressable>
+                      );
+                    })}
+                    {selectedCancelReason === 'other' ? (
+                      <TextInput
+                        multiline
+                        textAlignVertical="top"
+                        value={cancelReasonNote}
+                        onChangeText={setCancelReasonNote}
+                        editable={!isPending}
+                        placeholder="Add a note"
+                        placeholderTextColor="#9ca3af"
+                        className="min-h-24 rounded-lg border border-background-800 p-4 text-white"
+                      />
+                    ) : null}
+                  </Flex>
+                </Flex>
+              </ScrollView>
+              <Flex direction="row" gap={3} className="px-4">
+                <Button
+                  variant="outline"
+                  className="h-12 flex-1 rounded-lg"
+                  onPress={closeCancelModal}
+                  disabled={isPending}>
+                  <Text className="text-white">Keep RSVP</Text>
+                </Button>
+                <Button
+                  variant="alert"
+                  className="h-12 flex-1 rounded-lg"
+                  onPress={performCancellation}
+                  disabled={isPending || !selectedCancelReason}>
+                  {isPending ? (
+                    <Spinner />
+                  ) : (
+                    <Text bold className="text-white">
+                      Cancel RSVP
+                    </Text>
+                  )}
+                </Button>
+              </Flex>
+            </Flex>
+          </Flex>
+        </KeyboardAvoidingView>
+      </Modal>
+    </>
   );
 }

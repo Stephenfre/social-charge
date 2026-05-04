@@ -54,7 +54,11 @@ export function useRsvps(eventId: string) {
     queryKey: ['rsvps', eventId],
     initialData: undefined,
     queryFn: async (): Promise<RsvpRow[]> => {
-      const { data, error } = await supabase.from('rsvps').select('*').eq('event_id', eventId);
+      const { data, error } = await supabase
+        .from('rsvps')
+        .select('*')
+        .eq('event_id', eventId)
+        .eq('status', 'active');
       if (error) throw error;
       return data ?? [];
     },
@@ -72,13 +76,14 @@ export function useCreateRsvp() {
         .select('id')
         .eq('event_id', eventId)
         .eq('user_id', userId)
+        .eq('status', 'active')
         .limit(1);
       if (exErr) throw exErr;
 
       if (existing?.length) {
         const { error } = await supabase
           .from('rsvps')
-          .delete()
+          .update({ status: 'canceled', canceled_at: new Date().toISOString() })
           .eq('event_id', eventId)
           .eq('user_id', userId);
         if (error) throw error;
@@ -87,9 +92,9 @@ export function useCreateRsvp() {
 
       const { error: upsertErr } = await supabase
         .from('rsvps')
-        .upsert([{ event_id: eventId, user_id: userId }], {
+        .upsert([{ event_id: eventId, user_id: userId, status: 'active', canceled_at: null }], {
           onConflict: 'user_id,event_id',
-          ignoreDuplicates: true,
+          ignoreDuplicates: false,
         });
       if (upsertErr) throw upsertErr;
       return 'added';
@@ -120,6 +125,8 @@ export function useCreateRsvp() {
           event_id: eventId,
           user_id: userId,
           created_at: new Date().toISOString(),
+          status: 'active',
+          canceled_at: null,
         };
         qc.setQueryData<RsvpRow[]>(rsvpKey, [optimistic, ...prevRsvps]);
 
@@ -182,7 +189,7 @@ export function useRemoveRsvp() {
 
       const { error } = await supabase
         .from('rsvps')
-        .delete()
+        .update({ status: 'canceled', canceled_at: new Date().toISOString() })
         .eq('event_id', eventId)
         .eq('user_id', currentUser)
         .select('*');

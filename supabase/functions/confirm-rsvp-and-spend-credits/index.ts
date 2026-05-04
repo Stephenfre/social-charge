@@ -8,7 +8,6 @@ const corsHeaders = {
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 const revenueCatSecretKey = Deno.env.get('REVENUECAT_SECRET_API_KEY')!;
 const revenueCatProjectId = Deno.env.get('REVENUECAT_PROJECT_ID')!;
 const revenueCatVirtualCurrencyCode = Deno.env.get('REVENUECAT_VIRTUAL_CURRENCY_CODE')!;
@@ -27,20 +26,21 @@ Deno.serve(async (request) => {
       return Response.json({ error: 'Method not allowed' }, { status: 405, headers: corsHeaders });
     }
 
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
+    const supabaseAuth = createClient(supabaseUrl, supabaseServiceRoleKey, {
       global: {
         headers: {
           Authorization: request.headers.get('Authorization') ?? '',
         },
       },
     });
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     console.log('[confirm-rsvp] start');
 
     const {
       data: { user },
       error: userError,
-    } = await supabaseAdmin.auth.getUser();
+    } = await supabaseAuth.auth.getUser();
 
     console.log('[confirm-rsvp] auth result', {
       userId: user?.id ?? null,
@@ -74,7 +74,44 @@ Deno.serve(async (request) => {
     }
 
     const tokenCost = event.token_cost ?? 0;
-    const idempotencyKey = `rsvp:${user.id}:${eventId}`;
+    const { data: existingRsvp, error: existingRsvpError } = await supabaseAdmin
+      .from('rsvps')
+      .select('id,status,canceled_at')
+      .eq('event_id', eventId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (existingRsvpError) throw existingRsvpError;
+
+    if (existingRsvp?.status === 'active') {
+      return Response.json(
+        {
+          status: 'added',
+          eventId,
+          eventTitle: event.title,
+          tokenCost,
+          alreadyConfirmed: true,
+        },
+        { headers: corsHeaders }
+      );
+    }
+
+    const { count: activeRsvpCount, error: activeRsvpCountError } = await supabaseAdmin
+      .from('rsvps')
+      .select('id', { count: 'exact', head: true })
+      .eq('event_id', eventId)
+      .eq('status', 'active');
+
+    if (activeRsvpCountError) throw activeRsvpCountError;
+
+    if (event.capacity != null && (activeRsvpCount ?? 0) >= event.capacity) {
+      return Response.json(
+        { ok: false, status: 'event_full' },
+        { status: 409, headers: corsHeaders }
+      );
+    }
+
+    const idempotencyKey = `rsvp:${user.id}:${eventId}:${existingRsvp?.canceled_at ?? 'initial'}`;
 
     // Spend RevenueCat virtual currency first if needed
     if (tokenCost > 0) {
@@ -119,34 +156,48 @@ Deno.serve(async (request) => {
       }
     }
 
-    // Atomic DB confirmation
-    const { data: rpcResult, error: rpcError } = await supabaseAdmin.rpc(
-      'confirm_rsvp_after_credit_spend',
-      {
-        p_event_id: eventId,
-        p_user_id: user.id,
-        p_token_cost: tokenCost,
-        p_event_title: event.title,
-        p_idempotency_key: idempotencyKey,
-        p_virtual_currency_code: revenueCatVirtualCurrencyCode,
-      }
-    );
+    const { data: rsvp, error: upsertError } = await supabaseAdmin
+      .from('rsvps')
+      .upsert(
+        {
+          event_id: eventId,
+          user_id: user.id,
+          status: 'active',
+          canceled_at: null,
+        },
+        { onConflict: 'user_id,event_id', ignoreDuplicates: false }
+      )
+      .select('id')
+      .maybeSingle();
 
-    if (rpcError) throw rpcError;
+    if (upsertError) throw upsertError;
 
-    if (!rpcResult?.ok) {
-      return Response.json(rpcResult, {
-        status: rpcResult?.status === 'event_full' ? 409 : 400,
-        headers: corsHeaders,
+    if (tokenCost > 0) {
+      const { error: transactionError } = await supabaseAdmin.from('token_transactions').insert({
+        user_id: user.id,
+        kind: 'spend',
+        amount: tokenCost,
+        meta: {
+          type: 'event_rsvp',
+          eventId,
+          eventTitle: event.title,
+          idempotencyKey,
+          virtualCurrencyCode: revenueCatVirtualCurrencyCode,
+        },
       });
+
+      if (transactionError && transactionError.code !== '23505') {
+        throw transactionError;
+      }
     }
 
     return Response.json(
       {
-        status: rpcResult.status,
+        status: 'added',
         eventId,
         eventTitle: event.title,
         tokenCost,
+        rsvpId: rsvp?.id ?? existingRsvp?.id ?? null,
       },
       { headers: corsHeaders }
     );

@@ -32,7 +32,7 @@ const getAppTransactionDelta = (
   }, 0);
 
 export function useCreditBalance() {
-  const { customerInfo } = useRevenueCat();
+  const { customerInfo, refreshCustomerInfo } = useRevenueCat();
   const virtualCurrencyQuery = useRevenueCatVirtualCurrency();
   const tokenBalanceQuery = useTokenBalance();
   const tokenTransactionsQuery = useTokenTransactions();
@@ -46,15 +46,18 @@ export function useCreditBalance() {
       purchaseAmounts.length > 0 && purchaseAmounts.every((amount) => amount !== null)
         ? purchaseAmounts.reduce((total, amount) => total + (amount ?? 0), 0)
         : null;
-    const storeBalance =
+    const virtualCurrencyBalance =
       typeof virtualCurrencyQuery.data?.balance === 'number'
         ? virtualCurrencyQuery.data.balance
-        : (tokenBalanceQuery.data ?? 0);
+        : null;
+    const transactionDelta = getAppTransactionDelta(tokenTransactionsQuery.data);
+    const balanceCandidates = [
+      virtualCurrencyBalance,
+      tokenBalanceQuery.data == null ? null : tokenBalanceQuery.data,
+      purchaseBalance == null ? null : purchaseBalance + transactionDelta,
+    ].filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
 
-    return Math.max(
-      0,
-      (purchaseBalance ?? storeBalance) + getAppTransactionDelta(tokenTransactionsQuery.data)
-    );
+    return Math.max(0, ...balanceCandidates);
   }, [
     customerInfo?.nonSubscriptionTransactions,
     tokenBalanceQuery.data,
@@ -77,6 +80,7 @@ export function useCreditBalance() {
 
   const refetch = async () => {
     await Promise.all([
+      refreshCustomerInfo(),
       virtualCurrencyQuery.refetch(),
       tokenBalanceQuery.refetch(),
       tokenTransactionsQuery.refetch(),
