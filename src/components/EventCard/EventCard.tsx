@@ -4,7 +4,6 @@ import { Icon } from '../ui/icon';
 import { EventRow, EventWithJoins, VEventWithFullDetails } from '~/types/event.types';
 import dayjs from 'dayjs';
 import { useStorageImages } from '~/hooks';
-import { useTheme } from '~/providers/ThemeProvider';
 
 interface EventCardProps {
   event: EventRow | EventWithJoins | VEventWithFullDetails;
@@ -45,15 +44,17 @@ export function EventCard({
   imageSize,
   className,
 }: EventCardProps) {
-  // const { data } = useStorageImages({
-  //   bucket: 'event_cover',
-  //   paths: [event?.cover_img], // stored in users table
-  // });
+  const coverImage = event?.cover_img ?? null;
+  const isWebUrl = Boolean(coverImage && /^https?:\/\//i.test(coverImage));
+  const isLocalFileUrl = Boolean(coverImage && /^file:\/\//i.test(coverImage));
+  const shouldSignStoragePath = Boolean(coverImage && !isWebUrl && !isLocalFileUrl);
+  const { data: signedCoverUrls = [] } = useStorageImages({
+    bucket: 'event_cover',
+    paths: shouldSignStoragePath ? [coverImage] : [],
+  });
 
-  const src = event?.cover_img ? { uri: event.cover_img } : undefined;
-  // Array.isArray(data) && data[0]
-  //   ? { uri: data[0] as string } // never null ✅
-  //   : '';
+  const resolvedCoverUri = isWebUrl ? coverImage : shouldSignStoragePath ? signedCoverUrls[0] : null;
+  const src = resolvedCoverUri ? { uri: resolvedCoverUri } : undefined;
 
   return (
     <Flex className="relative">
