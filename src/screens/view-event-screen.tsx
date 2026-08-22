@@ -17,6 +17,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Countdown } from '~/components/Countdown/Countdown';
 import { EventCard } from '~/components/EventCard/EventCard';
 import { PremiumBlurGate } from '~/components/PremiumBlurGate';
 
@@ -29,6 +30,7 @@ import {
   useCreditBalance,
   useEventById,
   useJoinWaitlist,
+  useMyHeldRsvp,
   useMyWaitlistEntry,
   REVENUECAT_VIRTUAL_CURRENCY_QUERY_KEYS,
   useEventReview,
@@ -44,6 +46,7 @@ import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/providers/AuthProvider';
 import { useRevenueCat } from '~/providers/RevenueCatProvider';
 import { EventReviewContent } from './event-review-screen';
+import { getEventLocationForAccess } from '~/utils/eventPrivacy';
 import {
   cancelEventLocalNotifications,
   notifyCreditRefund,
@@ -96,7 +99,7 @@ export function ViewEventScreen() {
   const snapPoints = useMemo(() => ['70%', '90%'], []);
   const SMALL_SCREEN_WIDTH = 390;
 
-  const { session, userId } = useAuth();
+  const { session, user, userId } = useAuth();
   const {
     presentPaywall,
     presentPlacementPaywall,
@@ -160,6 +163,7 @@ export function ViewEventScreen() {
   const [hasSubmittedReview, setHasSubmittedReview] = useState(false);
   const [isOpeningPaywall, setIsOpeningPaywall] = useState(false);
   const [hasValidatedAttendeeAccess, setHasValidatedAttendeeAccess] = useState(false);
+  const [rsvpOpenCountdownComplete, setRsvpOpenCountdownComplete] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -167,6 +171,10 @@ export function ViewEventScreen() {
       void refetchExistingReview();
     }, [params.eventId, refetchExistingReview, userId])
   );
+
+  useEffect(() => {
+    setRsvpOpenCountdownComplete(false);
+  }, [event?.id, event?.rsvp_open_at]);
 
   const tokenCost = event?.token_cost ?? 0;
   const projectedBalance = useMemo(() => currentBalance - tokenCost, [currentBalance, tokenCost]);
@@ -177,12 +185,73 @@ export function ViewEventScreen() {
   }, [event?.capacity, currentRsvpCount]);
 
   const isRsvped = useMemo(() => rsvps.some((r) => r.user_id === userId), [rsvps, userId]);
+  const canViewExactAddress =
+    isRsvped ||
+    event?.is_current_user_host === true ||
+    user?.role === 'host' ||
+    user?.role === 'admin' ||
+    user?.role === 'super_admin';
   const hasReviewedEvent = hasSubmittedReview || Boolean(existingReview);
   const reviewActionDisabled = reviewLoading || reviewFetching || hasReviewedEvent;
   const isSoldOut = remainingSpots !== null && remainingSpots <= 0;
   const { data: waitlistEntry } = useMyWaitlistEntry(event?.id ?? '');
-  const { data: waitlistPosition } = useWaitlistPosition(event?.id ?? '', Boolean(waitlistEntry));
+  const { data: heldRsvp } = useMyHeldRsvp(event?.id ?? '');
+  const canViewWaitlistPosition = useMemo(() => {
+    if (!user) {
+      return false;
+    }
+
+    return (
+      user.role === 'host' ||
+      user.role === 'admin' ||
+      user.role === 'super_admin' ||
+      user.membership === 'plus' ||
+      user.membership === 'premium' ||
+      user.membership === 'admin' ||
+      user.membership === 'superadmin'
+    );
+  }, [user]);
+  const { data: waitlistPosition } = useWaitlistPosition(
+    event?.id ?? '',
+    Boolean(waitlistEntry) && canViewWaitlistPosition
+  );
   const isOnWaitlist = waitlistEntry?.status === 'waiting';
+  const hasHeldWaitlistSpot = waitlistEntry?.status === 'promoted' || heldRsvp?.status === 'held';
+  const waitlistPriorityLabel = useMemo(() => {
+    if (!user) {
+      return null;
+    }
+
+    if (user.membership === 'premium') {
+      return 'Premium priority: you are placed ahead of Plus and Basic members.';
+    }
+
+    if (user.membership === 'plus') {
+      return 'Plus priority: Premium members are first, then Plus, then Basic.';
+    }
+
+    return 'Basic waitlist: Premium and Plus members receive priority placement.';
+  }, [user]);
+  const rsvpOpenAt = event?.rsvp_open_at ? dayjs(event.rsvp_open_at) : null;
+  const userBypassesRsvpOpen =
+    user?.role === 'host' ||
+    user?.role === 'admin' ||
+    user?.role === 'super_admin' ||
+    user?.membership === 'plus' ||
+    user?.membership === 'premium' ||
+    user?.membership === 'admin' ||
+    user?.membership === 'superadmin' ||
+    event?.is_current_user_host === true;
+  const isPublicRsvpOpen =
+    event?.rsvp_open === true ||
+    !rsvpOpenAt ||
+    !rsvpOpenAt.isAfter(dayjs()) ||
+    rsvpOpenCountdownComplete;
+  const canRsvpNow = userBypassesRsvpOpen || isPublicRsvpOpen || hasHeldWaitlistSpot;
+  const shouldShowRsvpCountdown = Boolean(
+    !isRsvped && !isSoldOut && !canRsvpNow && rsvpOpenAt && rsvpOpenAt.isAfter(dayjs())
+  );
+  const rsvpOpenLabel = rsvpOpenAt ? rsvpOpenAt.format('MMM D [at] h:mm A') : null;
   const hasEventEnded = useMemo(() => {
     if (!event?.ends_at) return false;
     return dayjs().isAfter(dayjs(event.ends_at));
@@ -224,6 +293,7 @@ export function ViewEventScreen() {
       queryClient.invalidateQueries({ queryKey: ['rsvps', eventId] });
       queryClient.invalidateQueries({ queryKey: ['events', 'eventVibes'] });
       queryClient.invalidateQueries({ queryKey: WAITLIST_KEYS.mine(eventId, userId) });
+      queryClient.invalidateQueries({ queryKey: WAITLIST_KEYS.heldRsvp(eventId, userId) });
       queryClient.invalidateQueries({ queryKey: WAITLIST_KEYS.position(eventId, userId) });
     };
 
@@ -252,6 +322,15 @@ export function ViewEventScreen() {
   }, [params.eventId, queryClient, userId]);
 
   const openConfirmationModal = (mode: ConfirmationMode) => {
+    if (mode === 'rsvp' && !canRsvpNow) {
+      setRsvpError(
+        rsvpOpenLabel
+          ? `RSVP opens for Basic members on ${rsvpOpenLabel}.`
+          : 'RSVP is not open yet.'
+      );
+      return;
+    }
+
     setConfirmationMode(mode);
     setRsvpError(null);
     setShowRsvpModal(true);
@@ -382,6 +461,7 @@ export function ViewEventScreen() {
       queryClient.invalidateQueries({ queryKey: ['events', 'userEvents'] });
       queryClient.invalidateQueries({ queryKey: ['events', 'checkIns', 'byUser', userId] });
       queryClient.invalidateQueries({ queryKey: WAITLIST_KEYS.mine(event.id, userId) });
+      queryClient.invalidateQueries({ queryKey: WAITLIST_KEYS.heldRsvp(event.id, userId) });
       queryClient.invalidateQueries({ queryKey: WAITLIST_KEYS.position(event.id, userId) });
       queryClient.invalidateQueries({ queryKey: EVENT_KEYS.checkIn(userId) });
       queryClient.invalidateQueries({ queryKey: EVENT_KEYS.userCheckedIn(userId, event.id) });
@@ -477,7 +557,7 @@ export function ViewEventScreen() {
     : 'Date TBD';
   const eventTimeDisplay =
     event.starts_at && event.ends_at ? `${dayjs(event.starts_at).format('h:mm A')}` : 'Time TBD';
-  const eventLocationDisplay = event.location_text ?? null;
+  const eventLocationDisplay = getEventLocationForAccess(event, canViewExactAddress);
   const primaryHost = event.event_hosts?.[0];
   const hostNameDisplay =
     primaryHost && (primaryHost.first_name || primaryHost.last_name)
@@ -542,7 +622,7 @@ export function ViewEventScreen() {
                 </Flex>
                 <Flex direction="row" align="center" gap={2}>
                   <Icon as={MapPin} size={'lg'} className="text-typography-light" />
-                  <Text size="lg">{event.location_text}</Text>
+                  <Text size="lg">{eventLocationDisplay}</Text>
                 </Flex>
               </Flex>
             </Flex>
@@ -726,34 +806,88 @@ export function ViewEventScreen() {
             <Flex className="w-1/2" gap={2}>
               {isSoldOut ? (
                 <>
-                  <Button
-                    variant="primary"
-                    className={cn(
-                      'h-14 w-full rounded-lg',
-                      isOnWaitlist ? 'bg-background-700' : 'bg-primary-600'
-                    )}
-                    onPress={
-                      isOnWaitlist ? handleLeaveWaitlist : () => openConfirmationModal('waitlist')
-                    }
-                    disabled={joiningWaitlist || leavingWaitlist}>
-                    <Text bold size="lg" className="text-white">
-                      {isOnWaitlist
-                        ? leavingWaitlist
-                          ? 'Leaving...'
-                          : 'Leave Waitlist'
-                        : joiningWaitlist
-                          ? 'Joining...'
-                          : 'Join Waitlist'}
+                  {hasHeldWaitlistSpot ? (
+                    <RsvpButton
+                      onPress={() => openConfirmationModal('rsvp')}
+                      isLoading={isConfirmingRsvp}
+                    />
+                  ) : (
+                    <Button
+                      variant="primary"
+                      className={cn(
+                        'h-14 w-full rounded-lg',
+                        isOnWaitlist ? 'bg-background-700' : 'bg-primary-600'
+                      )}
+                      onPress={
+                        isOnWaitlist ? handleLeaveWaitlist : () => openConfirmationModal('waitlist')
+                      }
+                      disabled={joiningWaitlist || leavingWaitlist}>
+                      <Text bold size="lg" className="text-white">
+                        {isOnWaitlist
+                          ? leavingWaitlist
+                            ? 'Leaving...'
+                            : 'Leave Waitlist'
+                          : joiningWaitlist
+                            ? 'Joining...'
+                            : 'Join Waitlist'}
+                      </Text>
+                    </Button>
+                  )}
+                  {hasHeldWaitlistSpot ? (
+                    <Text size="sm" className="text-center text-success-500">
+                      Your spot is held temporarily. Confirm RSVP to claim it.
                     </Text>
-                  </Button>
-                  {isOnWaitlist && waitlistPosition ? (
+                  ) : isOnWaitlist && canViewWaitlistPosition && waitlistPosition ? (
                     <Text size="sm" className="text-center text-white">
-                      {`You're #${waitlistPosition} on the waitlist`}
+                      {`You're #${waitlistPosition} on the priority waitlist`}
+                    </Text>
+                  ) : isOnWaitlist ? (
+                    <Text size="sm" className="text-center text-white">
+                      You're on the waitlist
+                    </Text>
+                  ) : null}
+                  {isOnWaitlist && waitlistPriorityLabel ? (
+                    <Text size="xs" className="text-center text-white/70">
+                      {waitlistPriorityLabel}
                     </Text>
                   ) : null}
                 </>
               ) : (
-                <RsvpButton onPress={() => openConfirmationModal('rsvp')} />
+                <>
+                  {shouldShowRsvpCountdown ? (
+                    <Flex gap={1} className="absolute bottom-24 rounded-lg bg-background-800 p-3">
+                      <Text size="xs" className="text-center text-white/70">
+                        Basic RSVP opens {rsvpOpenLabel}
+                      </Text>
+                      <Flex align="center">
+                        <Countdown
+                          to={rsvpOpenAt!.toDate()}
+                          onComplete={() => setRsvpOpenCountdownComplete(true)}
+                        />
+                      </Flex>
+                      <Text size="xs" className="text-center text-white/70">
+                        Plus and Premium get priority booking.
+                      </Text>
+                      <Button
+                        variant="outline"
+                        className="mt-1 h-10 rounded-lg border-primary-600"
+                        onPress={handleUpgradePress}
+                        disabled={loadingOfferings || isOpeningPaywall}>
+                        <Text bold size="sm" className="text-primary-300">
+                          {isOpeningPaywall ? 'Opening...' : 'Upgrade'}
+                        </Text>
+                      </Button>
+                    </Flex>
+                  ) : userBypassesRsvpOpen && !isPublicRsvpOpen ? (
+                    <Text size="xs" className="text-center text-primary-300">
+                      Priority booking is unlocked for your membership.
+                    </Text>
+                  ) : null}
+                  <RsvpButton
+                    onPress={() => openConfirmationModal('rsvp')}
+                    disabled={!canRsvpNow}
+                  />
+                </>
               )}
               {remainingSpots !== null && remainingSpots > 0 ? (
                 <Text
@@ -810,18 +944,24 @@ function RsvpButton({
   onPress,
   isLoading,
   canEdit,
+  disabled,
 }: {
   onPress: () => void;
   isLoading?: boolean;
   canEdit?: boolean;
+  disabled?: boolean;
 }) {
   const label = isLoading ? <Spinner /> : 'RSVP';
   return (
     <Button
       variant="primary"
-      className={cn('h-14 w-full rounded-lg bg-primary-700', canEdit && 'w-[48%]')}
+      className={cn(
+        'h-14 w-full rounded-lg',
+        disabled ? 'bg-gray-500' : 'bg-primary-700',
+        canEdit && 'w-[48%]'
+      )}
       onPress={onPress}
-      disabled={isLoading}>
+      disabled={isLoading || disabled}>
       <Text bold size="lg" className="text-white dark:text-black">
         {label}
       </Text>

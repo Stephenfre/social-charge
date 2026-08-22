@@ -19,7 +19,7 @@ const revenueCatUseTestStore = process.env.EXPO_PUBLIC_RC_USE_TEST_STORE === 'tr
 const revenueCatEntitlementIdentifier =
   process.env.EXPO_PUBLIC_RC_ENTITLEMENT_IDENTIFIER ?? 'Social Charge Pro';
 const revenueCatOfferingIdentifier = process.env.EXPO_PUBLIC_RC_OFFERING_IDENTIFIER ?? 'default';
-const revenueCatVirtualCurrencyCode = process.env.EXPO_PUBLIC_RC_VIRTUAL_CURRENCY_CODE ?? 'battery';
+const revenueCatVirtualCurrencyCode = process.env.EXPO_PUBLIC_RC_VIRTUAL_CURRENCY_CODE ?? 'SCB';
 const googleSignInPlugin: [string, any] | null = googleIosUrlScheme
   ? [
       '@react-native-google-signin/google-signin',
@@ -29,7 +29,7 @@ const googleSignInPlugin: [string, any] | null = googleIosUrlScheme
     ]
   : null;
 const googleServicesFile = './google-services.json';
-const hasGoogleServicesFile = existsSync(resolve(__dirname, googleServicesFile));
+const hasGoogleServicesFile = existsSync(resolve(process.cwd(), googleServicesFile));
 
 const config: ExpoConfig = {
   name: appName,
@@ -61,6 +61,13 @@ const config: ExpoConfig = {
       },
     ],
     'expo-font',
+    [
+      'expo-contacts',
+      {
+        contactsPermission:
+          'Allow Social Charge to access your contacts so you can choose a friend to invite.',
+      },
+    ],
     'expo-maps',
     'expo-apple-authentication',
     ...(googleSignInPlugin ? [googleSignInPlugin] : []),

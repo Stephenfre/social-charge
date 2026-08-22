@@ -1,14 +1,28 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { KeyboardAvoidingView, Platform } from 'react-native';
+import { KeyboardAvoidingView, Linking, Platform } from 'react-native';
+import { useEffect } from 'react';
 import { AppleOauth, AuthForm } from '~/components';
 import { GoogleSignInButton } from '~/components/GoogleSignInButton';
 import { Divider, Flex, Pressable, Text } from '~/components/ui';
 import { useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '~/types/navigation';
 import { ArrowLeft } from 'lucide-react-native';
+import { useSignupWizard } from '~/hooks/useSignupWizard';
 
 export function RegisterScreen() {
   const navigation = useNavigation<NavigationProp<'Register'>>();
+  const setField = useSignupWizard((state) => state.setField);
+
+  useEffect(() => {
+    const captureReferral = (url: string | null) => {
+      if (!url) return;
+      const match = url.match(/[?&]ref=([A-Za-z0-9]+)/i);
+      if (match?.[1]) setField('referralCode', match[1].toUpperCase());
+    };
+    void Linking.getInitialURL().then(captureReferral);
+    const subscription = Linking.addEventListener('url', ({ url }) => captureReferral(url));
+    return () => subscription.remove();
+  }, [setField]);
 
   const onNext = () => {
     navigation.navigate('RegisterUserName');

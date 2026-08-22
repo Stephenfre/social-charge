@@ -578,6 +578,8 @@ export type Database = {
           longitude: number
           place_id: string | null
           provider: string | null
+          rsvp_open: boolean
+          rsvp_open_at: string | null
           starts_at: string
           title: string
           token_cost: number
@@ -600,6 +602,8 @@ export type Database = {
           longitude: number
           place_id?: string | null
           provider?: string | null
+          rsvp_open?: boolean
+          rsvp_open_at?: string | null
           starts_at: string
           title: string
           token_cost?: number
@@ -622,6 +626,8 @@ export type Database = {
           longitude?: number
           place_id?: string | null
           provider?: string | null
+          rsvp_open?: boolean
+          rsvp_open_at?: string | null
           starts_at?: string
           title?: string
           token_cost?: number
@@ -1001,6 +1007,7 @@ export type Database = {
           canceled_at: string | null
           created_at: string | null
           event_id: string
+          held_expires_at: string | null
           id: string
           status: Database["public"]["Enums"]["rsvp_status"]
           user_id: string | null
@@ -1009,6 +1016,7 @@ export type Database = {
           canceled_at?: string | null
           created_at?: string | null
           event_id: string
+          held_expires_at?: string | null
           id?: string
           status?: Database["public"]["Enums"]["rsvp_status"]
           user_id?: string | null
@@ -1017,6 +1025,7 @@ export type Database = {
           canceled_at?: string | null
           created_at?: string | null
           event_id?: string
+          held_expires_at?: string | null
           id?: string
           status?: Database["public"]["Enums"]["rsvp_status"]
           user_id?: string | null
@@ -1975,6 +1984,8 @@ export type Database = {
           longitude: number | null
           place_id: string | null
           provider: string | null
+          rsvp_open: boolean | null
+          rsvp_open_at: string | null
           rsvps: Database["public"]["CompositeTypes"]["rsvp_info"][] | null
           starts_at: string | null
           title: string | null
@@ -3138,7 +3149,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      waitlist_position: { Args: { p_event_id: string }; Returns: number }
+      waitlist_position: { Args: { p_event_id: string }; Returns: number | null }
       waitlist_promote_next: { Args: { p_event_id: string }; Returns: Json }
     }
     Enums: {
@@ -3183,7 +3194,7 @@ export type Database = {
         | "Tech"
         | "Pets"
       membership_role: "superadmin" | "admin" | "basic" | "plus" | "premium"
-      rsvp_status: "active" | "canceled"
+      rsvp_status: "active" | "canceled" | "held"
       social_archetype: "chill" | "social" | "adventurer"
       style_band:
         | "cheap_casual"
@@ -3393,7 +3404,7 @@ export const Constants = {
         "Pets",
       ],
       membership_role: ["superadmin", "admin", "basic", "plus", "premium"],
-      rsvp_status: ["active", "canceled"],
+      rsvp_status: ["active", "canceled", "held"],
       social_archetype: ["chill", "social", "adventurer"],
       style_band: [
         "cheap_casual",

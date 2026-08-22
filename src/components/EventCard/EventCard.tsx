@@ -4,6 +4,7 @@ import { Icon } from '../ui/icon';
 import { EventRow, EventWithJoins, VEventWithFullDetails } from '~/types/event.types';
 import dayjs from 'dayjs';
 import { useStorageImages } from '~/hooks';
+import { getPublicEventLocation } from '~/utils/eventPrivacy';
 
 interface EventCardProps {
   event: EventRow | EventWithJoins | VEventWithFullDetails;
@@ -55,12 +56,22 @@ export function EventCard({
 
   const resolvedCoverUri = isWebUrl ? coverImage : shouldSignStoragePath ? signedCoverUrls[0] : null;
   const src = resolvedCoverUri ? { uri: resolvedCoverUri } : undefined;
+  const isPremiumEvent =
+    'event_type' in event
+      ? event.event_type === 'premium' ||
+        (!event.event_type && typeof event.token_cost === 'number' && event.token_cost >= 10)
+      : typeof event.token_cost === 'number' && event.token_cost >= 10;
 
   return (
     <Flex className="relative">
       {featured && (
         <Button className="absolute left-0 top-0 z-50 m-4 h-6 rounded-md bg-red-500 px-4">
           <ButtonText className="text-sm text-white">FEATURED</ButtonText>
+        </Button>
+      )}
+      {isPremiumEvent && (
+        <Button className="absolute right-0 top-0 z-50 m-4 h-6 rounded-md bg-amber-500 px-3">
+          <ButtonText className="text-sm text-black">PREMIUM</ButtonText>
         </Button>
       )}
       <Pressable onPress={onPress} className={className}>
@@ -94,11 +105,11 @@ export function EventCard({
                 </Text>
               </Flex>
             )}
-            {showLocation && event?.location_text && (
+            {showLocation && (
               <Flex direction="row" align="center" gap={1}>
                 <Icon as={MapPin} size={'sm'} className="text-white dark:text-black" />
                 <Text size="lg" className="text-white dark:text-black">
-                  {event?.location_text}
+                  {getPublicEventLocation(event)}
                 </Text>
               </Flex>
             )}

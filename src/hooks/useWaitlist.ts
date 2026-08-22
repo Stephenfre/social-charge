@@ -4,9 +4,12 @@ import { useAuth } from '~/providers/AuthProvider';
 import type { Database } from '~/types/database.types';
 
 type EventWaitlistRow = Database['public']['Tables']['event_waitlist']['Row'];
+type RsvpRow = Database['public']['Tables']['rsvps']['Row'];
 
 export const WAITLIST_KEYS = {
   mine: (eventId: string, userId?: string | null) => ['waitlist', 'mine', eventId, userId] as const,
+  heldRsvp: (eventId: string, userId?: string | null) =>
+    ['waitlist', 'held-rsvp', eventId, userId] as const,
   position: (eventId: string, userId?: string | null) =>
     ['waitlist', 'position', eventId, userId] as const,
 };
@@ -23,7 +26,31 @@ export function useMyWaitlistEntry(eventId: string) {
         .select('*')
         .eq('event_id', eventId)
         .eq('user_id', userId!)
-        .eq('status', 'waiting')
+        .in('status', ['waiting', 'promoted'])
+        .order('requested_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useMyHeldRsvp(eventId: string) {
+  const { userId } = useAuth();
+
+  return useQuery<RsvpRow | null>({
+    queryKey: WAITLIST_KEYS.heldRsvp(eventId, userId),
+    enabled: !!eventId && !!userId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rsvps')
+        .select('*')
+        .eq('event_id', eventId)
+        .eq('user_id', userId!)
+        .eq('status', 'held')
+        .gt('held_expires_at', new Date().toISOString())
         .maybeSingle();
 
       if (error) throw error;
@@ -58,6 +85,7 @@ export function useJoinWaitlist() {
     },
     onSuccess: (_data, { eventId }) => {
       qc.invalidateQueries({ queryKey: WAITLIST_KEYS.mine(eventId, userId) });
+      qc.invalidateQueries({ queryKey: WAITLIST_KEYS.heldRsvp(eventId, userId) });
       qc.invalidateQueries({ queryKey: WAITLIST_KEYS.position(eventId, userId) });
     },
   });
@@ -75,6 +103,7 @@ export function useCancelWaitlist() {
     },
     onSuccess: (_data, { eventId }) => {
       qc.invalidateQueries({ queryKey: WAITLIST_KEYS.mine(eventId, userId) });
+      qc.invalidateQueries({ queryKey: WAITLIST_KEYS.heldRsvp(eventId, userId) });
       qc.invalidateQueries({ queryKey: WAITLIST_KEYS.position(eventId, userId) });
     },
   });

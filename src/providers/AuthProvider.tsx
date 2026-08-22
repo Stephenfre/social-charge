@@ -183,6 +183,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [finishInitialProfileHydration, hydrateUser]);
 
+  useEffect(() => {
+    const referralCode = session?.user?.user_metadata?.referral_code;
+    if (
+      !session?.user?.id ||
+      !session.user.email_confirmed_at ||
+      typeof referralCode !== 'string' ||
+      !referralCode.trim()
+    ) {
+      return;
+    }
+
+    const claimReferral = supabase.rpc as unknown as (
+      _name: 'claim_referral',
+      _args: { p_code: string }
+    ) => Promise<{ error: unknown }>;
+    void claimReferral('claim_referral', { p_code: referralCode.trim().toUpperCase() });
+  }, [session?.user?.id, session?.user?.email_confirmed_at]);
+
   const refreshUser = useCallback(async () => {
     if (!session?.user?.id) return null;
 

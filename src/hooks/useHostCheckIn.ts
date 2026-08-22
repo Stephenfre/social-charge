@@ -17,10 +17,19 @@ export function useHostCheckIn() {
       throw new Error('You must be signed in to scan.');
     }
 
-    return supabase.functions.invoke('qr-consume', {
+    const result = await supabase.functions.invoke('qr-consume', {
       headers: { Authorization: `Bearer ${hostAccessToken}` },
       body: { jti, eventId },
     });
+    const referredUserId = result.data?.checkedInUserId ?? result.data?.user_id;
+    if (!result.error && referredUserId) {
+      const { error } = await supabase.functions.invoke('award-referral-social-batteries', {
+        headers: { Authorization: `Bearer ${hostAccessToken}` },
+        body: { referredUserId },
+      });
+      if (error) console.warn('Referral reward qualification failed:', error);
+    }
+    return result;
   }, []);
 
   return { processScan };

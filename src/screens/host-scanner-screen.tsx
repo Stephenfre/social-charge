@@ -1,14 +1,20 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Linking, StyleSheet, Vibration } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
+import {
+  CameraView,
+  useCameraPermissions,
+  type BarcodeScanningResult,
+  type BarcodeType,
+} from 'expo-camera';
 import { Buffer } from 'buffer';
 import dayjs from 'dayjs';
 import { useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '~/lib/keys';
 import { useNavigationStack, useRouteStack } from '~/types/navigation.types';
-import { Button, Flex, Text } from '~/components/ui';
-import { useHostCheckIn } from '~/hooks';
+import { Avatar, AvatarFallbackText, AvatarImage, Button, Flex, Text } from '~/components/ui';
+import { supabase } from '~/lib/supabase';
+import { useHostCheckIn, useStorageImages } from '~/hooks';
 
 type HostScannerScreenProps = {
   hostRunId?: string | null;
@@ -20,7 +26,13 @@ type QrPayload = {
   eventId?: string;
 };
 
-const BARCODE_TYPES = ['qr', 'pdf417'] as const;
+type CheckedInGuest = {
+  id: string;
+  name: string;
+  profilePicture: string | null;
+};
+
+const BARCODE_TYPES: BarcodeType[] = ['qr', 'pdf417'];
 
 export function HostScannerScreen({ hostRunId = null }: HostScannerScreenProps) {
   const navigation = useNavigationStack<'ScanQrModal'>();
@@ -30,6 +42,7 @@ export function HostScannerScreen({ hostRunId = null }: HostScannerScreenProps) 
 
   const [scanning, setScanning] = useState(false);
   const [lastProcessedJti, setLastProcessedJti] = useState<string | null>(null);
+  const [checkedInGuest, setCheckedInGuest] = useState<CheckedInGuest | null>(null);
 
   const cooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const processingRef = useRef(false);
@@ -37,6 +50,11 @@ export function HostScannerScreen({ hostRunId = null }: HostScannerScreenProps) 
 
   const eventIdFromRoute = hostRunId ?? params?.runId ?? null;
   const { processScan } = useHostCheckIn();
+  const { data: checkedInGuestAvatarUrls = [] } = useStorageImages({
+    bucket: 'avatars',
+    paths: [checkedInGuest?.profilePicture],
+  });
+  const checkedInGuestAvatarUrl = checkedInGuestAvatarUrls[0] ?? null;
 
   const scheduleReset = useCallback(() => {
     if (cooldownRef.current) {
@@ -102,6 +120,7 @@ export function HostScannerScreen({ hostRunId = null }: HostScannerScreenProps) 
       }
       processingRef.current = true;
       setScanning(true);
+      setCheckedInGuest(null);
 
       try {
         const token = data?.trim();
@@ -152,13 +171,39 @@ export function HostScannerScreen({ hostRunId = null }: HostScannerScreenProps) 
         const res = await processScan({ jti, eventId: eventIdForToken });
         if (res.error) {
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          Alert.alert('Check-in failed', res.error.message ?? 'Unable to check in player');
+          Alert.alert('Check-in failed', res.error.message ?? 'Unable to check in guest');
         } else {
           const scannedUserId = res.data?.checkedInUserId ?? res.data?.user_id ?? null;
+          let guestName = 'Guest';
+          let guestProfilePicture: string | null = null;
+
+          if (scannedUserId) {
+            const { data: scannedUser, error: scannedUserError } = await supabase
+              .from('users')
+              .select('first_name,last_name,profile_picture')
+              .eq('id', scannedUserId)
+              .maybeSingle();
+
+            if (!scannedUserError && scannedUser) {
+              const fullName = `${scannedUser.first_name ?? ''} ${
+                scannedUser.last_name ?? ''
+              }`.trim();
+              guestName = fullName || 'Guest';
+              guestProfilePicture = scannedUser.profile_picture ?? null;
+            }
+          }
 
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           Vibration.vibrate(100);
-          Alert.alert('Checked in', 'Player successfully checked in');
+          if (scannedUserId) {
+            setCheckedInGuest({
+              id: scannedUserId,
+              name: guestName,
+              profilePicture: guestProfilePicture,
+            });
+          } else {
+            Alert.alert('Checked in', `${guestName} successfully checked in`);
+          }
           if (jti) {
             setLastProcessedJti(jti);
           }
@@ -176,7 +221,9 @@ export function HostScannerScreen({ hostRunId = null }: HostScannerScreenProps) 
           if (eventIdFromRoute) {
             await Promise.all([
               queryClient.invalidateQueries({ queryKey: QUERY_KEYS.runById(eventIdFromRoute) }),
-              queryClient.invalidateQueries({ queryKey: QUERY_KEYS.waitlistByRun(eventIdFromRoute) }),
+              queryClient.invalidateQueries({
+                queryKey: QUERY_KEYS.waitlistByRun(eventIdFromRoute),
+              }),
               queryClient.invalidateQueries({ queryKey: QUERY_KEYS.isCheckedIn(eventIdFromRoute) }),
             ]);
           }
@@ -242,12 +289,39 @@ export function HostScannerScreen({ hostRunId = null }: HostScannerScreenProps) 
     <Flex flex justify="center" className="bg-background-dark px-4" align="center" gap={2}>
       <Flex align="center">
         <Text bold size="xl">
-          Scan Player QR
+          Scan Guest QR
         </Text>
         {params?.runTitle && <Text>{params.runTitle}</Text>}
         {params?.locationName && <Text>{params.locationName}</Text>}
         {runWindow && <Text>{runWindow}</Text>}
       </Flex>
+
+      {checkedInGuest ? (
+        <Flex
+          direction="row"
+          align="center"
+          gap={3}
+          className="w-full rounded-xl border border-success-500/40 bg-success-500/10 p-4">
+          <Avatar size="md">
+            {checkedInGuestAvatarUrl ? (
+              <AvatarImage
+                source={{ uri: checkedInGuestAvatarUrl }}
+                alt={`${checkedInGuest.name} profile`}
+              />
+            ) : (
+              <AvatarFallbackText>{checkedInGuest.name}</AvatarFallbackText>
+            )}
+          </Avatar>
+          <Flex flex>
+            <Text bold size="lg" className="text-white">
+              {checkedInGuest.name}
+            </Text>
+            <Text size="sm" className="text-success-500">
+              Checked in
+            </Text>
+          </Flex>
+        </Flex>
+      ) : null}
 
       <Flex
         className="m-4 h-80 w-full overflow-hidden rounded-xl border bg-slate-300"

@@ -23,6 +23,7 @@ export type SignUpArgs = {
   profileImageUri?: string | null;
   selectedInterests: string[]; // can be plain strings; we’ll narrow to enum
   skipInterests?: boolean;
+  referralCode?: string | null;
 };
 
 export function useSignUp() {
@@ -42,6 +43,7 @@ export function useSignUp() {
         profileImageUri,
         selectedInterests,
         skipInterests,
+        referralCode,
       } = args;
 
       const {
@@ -59,7 +61,12 @@ export function useSignUp() {
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { display_name: `${firstName} ${lastName}` } },
+          options: {
+            data: {
+              display_name: `${firstName} ${lastName}`,
+              referral_code: referralCode?.trim().toUpperCase() || undefined,
+            },
+          },
         });
         if (signUpError) throw signUpError;
 
@@ -85,6 +92,17 @@ export function useSignUp() {
 
         const { error: upsertError } = await supabase.from('users').upsert(userInfo);
         if (upsertError) throw upsertError;
+
+        if (referralCode?.trim()) {
+          const claimReferral = supabase.rpc as unknown as (
+            _name: 'claim_referral',
+            _args: { p_code: string }
+          ) => Promise<{ error: { code?: string } | null }>;
+          const { error: referralError } = await claimReferral('claim_referral', {
+            p_code: referralCode.trim().toUpperCase(),
+          });
+          if (referralError && referralError.code !== '23505') throw referralError;
+        }
 
         // 2b) Optional image upload → save URL/path on users.profile_picture
         if (profileImageUri) {

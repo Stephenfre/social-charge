@@ -63,7 +63,7 @@ Deno.serve(async (request) => {
 
     const { data: event, error: eventError } = await supabaseAdmin
       .from('events')
-      .select('id,title,token_cost,capacity,deleted_at')
+      .select('id,title,token_cost,capacity,deleted_at,rsvp_open,rsvp_open_at')
       .eq('id', eventId)
       .maybeSingle();
 
@@ -76,7 +76,7 @@ Deno.serve(async (request) => {
     const tokenCost = event.token_cost ?? 0;
     const { data: existingRsvp, error: existingRsvpError } = await supabaseAdmin
       .from('rsvps')
-      .select('id,status,canceled_at')
+      .select('id,status,canceled_at,held_expires_at')
       .eq('event_id', eventId)
       .eq('user_id', user.id)
       .maybeSingle();
@@ -96,6 +96,54 @@ Deno.serve(async (request) => {
       );
     }
 
+    const { data: userProfile, error: userProfileError } = await supabaseAdmin
+      .from('users')
+      .select('membership,role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (userProfileError) throw userProfileError;
+
+    const { data: eventHost, error: eventHostError } = await supabaseAdmin
+      .from('event_hosts')
+      .select('user_id')
+      .eq('event_id', eventId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (eventHostError) throw eventHostError;
+
+    const membership = userProfile?.membership ?? 'basic';
+    const role = userProfile?.role ?? 'user';
+    const bypassesRsvpOpen =
+      membership === 'plus' ||
+      membership === 'premium' ||
+      membership === 'admin' ||
+      membership === 'superadmin' ||
+      role === 'host' ||
+      role === 'admin' ||
+      role === 'super_admin' ||
+      Boolean(eventHost);
+    const rsvpOpenAt = event.rsvp_open_at ? new Date(event.rsvp_open_at) : null;
+    const isPublicRsvpOpen =
+      event.rsvp_open === true || !rsvpOpenAt || rsvpOpenAt.getTime() <= Date.now();
+
+    if (!bypassesRsvpOpen && !isPublicRsvpOpen) {
+      return Response.json(
+        {
+          ok: false,
+          status: 'rsvp_not_open',
+          rsvpOpenAt: event.rsvp_open_at,
+        },
+        { status: 403, headers: corsHeaders }
+      );
+    }
+
+    const hasActiveHold =
+      existingRsvp?.status === 'held' &&
+      existingRsvp.held_expires_at != null &&
+      new Date(existingRsvp.held_expires_at).getTime() > Date.now();
+
     const { count: activeRsvpCount, error: activeRsvpCountError } = await supabaseAdmin
       .from('rsvps')
       .select('id', { count: 'exact', head: true })
@@ -104,7 +152,18 @@ Deno.serve(async (request) => {
 
     if (activeRsvpCountError) throw activeRsvpCountError;
 
-    if (event.capacity != null && (activeRsvpCount ?? 0) >= event.capacity) {
+    const { count: heldRsvpCount, error: heldRsvpCountError } = await supabaseAdmin
+      .from('rsvps')
+      .select('id', { count: 'exact', head: true })
+      .eq('event_id', eventId)
+      .eq('status', 'held')
+      .gt('held_expires_at', new Date().toISOString());
+
+    if (heldRsvpCountError) throw heldRsvpCountError;
+
+    const reservedRsvpCount = (activeRsvpCount ?? 0) + (heldRsvpCount ?? 0);
+
+    if (event.capacity != null && reservedRsvpCount >= event.capacity && !hasActiveHold) {
       return Response.json(
         { ok: false, status: 'event_full' },
         { status: 409, headers: corsHeaders }
@@ -148,47 +207,40 @@ Deno.serve(async (request) => {
       });
 
       if (!rcResponse.ok) {
-        const errorBody = await rcResponse.text();
         return Response.json(
-          { error: 'Failed to spend RevenueCat virtual currency', details: errorBody },
+          { error: 'Failed to spend RevenueCat virtual currency', details: rcText },
           { status: rcResponse.status, headers: corsHeaders }
         );
       }
     }
 
-    const { data: rsvp, error: upsertError } = await supabaseAdmin
-      .from('rsvps')
-      .upsert(
-        {
-          event_id: eventId,
-          user_id: user.id,
-          status: 'active',
-          canceled_at: null,
-        },
-        { onConflict: 'user_id,event_id', ignoreDuplicates: false }
-      )
-      .select('id')
-      .maybeSingle();
-
-    if (upsertError) throw upsertError;
-
-    if (tokenCost > 0) {
-      const { error: transactionError } = await supabaseAdmin.from('token_transactions').insert({
-        user_id: user.id,
-        kind: 'spend',
-        amount: tokenCost,
-        meta: {
-          type: 'event_rsvp',
-          eventId,
-          eventTitle: event.title,
-          idempotencyKey,
-          virtualCurrencyCode: revenueCatVirtualCurrencyCode,
-        },
-      });
-
-      if (transactionError && transactionError.code !== '23505') {
-        throw transactionError;
+    const { data: confirmResult, error: confirmError } = await supabaseAdmin.rpc(
+      'confirm_rsvp_after_credit_spend',
+      {
+        p_event_id: eventId,
+        p_user_id: user.id,
+        p_token_cost: tokenCost,
+        p_event_title: event.title,
+        p_idempotency_key: idempotencyKey,
+        p_virtual_currency_code: revenueCatVirtualCurrencyCode,
       }
+    );
+
+    if (confirmError) throw confirmError;
+
+    if (
+      confirmResult &&
+      typeof confirmResult === 'object' &&
+      'ok' in confirmResult &&
+      confirmResult.ok === false
+    ) {
+      const status = 'status' in confirmResult ? confirmResult.status : 'not_confirmed';
+      const responseStatus = status === 'rsvp_not_open' ? 403 : 409;
+      const rsvpOpenAt = 'rsvpOpenAt' in confirmResult ? confirmResult.rsvpOpenAt : null;
+      return Response.json(
+        { ok: false, status, rsvpOpenAt },
+        { status: responseStatus, headers: corsHeaders }
+      );
     }
 
     return Response.json(
@@ -197,7 +249,10 @@ Deno.serve(async (request) => {
         eventId,
         eventTitle: event.title,
         tokenCost,
-        rsvpId: rsvp?.id ?? existingRsvp?.id ?? null,
+        rsvpId:
+          confirmResult && typeof confirmResult === 'object' && 'rsvpId' in confirmResult
+            ? confirmResult.rsvpId
+            : (existingRsvp?.id ?? null),
       },
       { headers: corsHeaders }
     );

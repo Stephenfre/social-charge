@@ -128,6 +128,11 @@ export function useCheckIn() {
     mutationFn: async (eventId: string) => {
       const { error } = await supabase.rpc('check_in', { event_id: eventId });
       if (error) throw error;
+      const { error: rewardError } = await supabase.functions.invoke(
+        'award-referral-social-batteries',
+        { body: { referredUserId: userId } }
+      );
+      if (rewardError) console.warn('Referral reward qualification failed:', rewardError);
       return true;
     },
     onSuccess: (_res, eventId) => {
@@ -172,7 +177,7 @@ export function useHostEvents() {
 }
 
 export function useEventById(id: string) {
-  return useQuery<VEventWithFullDetails>({
+  return useQuery<VEventWithFullDetails | null>({
     queryKey: EVENT_KEYS.eventById(id),
     enabled: !!id,
     queryFn: async () => {
@@ -183,7 +188,24 @@ export function useEventById(id: string) {
         .maybeSingle<VEventWithFullDetails>();
 
       if (error) throw error;
-      return data!;
+
+      if (!data) {
+        return null;
+      }
+
+      const { data: eventAccess, error: eventAccessError } = await supabase
+        .from('events')
+        .select('rsvp_open,rsvp_open_at')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (eventAccessError) throw eventAccessError;
+
+      return {
+        ...data!,
+        rsvp_open: eventAccess?.rsvp_open ?? true,
+        rsvp_open_at: eventAccess?.rsvp_open_at ?? null,
+      };
     },
   });
 }

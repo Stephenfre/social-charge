@@ -124,6 +124,54 @@ const resolveDefaultPaywallOffering = (
   return allOfferings[0] ?? null;
 };
 
+type PaidMembership = 'basic' | 'plus' | 'premium';
+
+const productIdentifierMatches = (candidate: string, configuredProductId?: string) => {
+  if (!configuredProductId) {
+    return false;
+  }
+
+  return (
+    candidate === configuredProductId ||
+    candidate.endsWith(`.${configuredProductId}`) ||
+    candidate.includes(configuredProductId)
+  );
+};
+
+const resolveMembershipFromCustomerInfo = (info: CustomerInfo): PaidMembership => {
+  const activeEntitlement = info.entitlements.active[REVENUECAT_ENTITLEMENT];
+  const activeProductIdentifiers = [
+    activeEntitlement?.productIdentifier,
+    ...(info.activeSubscriptions ?? []),
+  ].filter((productId): productId is string => Boolean(productId));
+
+  if (
+    activeProductIdentifiers.some((productId) =>
+      productIdentifierMatches(productId, revenueCatConfig.products.monthly_premium)
+    )
+  ) {
+    return 'premium';
+  }
+
+  if (
+    activeProductIdentifiers.some((productId) =>
+      productIdentifierMatches(productId, revenueCatConfig.products.monthly_plus)
+    )
+  ) {
+    return 'plus';
+  }
+
+  if (
+    activeProductIdentifiers.some((productId) =>
+      productIdentifierMatches(productId, revenueCatConfig.products.monthly)
+    )
+  ) {
+    return 'basic';
+  }
+
+  return activeEntitlement ? 'premium' : 'basic';
+};
+
 const buildNoOfferingsMessage = (availableOfferings: PurchasesOfferings | null) => {
   const availableIds = Object.keys(availableOfferings?.all ?? {});
   const bundleIdentifier =
@@ -359,9 +407,7 @@ export function RevenueCatProvider({ children }: PropsWithChildren) {
       return;
     }
 
-    const nextMembership = customerInfo.entitlements.active[REVENUECAT_ENTITLEMENT]
-      ? 'premium'
-      : 'basic';
+    const nextMembership = resolveMembershipFromCustomerInfo(customerInfo);
 
     if (user.membership === nextMembership) {
       return;

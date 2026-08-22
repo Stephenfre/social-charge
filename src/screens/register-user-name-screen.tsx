@@ -43,6 +43,7 @@ export function RegisterUserNameScreen() {
     city,
     state,
     country,
+    referralCode,
     setField,
     reset: resetSignupWizard,
   } = useSignupWizard();
@@ -348,6 +349,7 @@ export function RegisterUserNameScreen() {
           profileImageUri,
           selectedInterests: [],
           skipInterests: true,
+          referralCode,
         },
         {
           onSuccess: async ({ needsEmailConfirm, userId }) => {

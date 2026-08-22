@@ -87,7 +87,7 @@ export const revenueCatConfig: RevenueCatConfig = {
   offeringIdentifier:
     process.env.EXPO_PUBLIC_RC_OFFERING_IDENTIFIER ?? extra.offeringIdentifier ?? 'default',
   virtualCurrencyCode:
-    process.env.EXPO_PUBLIC_RC_VIRTUAL_CURRENCY_CODE ?? extra.virtualCurrencyCode ?? 'battery',
+    process.env.EXPO_PUBLIC_RC_VIRTUAL_CURRENCY_CODE ?? extra.virtualCurrencyCode ?? 'SCB',
   products: {
     monthly: extra.products?.monthly ?? defaultProducts.monthly,
     monthly_plus: extra.products?.monthly_plus ?? defaultProducts.monthly_plus,

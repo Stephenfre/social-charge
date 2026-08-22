@@ -90,12 +90,21 @@ export function useCreateRsvp() {
         return 'removed';
       }
 
-      const { error: upsertErr } = await supabase
-        .from('rsvps')
-        .upsert([{ event_id: eventId, user_id: userId, status: 'active', canceled_at: null }], {
+      const { error: upsertErr } = await supabase.from('rsvps').upsert(
+        [
+          {
+            event_id: eventId,
+            user_id: userId,
+            status: 'active',
+            canceled_at: null,
+            held_expires_at: null,
+          },
+        ],
+        {
           onConflict: 'user_id,event_id',
           ignoreDuplicates: false,
-        });
+        }
+      );
       if (upsertErr) throw upsertErr;
       return 'added';
     },
@@ -127,6 +136,7 @@ export function useCreateRsvp() {
           created_at: new Date().toISOString(),
           status: 'active',
           canceled_at: null,
+          held_expires_at: null,
         };
         qc.setQueryData<RsvpRow[]>(rsvpKey, [optimistic, ...prevRsvps]);
 

@@ -16,6 +16,7 @@ interface SignupData {
   age?: number;
   profileImageUri?: string;
   interests: string[];
+  referralCode: string;
 }
 
 type SignupWizardState = SignupData & {
@@ -40,6 +41,7 @@ export const useSignupWizard = create<SignupWizardState>()(
       age: undefined,
       profileImageUri: '',
       interests: [],
+      referralCode: '',
       setField: (key, value) => set((s) => ({ ...s, [key]: value })),
       setInterests: (ints) => set(() => ({ interests: ints })),
       reset: () =>
@@ -57,6 +59,7 @@ export const useSignupWizard = create<SignupWizardState>()(
           age: undefined,
           profileImageUri: '',
           interests: [],
+          referralCode: '',
         }),
     }),
     {

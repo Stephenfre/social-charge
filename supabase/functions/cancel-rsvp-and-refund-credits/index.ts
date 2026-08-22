@@ -115,6 +115,8 @@ Deno.serve(async (request) => {
       );
     }
 
+    const wasHeld = rsvp.status === 'held';
+
     const { data: spendTransactions, error: spendTransactionsError } = await supabaseAdmin
       .from('token_transactions')
       .select('id,amount,created_at')
@@ -132,7 +134,7 @@ Deno.serve(async (request) => {
     const idempotencyKey = `rsvp-refund:${user.id}:${eventId}:${spendTransaction?.id ?? rsvp.id}`;
 
     // Refund RevenueCat first if needed
-    if (shouldRefund && tokenCost > 0) {
+    if (shouldRefund && tokenCost > 0 && !wasHeld) {
       const rcResponse = await fetch(
         `https://api.revenuecat.com/v2/projects/${revenueCatProjectId}/customers/${user.id}/virtual_currencies/transactions`,
         {
@@ -175,7 +177,7 @@ Deno.serve(async (request) => {
       .from('rsvps')
       .update({ status: 'canceled', canceled_at: new Date().toISOString() })
       .eq('id', rsvp.id)
-      .eq('status', 'active')
+      .in('status', ['active', 'held'])
       .select('id')
       .maybeSingle();
 
@@ -188,7 +190,7 @@ Deno.serve(async (request) => {
       );
     }
 
-    if (shouldRefund && tokenCost > 0) {
+    if (shouldRefund && tokenCost > 0 && !wasHeld) {
       const { error: transactionError } = await supabaseAdmin.from('token_transactions').insert({
         user_id: user.id,
         kind: 'refund',
@@ -217,13 +219,21 @@ Deno.serve(async (request) => {
 
     if (cancelationError) throw cancelationError;
 
+    const { data: promotionResult, error: promotionError } = await supabaseAdmin.rpc(
+      'waitlist_promote_next',
+      { p_event_id: eventId }
+    );
+
+    if (promotionError) throw promotionError;
+
     return Response.json(
       {
         status: 'removed',
         eventId,
         eventTitle: event.title,
         tokenCost,
-        refunded: shouldRefund && tokenCost > 0,
+        refunded: shouldRefund && tokenCost > 0 && !wasHeld,
+        promotion: promotionResult ?? null,
       },
       { headers: corsHeaders }
     );
