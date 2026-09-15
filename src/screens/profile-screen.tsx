@@ -188,7 +188,7 @@ export function ProfileScreen() {
           {!isPro ? (
             <Button
               className="rounded-xl bg-primary-500"
-              disabled={isOpeningPaywall || loadingOfferings}
+              disabled={Platform.OS === 'android' || isOpeningPaywall || loadingOfferings}
               onPress={handleUpgradePress}>
               <Text bold>Go Premium</Text>
             </Button>

@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import dayjs from 'dayjs';
 import { ArrowRight, Minus, Plus } from 'lucide-react-native';
-import { RefreshControl, ScrollView } from 'react-native';
+import { Platform, RefreshControl, ScrollView } from 'react-native';
 import { Box, Button, Flex, Text } from '~/components/ui';
 import { useCreditBalance } from '~/hooks';
 import { useRevenueCat } from '~/providers/RevenueCatProvider';
@@ -163,7 +163,7 @@ export function WalletScreen() {
             size="xl"
             className="rounded-xl"
             onPress={handleOpenTokensPaywall}
-            disabled={!initialized || loadingOfferings}>
+            disabled={Platform.OS === 'android' || !initialized || loadingOfferings}>
             <Text size="xl" bold>
               {loadingOfferings ? 'Loading Store...' : 'Add Credits'}
             </Text>
