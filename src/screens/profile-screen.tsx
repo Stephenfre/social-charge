@@ -187,10 +187,16 @@ export function ProfileScreen() {
           </Flex>
           {!isPro ? (
             <Button
-              className="rounded-xl bg-primary-500"
+              className={
+                Platform.OS === 'android'
+                  ? 'rounded-xl bg-background-700 opacity-60'
+                  : 'rounded-xl bg-primary-500'
+              }
               disabled={Platform.OS === 'android' || isOpeningPaywall || loadingOfferings}
               onPress={handleUpgradePress}>
-              <Text bold>Go Premium</Text>
+              <Text bold className={Platform.OS === 'android' ? 'text-typography-400' : undefined}>
+                Go Premium
+              </Text>
             </Button>
           ) : null}
           <Flex gap={2} className="rounded-2xl bg-background-900 p-4">

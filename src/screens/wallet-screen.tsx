@@ -161,10 +161,15 @@ export function WalletScreen() {
           </Box>
           <Button
             size="xl"
-            className="rounded-xl"
+            className={
+              Platform.OS === 'android' ? 'rounded-xl bg-background-700 opacity-60' : 'rounded-xl'
+            }
             onPress={handleOpenTokensPaywall}
             disabled={Platform.OS === 'android' || !initialized || loadingOfferings}>
-            <Text size="xl" bold>
+            <Text
+              size="xl"
+              bold
+              className={Platform.OS === 'android' ? 'text-typography-400' : undefined}>
               {loadingOfferings ? 'Loading Store...' : 'Add Credits'}
             </Text>
           </Button>
